@@ -36,7 +36,7 @@ class Net {
     int tID;
     unsigned long tick1sec;
     unsigned long tick10sec;
-    ustd::sensorprocessor rssival = ustd::sensorprocessor(5, 60, 0.9);
+    ustd::sensorprocessor rssival = ustd::sensorprocessor(10, 600, 0.9);
     ustd::map<String, String> netServices;
     String macAddress;
     bool bOnceConnected = false;
