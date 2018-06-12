@@ -9,6 +9,7 @@
 #include "map.h"
 
 #include "scheduler.h"
+#include "sensors.h"
 
 #include <ArduinoJson.h>
 
