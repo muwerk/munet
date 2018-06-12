@@ -1,0 +1,22 @@
+{
+    "name": "munet",
+    "keywords": "esp networking",
+    "description": "modular networking libraries for espressif chips for muwerk scheduler",
+    "authors": [{
+        "name": "Dominik Schlösser",
+        "email": "dsc@dosc.net",
+        "maintainer": true
+    }],
+    "dependencies": [{
+        "name": "ustd",
+        "authors": "Dominik Schösser",
+        "frameworks": "arduino"
+    }, {
+        "name": "muwerk",
+        "authors": "Dominik Schösser",
+        "frameworks": "arduino"
+    }],
+    "version": "0.1.0",
+    "frameworks": "arduino",
+    "platforms": "*"
+}
