@@ -1,7 +1,11 @@
 {
     "name": "munet",
     "keywords": "esp networking",
-    "description": "modular networking libraries for espressif chips for muwerk scheduler",
+    "description": "modular networking libraries for ESP32 and ESP8266 for muwerk scheduler for WLAN-Client, NTP, OTA, MQTT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/muwerk/munet.git"
+    },
     "authors": [{
         "name": "Dominik Schlösser",
         "email": "dsc@dosc.net",
@@ -22,5 +26,5 @@
     }],
     "version": "0.1.0",
     "frameworks": "arduino",
-    "platforms": "*"
+    "platforms": "espressif8266,espressif32"
 }
