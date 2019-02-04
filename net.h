@@ -2,6 +2,35 @@
 
 #pragma once
 
+/*! \mainpage Munet a collection of network libraries for ESP8266 and ESP32
+based on the cooperative scheduler muwerk.
+
+\section Introduction
+
+munet implements the classes:
+
+* * \ref ustd::Net WLAN client connectivity and NTP time synchronization
+* * \ref ustd::Ota Over-the-air (OTA) software update
+* * \ref ustd::Mqtt connection to MQTT server
+
+libraries are header-only and should work with any c++11 compiler
+and support platforms esp8266 and esp32.
+
+This library requires the libraries ustd, muwerk and requires a
+<a href="https://github.com/muwerk/ustd/blob/master/README.md">platform
+define</a>.
+
+\section Reference
+* * <a href="https://github.com/muwerk/munet">munet github repository</a>
+
+depends on:
+* * <a href="https://github.com/muwerk/ustd">ustd github repository</a>
+* * <a href="https://github.com/muwerk/muwerk">muwerk github repository</a>
+
+used by:
+* * <a href="https://github.com/muwerk/mupplets">mupplets github repository</a>
+*/
+
 #if defined(__ESP__)
 
 #include "platform.h"
