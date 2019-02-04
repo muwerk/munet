@@ -1,9 +1,21 @@
 # munet
-Network WLAN access, OTA, NTP time and MQTT (via PubSubClient) for ESP8266 and ESP32
+
+The munet libraries use the [muwerk scheduler](https://github.com/muwerk/muwerk) to provide a comprehensive set of network functionality for ESP8266 and ESP32 chips with a minimum of code:
+
+```c++
+
+```
+
+The library provides:
+
+* Network WLAN access, using credentials read from SPIFFS file system (s.b.), automatic connection to a WLAN is established. The library handles re-connect and error recovery gracefully.
+* Over-the-air (OTA) update is supported with one line of code [optional]
+* Time synchronization with NTP servers, including daylight saving handling [optional]
+* Connection to an MQTT server (via PubSubClient) [optional]
 
 ## Configuration
 
-The network configuration is stored in a `json` file `data/net.json`
+The network configuration is stored in a `json` formatted file `net.json` in the SPIFFS file system of the ESP chip. Create a copy in your local file system of your project at `data/net.json`.
 
 ### Sample `net.json`
 
