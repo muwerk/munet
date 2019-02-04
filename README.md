@@ -1,10 +1,38 @@
 # munet
 
-The munet libraries use the [muwerk scheduler](https://github.com/muwerk/muwerk) to provide a comprehensive set of network functionality for ESP8266 and ESP32 chips with a minimum of code:
+The munet libraries use the [muwerk scheduler](https://github.com/muwerk/muwerk) to provide a comprehensive set of network functionality: WLAN connection, NTP time sync, OTA software update and MQTT communication for ESP8266 and ESP32 chips with a minimum of code:
 
 ```c++
+#include "scheduler.h"
+#include "net.h"
+#include "mqtt.h"
+#include "ota.h"
+
+ustd::Scheduler sched;
+ustd::Net net(LED_BUILTIN);
+ustd::Mqtt mqtt;
+ustd::Ota ota;
+
+void setup() {
+    net.begin(&sched);  // connect to WLAN and sync NTP time
+    mqtt.begin(&sched); // connect to MQTT server
+    ota.begin(&sched);  // enable OTA updates
+    
+    tID = sched.add(appLoop, "main");  // create task for your app code
+}
+
+void appLoop() {
+    // your code goes here.
+}
+
+// Never add code to this loop, use appLoop() instead.
+void loop() {
+    sched.loop();
+}
 
 ```
+
+Requirements: packages `ustd`, `muwerk`, `munet`
 
 The library provides:
 
@@ -56,4 +84,8 @@ pio run -t updatefs
 * SPIFFS filesystem: Optionally use this [Arduino plugin](https://github.com/me-no-dev/arduino-esp32fs-plugin) to upload the SPIFFS filesystem to ESP32.
 
 ## References
+* [ustd](https://github.com/muwerk/ustd) microWerk standard library
+* [muWerk](https://github.com/muwerk/muwerk) microWerk scheduler
+* [mupplets](https://github.com/muwerk/mupplets) sensor and io functionality blocks
+* [pubsubclient](https://github.com/knolleary/pubsubclient) the excellent MQTT library used by munet.
 * Time zone rules: https://mm.icann.org/pipermail/tz/2016-April/023570.html
