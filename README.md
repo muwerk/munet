@@ -3,6 +3,7 @@
 The munet libraries use the [muwerk scheduler](https://github.com/muwerk/muwerk) to provide a comprehensive set of network functionality: WLAN connection, NTP time sync, OTA software update and MQTT communication for ESP8266 and ESP32 chips with a minimum of code:
 
 ```c++
+#define __ESP__   // Platform define, add #define __ESP32__ for ESP32 (see dependencies)
 #include "scheduler.h"
 #include "net.h"
 #include "mqtt.h"
@@ -32,14 +33,19 @@ void loop() {
 
 ```
 
-Requirements: packages `ustd`, `muwerk`, `munet`
-
 The library provides:
 
 * Network WLAN access, using credentials read from SPIFFS file system (s.b.), automatic connection to a WLAN is established. The library handles re-connect and error recovery gracefully.
 * Over-the-air (OTA) update is supported with one line of code [optional]
 * Time synchronization with NTP servers, including daylight saving handling [optional]
 * Connection to an MQTT server (via PubSubClient) [optional]
+
+## Dependencies
+
+Muwerk relies only on:
+
+* [ustd](https://github.com/muwerk/ustd). Check documentation for required [platform defines](https://github.com/muwerk/ustd/blob/master/README.md).
+* [muwerk](https://github.com/muwerk/ustd)
 
 ## Configuration
 
@@ -76,6 +82,12 @@ pio run -t buildfs
 pio run -t updatefs
 ```
 
+## Documentation
+
+* [ustd::munet documentation.](https://muwerk.github.io/munet/docs/index.html) [WIP]
+* [ustd::muwerk documentation.](https://muwerk.github.io/muwerk/docs/index.html)
+* `ustd` required [platform defines.](https://github.com/muwerk/ustd/blob/master/README.md)
+* [ustd::ustd documentation.](https://muwerk.github.io/ustd/docs/index.html)
 
 
 ## ESP32 notes
