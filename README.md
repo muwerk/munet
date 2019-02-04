@@ -14,7 +14,7 @@ ustd::Mqtt mqtt;
 ustd::Ota ota;
 
 void setup() {
-    net.begin(&sched);  // connect to WLAN and sync NTP time
+    net.begin(&sched);  // connect to WLAN and sync NTP time, credentials read from SPIFFS, (s.b.)
     mqtt.begin(&sched); // connect to MQTT server
     ota.begin(&sched);  // enable OTA updates
     
