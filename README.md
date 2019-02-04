@@ -26,7 +26,7 @@ The network configuration is stored in a `json` file `data/net.json`
 | password      | Wireless network password                                                       |
 | hostname      | Hostname the ESP will try to register at the DHCP server                        |
 | timeserver    | optional address of an NTP time server, if given, ESP time will be synchronized |
-| dstrules      | optional timezone and daylight saving rules in unix format                      |
+| dstrules      | optional timezone and daylight saving rules in [unix format](https://mm.icann.org/pipermail/tz/2016-April/023570.html)                      |
 | mqttserver    | optional address of MQTT server ESP connects to                                 |
 
 Using platformio, `data/net.conf` is saved to the ESP chip using:
@@ -42,3 +42,6 @@ pio run -t updatefs
 
 * In order to build MQTT for ESP32, this patch needs to be applied: https://github.com/knolleary/pubsubclient/pull/336
 * SPIFFS filesystem: Optionally use this [Arduino plugin](https://github.com/me-no-dev/arduino-esp32fs-plugin) to upload the SPIFFS filesystem to ESP32.
+
+## References
+* Time zone rules: https://mm.icann.org/pipermail/tz/2016-April/023570.html
