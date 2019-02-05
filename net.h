@@ -67,9 +67,12 @@ Alternatively, credentials can be given in source code during Net.begin().
 #define __ESP__ 1   // Platform defines required, see doc, mainpage.
 #include "scheduler.h"
 #include "net.h"
+#include "ota.h"  // otpoinal for over-the-air software updates
 
 ustd::Scheduler sched;
 ustd::Net net(LED_BUILTIN);
+
+ustd::Ota ota();  // optional
 
 void appLoop();
 
@@ -77,6 +80,7 @@ void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
     net.begin(&sched);  // connect to WLAN and sync NTP time,
                         // credentials read from SPIFFS, (net.json)
+    ota.begin(&sched);  // optional ota update
 
     tID = sched.add(appLoop, "main");  // create task for your app code
 }
