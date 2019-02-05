@@ -36,7 +36,7 @@ class Ota {
          * Network failures are handled automatically.
          *
          * Simply add to your code:
-        ~~~{.cpp}
+        \code{cpp}
         #define __ESP__ 1   // Platform defines required, see doc, mainpage.
         #include "scheduler.h"
         #include "net.h"
@@ -50,7 +50,7 @@ class Ota {
             net.begin(&sched);
             ota.begin(&sched);
         }
-        ___
+        \endcode
          */
     }
 
