@@ -45,6 +45,53 @@ used by:
 #define RECONNECT_MAX_TRIES 4
 
 namespace ustd {
+
+/*! \brief Munet, the muwerk network class for WLAN and NTP
+
+The library header-only and relies on the libraries ustd and muwerk.
+
+Make sure to provide the <a
+href="https://github.com/muwerk/ustd/blob/master/README.md">required platform
+define</a> before including ustd headers.
+
+See <a
+href="https://github.com/muwerk/munet/blob/master/README.md">for network
+credential and NTP configuration.</a>
+
+Alternatively, credentials can be given in source code during Net.begin().
+(s.b.)
+
+## Sample network connection
+
+~~~{.cpp}
+#define __ESP__ 1   // Platform defines required, see doc, mainpage.
+#include "scheduler.h"
+#include "net.h"
+
+ustd::Scheduler sched;
+ustd::Net net(LED_BUILTIN);
+
+void appLoop();
+
+void setup() {
+    pinMode(LED_BUILTIN, OUTPUT);
+    net.begin(&sched);  // connect to WLAN and sync NTP time,
+                        // credentials read from SPIFFS, (net.json)
+
+    tID = sched.add(appLoop, "main");  // create task for your app code
+}
+
+void appLoop() {
+    // your code goes here.
+}
+
+// Never add code to this loop, use appLoop() instead.
+void loop() {
+    sched.loop();
+}
+~~~
+ */
+
 class Net {
   public:
     enum Netstate { NOTDEFINED, NOTCONFIGURED, CONNECTINGAP, CONNECTED };
@@ -74,6 +121,26 @@ class Net {
     // unsigned int tz_sec = 3600, dst_sec = 3600;
 
     Net(uint8_t signalLed = 0xff) : signalLed(signalLed) {
+        /*! Instantiate a network object for WLAN and NTP connectivity.
+         *
+         * The Net object publishes messages using muwerk's pub/sub intertask
+         * communication (which does not rely on MQTT servers), other muwerk
+         * tasks can subscribe to the following topics:
+         *
+         * subscribe('net/network'); for information about wlan connection state
+         * changes. Status can be actively requested by
+         * publish('net/network/get');
+         *
+         * subscribe('net/rssi'); for information about WLAN reception strength
+         *
+         * subscribe('net/services'); for a list of available network services.
+         *
+         * subscribe('net/networks'); for a list of WLANs nearby.
+         *
+         * @param signalLed (optional), Pin of that will be set to LOW (led on)
+         * during network connection attempts. Once connected, led is switched
+         * off and can be used for other functions.
+         */
         oldState = NOTDEFINED;
         state = NOTCONFIGURED;
         if (signalLed != 0xff) {
@@ -84,6 +151,27 @@ class Net {
 
     void begin(Scheduler *_pSched, bool _restartEspOnRepeatedFailure = true,
                String _ssid = "", String _password = "", Netmode _mode = AP) {
+        /*! Connect to WLAN network and request NTP time
+         *
+         * This function starts the connection to a WLAN network, by default
+         * using the network credentials configured in net.json. Once a
+         * connection is established, a NTP time server is contacted and time is
+         * set according to local timezone rules as configured in net.json.
+         *
+         * Note: NTP configuration is only available via net.json, ssid and
+         * password can also be set using this function.
+         *
+         * Other muwerk task can subscribe to topic 'net/network' to receive
+         * information about network connection states.
+         *
+         * @param _restartEspOnRepeatedFailure (optional, default true) restarts
+         * ESP on continued failure.
+         * @param _ssid (optional, default unused) Alternative way to specify
+         * WLAN SSID not using net.json.
+         * @param _password (optional, default unused) Alternative way to
+         * specify WLAN password.
+         * @param _mode (optional, default AP) Currently unused network mode.
+         */
         pSched = _pSched;
         bReboot = _restartEspOnRepeatedFailure;
         SSID = _ssid;

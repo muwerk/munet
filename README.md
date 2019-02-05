@@ -14,6 +14,8 @@ ustd::Net net(LED_BUILTIN);
 ustd::Mqtt mqtt;
 ustd::Ota ota;
 
+void appLoop();
+
 void setup() {
     net.begin(&sched);  // connect to WLAN and sync NTP time, credentials read from SPIFFS, (s.b.)
     mqtt.begin(&sched); // connect to MQTT server
