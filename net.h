@@ -170,6 +170,7 @@ class Net {
          * Other muwerk task can subscribe to topic 'net/network' to receive
          * information about network connection states.
          *
+         * @param _pSched Pointer to the muwerk scheduler.
          * @param _restartEspOnRepeatedFailure (optional, default true) restarts
          * ESP on continued failure.
          * @param _ssid (optional, default unused) Alternative way to specify
