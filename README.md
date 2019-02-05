@@ -44,10 +44,12 @@ The library provides:
 
 ## Dependencies
 
-Muwerk relies only on:
+Munet relies only on:
 
 * [ustd](https://github.com/muwerk/ustd). Check documentation for required [platform defines](https://github.com/muwerk/ustd/blob/master/README.md).
 * [muwerk](https://github.com/muwerk/ustd)
+* [PubSubClient](https://github.com/knolleary/pubsubclient)
+* [ArduinoJson](https://github.com/bblanchon/ArduinoJson)
 
 ## Configuration
 
@@ -94,12 +96,13 @@ pio run -t updatefs
 
 ## ESP32 notes
 
-* In order to build MQTT for ESP32, this patch needs to be applied: https://github.com/knolleary/pubsubclient/pull/336
+* In order to build MQTT for ESP32, PubSubClient v2.7 or newer is needed.
 * SPIFFS filesystem: Optionally use this [Arduino plugin](https://github.com/me-no-dev/arduino-esp32fs-plugin) to upload the SPIFFS filesystem to ESP32.
 
 ## References
 * [ustd](https://github.com/muwerk/ustd) microWerk standard library
 * [muWerk](https://github.com/muwerk/muwerk) microWerk scheduler
 * [mupplets](https://github.com/muwerk/mupplets) sensor and io functionality blocks
-* [pubsubclient](https://github.com/knolleary/pubsubclient) the excellent MQTT library used by munet.
+* [PubSubClient](https://github.com/knolleary/pubsubclient) the excellent MQTT library used by munet.
+* [ArduinoJson](https://github.com/bblanchon/ArduinoJson) a low-resource JSON library for Arduino
 * Time zone rules: https://mm.icann.org/pipermail/tz/2016-April/023570.html
