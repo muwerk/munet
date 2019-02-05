@@ -31,7 +31,7 @@ used by:
 * * <a href="https://github.com/muwerk/mupplets">mupplets github repository</a>
 */
 
-//#if defined(__ESP__)
+// #if defined(__ESP__)
 
 #include "platform.h"
 #include "array.h"
@@ -97,6 +97,7 @@ class Net {
     enum Netstate { NOTDEFINED, NOTCONFIGURED, CONNECTINGAP, CONNECTED };
     enum Netmode { AP, STATION };
 
+  private:
     Netstate state;
     Netstate oldState;
     Netmode mode;
@@ -120,6 +121,7 @@ class Net {
     int initialCounter = RECONNECT_MAX_TRIES;
     // unsigned int tz_sec = 3600, dst_sec = 3600;
 
+  public:
     Net(uint8_t signalLed = 0xff) : signalLed(signalLed) {
         /*! Instantiate a network object for WLAN and NTP connectivity.
          *
@@ -239,6 +241,7 @@ class Net {
         pSched->subscribe(tID, "net/services/+/get", fsg);
     }
 
+  private:
     void publishNetwork() {
         String json;
         if (mode == AP) {
@@ -527,4 +530,4 @@ class Net {
 };  // namespace ustd
 }  // namespace ustd
 
-//#endif  // defined(__ESP__)
+// #endif  // defined(__ESP__)
