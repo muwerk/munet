@@ -65,15 +65,15 @@ class Mqtt {
          *
          * and
          *
-         * <domainname>/#
+         * <domainToken>/#
          *
          * Hostname is by default the hostname of the ESP chip, but can
          * be overwritten using
-         * _clientName in ustd::Mqtt.begin();. domainname is "mu" by
+         * _clientName in ustd::Mqtt.begin();. domainToken is "mu" by
          * default and can be overwritten using _domainToken in
          * ustd::Mqtt.begin();
          *
-         * Received messsages are stripped of hostname or domainname prefix
+         * Received messsages are stripped of hostname or domainToken prefix
          * and published into ustd::Scheduler.publish();. That way external
          * MQTT messages are routed to any muwerk task that uses the internal
          * muwerk ustd::Scheduler.subscribe(); mechanism, and all muwerk
@@ -120,8 +120,8 @@ class Mqtt {
          * name. WARNING: this name mus tbe unique! Otherwise the MQTT server
          * will rapidly disconnect.
          * @param _domainToken (optional, default is "mu") The MQTT client subs
-         * to message topics <_clientName>/# and <_domainName>/#, strips both
-         * _domainName and _clientName from received topics and publishes those
+         * to message topics <_clientName>/# and <_domainToken>/#, strips both
+         * _domainToken and _clientName from received topics and publishes those
          * messages to the internal muwerk interface ustd::scheduler.publish();
          */
 
