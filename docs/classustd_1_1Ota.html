@@ -111,11 +111,7 @@ Public Member Functions</h2></td></tr>
 <p>Instantiate a over-the-air (OTA) software update object.</p>
 <p>The OTA object listens for network connections and automatically establishes OTA update funcionality on successful connection to WLAN. In case of software update, all other muwerk tasks are automatically halted, and software update is granted priority.</p>
 <p>Network failures are handled automatically.</p>
-<p>Simply add to your code: ~~~{.cpp} #define <b>ESP</b> 1 // Platform defines required, see doc, mainpage. #include "scheduler.h" #include "net.h" #include "ota.h"</p>
-<p>ustd::Scheduler sched; <a class="el" href="classustd_1_1Net.html" title="Munet, the muwerk network class for WLAN and NTP.">ustd::Net</a> net(); <a class="el" href="classustd_1_1Ota.html">ustd::Ota</a> ota;</p>
-<p>void setup() { net.begin(&amp;sched); ota.begin(&amp;sched); }</p>
-<hr/>
-
+<p>Simply add to your code: </p><div class="fragment"><div class="line"><span class="preprocessor">#define __ESP__ 1   // Platform defines required, see doc, mainpage.</span></div><div class="line"><span class="preprocessor">#include &quot;scheduler.h&quot;</span></div><div class="line"><span class="preprocessor">#include &quot;<a class="code" href="net_8h.html">net.h</a>&quot;</span></div><div class="line"><span class="preprocessor">#include &quot;<a class="code" href="ota_8h.html">ota.h</a>&quot;</span></div><div class="line"></div><div class="line">ustd::Scheduler sched;</div><div class="line"><a class="code" href="classustd_1_1Net.html">ustd::Net</a> net();</div><div class="line"><a class="code" href="classustd_1_1Ota.html">ustd::Ota</a> ota;</div><div class="line"></div><div class="line"><span class="keywordtype">void</span> setup() {</div><div class="line">    net.<a class="code" href="classustd_1_1Ota.html#abd1481e14b367cf18e155a9bff75c407">begin</a>(&amp;sched);</div><div class="line">    ota.<a class="code" href="classustd_1_1Ota.html#abd1481e14b367cf18e155a9bff75c407">begin</a>(&amp;sched);</div><div class="line">}</div></div><!-- fragment -->
 </div>
 </div>
 <a id="ae6c4d57311293b006282469eea21e0f0"></a>
