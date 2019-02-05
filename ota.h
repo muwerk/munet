@@ -1,7 +1,7 @@
 // ota.h
 #pragma once
 
-#if defined(__ESP__)
+// #if defined(__ESP__)
 
 #include <functional>
 
@@ -14,8 +14,9 @@
 #include <ArduinoOTA.h>
 
 namespace ustd {
+
 class Ota {
-  public:
+  private:
     Scheduler *pSched;
     int tID;
     String hostName;
@@ -23,16 +24,44 @@ class Ota {
     bool bNetUp = false;
     bool bCheckOTA = false;
 
+  public:
     Ota() {
+        /*! Instantiate a over-the-air (OTA) software update object.
+         *
+         * The OTA object listens for network connections and automatically
+         * establishes OTA update funcionality on successful connection to WLAN.
+         * In case of software update, all other muwerk tasks are automatically
+         * halted, and software update is granted priority.
+         *
+         * Network failures are handled automatically.
+         *
+         * Simply add to your code:
+        ~~~{.cpp}
+        #define __ESP__ 1   // Platform defines required, see doc, mainpage.
+        #include "scheduler.h"
+        #include "net.h"
+        #include "ota.h"
+
+        ustd::Scheduler sched;
+        ustd::Net net();
+        ustd::Ota ota;
+
+        void setup() {
+            net.begin(&sched);
+            ota.begin(&sched);
+        }
+        ___
+         */
     }
 
     ~Ota() {
     }
 
+  private:
     void OTAsetup() {
         ArduinoOTA.setHostname(hostName.c_str());
 
-        // No authentication by default
+        // TODO: No authentication by default
         // ArduinoOTA.setPassword("chopon");
 
         // Password can be set with it's md5 value as well
@@ -85,6 +114,7 @@ class Ota {
         ArduinoOTA.begin();
     }
 
+  public:
     void begin(Scheduler *_pSched) {
         pSched = _pSched;
 #if defined(__ESP32__)
@@ -107,6 +137,7 @@ class Ota {
         pSched->publish("net/network/get");
     }
 
+  private:
     void loop() {
         if (bCheckOTA) {
             ArduinoOTA.handle();
@@ -139,4 +170,4 @@ class Ota {
 
 }  // namespace ustd
 
-#endif  // defined(__ESP__)
+// #endif  // defined(__ESP__)
