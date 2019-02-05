@@ -31,7 +31,7 @@ used by:
 * * <a href="https://github.com/muwerk/mupplets">mupplets github repository</a>
 */
 
-#if defined(__ESP__)
+//#if defined(__ESP__)
 
 #include "platform.h"
 #include "array.h"
@@ -527,4 +527,4 @@ class Net {
 };  // namespace ustd
 }  // namespace ustd
 
-#endif  // defined(__ESP__)
+//#endif  // defined(__ESP__)
