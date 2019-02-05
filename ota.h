@@ -51,6 +51,18 @@ class Ota {
             ota.begin(&sched);
         }
         \endcode
+
+        Security note: currently the API doesn't support setting an OTA
+        password. Please use:
+
+        \code{cpp} ArduinoOTA.setPassword("secret");
+        // or:
+        // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
+        ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
+        \endcode
+
+        to set an OTA password. This will be supported within the API in a
+        future version.
          */
     }
 
@@ -62,7 +74,7 @@ class Ota {
         ArduinoOTA.setHostname(hostName.c_str());
 
         // TODO: No authentication by default
-        // ArduinoOTA.setPassword("chopon");
+        // ArduinoOTA.setPassword("secret");
 
         // Password can be set with it's md5 value as well
         // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3

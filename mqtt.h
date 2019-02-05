@@ -2,7 +2,7 @@
 
 #pragma once
 
-#if defined(__ESP__)
+// #if defined(__ESP__)
 
 #include <functional>
 
@@ -18,7 +18,7 @@
 
 namespace ustd {
 class Mqtt {
-  public:
+  private:
     WiFiClient wifiClient;
     PubSubClient mqttClient;
     bool bMqInit = false;
@@ -36,7 +36,69 @@ class Mqtt {
     String mqttServer;
     IPAddress mqttserverIP;
 
+  public:
     Mqtt() {
+        /*! Instantiate a MQTT client object using pubsubclient library.
+         *
+         * This object connects to an external MQTT server as soon as a network
+         * connection is available.
+         *
+         * The muwerk scheduler implements pub/sub inter-task communication
+         * between muwerk tasks. Tasks can subscribe to MQTT formatted topics
+         * and publish messages.
+         *
+         * Publish to external server:
+         *
+         * This object extends the internal communication
+         * to external MQTT servers. All internal muwerk messages are published
+         * to the external MQTT server with prefix <hostname>/. E.g. if a muwerk
+         * task ustd::Scheduler.publish('led/set', 'on'); and hostname of ESP is
+         * 'myhost', an MQTT publish message with topic 'myhost/led/set' and msg
+         * 'on' is sent to the external server.
+         *
+         * Subscribes to external server:
+         *
+         * This object subscribes to two wild-card topics on the external
+        server:
+         *
+         * <hostname>/#
+         *
+         * and
+         *
+         * <domainname>/#
+         *
+         * Hostname is by default the hostname of the ESP chip, but can
+         * be overwritten using
+         * _clientName in ustd::Mqtt.begin();. domainname is "mu" by
+         * default and can be overwritten using _domainToken in
+         * ustd::Mqtt.begin();
+         *
+         * Received messsages are stripped of hostname or domainname prefix
+         * and published into ustd::Scheduler.publish();. That way external
+         * MQTT messages are routed to any muwerk task that uses the internal
+         * muwerk ustd::Scheduler.subscribe(); mechanism, and all muwerk
+         * tasks can publish to external MQTT entities transparently.
+         *
+         * Network failures and reconnects to the extern MQTT server
+         * are handled automatically.
+         *
+         * Simply add to your code:
+        \code{cpp}
+        #define __ESP__ 1   // Platform defines required, see doc, mainpage.
+        #include "scheduler.h"
+        #include "net.h"
+        #include "mqtt.h"
+
+        ustd::Scheduler sched;
+        ustd::Net net();
+        ustd::Mqtt mqtt;
+
+        void setup() {
+            net.begin(&sched);
+            mqtt.begin(&sched);
+        }
+        \endcode
+         */
         mqttServer = "";
         isOn = false;
     }
@@ -47,14 +109,30 @@ class Mqtt {
         }
     }
 
-    void begin(Scheduler *_pSched, String _clientName = "") {
-        // Make sure _clientName is Unique! Otherwise MQTT server will rapidly
-        // disconnect.
+    void begin(Scheduler *_pSched, String _clientName = "",
+               String _domainToken = "") {
+        /*! Connect to external MQTT server as soon as network is available
+         *
+         * This function starts the connection to an MQTT server.
+         *
+         * @param _pSched Pointer to the muwerk scheduler.
+         * @param _clientName (optional, default is hostname) the MQTT client
+         * name. WARNING: this name mus tbe unique! Otherwise the MQTT server
+         * will rapidly disconnect.
+         * @param _domainToken (optional, default is "mu") The MQTT client subs
+         * to message topics <_clientName>/# and <_domainName>/#, strips both
+         * _domainName and _clientName from received topics and publishes those
+         * messages to the internal muwerk interface ustd::scheduler.publish();
+         */
+
         pSched = _pSched;
         clientName = _clientName;
         mqttClient = wifiClient;
 
         mqttTicker = millis();
+        if (_domainToken != "") {
+            domainToken = _domainToken;
+        }
         if (clientName == "") {
 #if defined(__ESP32__)
             clientName = WiFi.getHostname();
@@ -79,6 +157,7 @@ class Mqtt {
         isOn = true;
     }
 
+  private:
     bool bWarned = false;
     void loop() {
         if (isOn) {
@@ -208,4 +287,4 @@ class Mqtt {
 
 }  // namespace ustd
 
-#endif  // defined(__ESP__)
+// #endif  // defined(__ESP__)
