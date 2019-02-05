@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['loop',['loop',['../classustd_1_1Net.html#a1157592c8d2af449cbbd2fec9f337b74',1,'ustd::Net']]]
+  ['ota',['Ota',['../classustd_1_1Ota.html#af83b7dcb119bbd3af7c064f061c8a31c',1,'ustd::Ota']]]
 ];
