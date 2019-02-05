@@ -143,9 +143,10 @@ class Net {
          *
          * subscribe('net/networks'); for a list of WLANs nearby.
          *
-         * @param signalLed (optional), Pin of that will be set to LOW (led on)
+         * @param signalLed (optional), Pin that will be set to LOW (led on)
          * during network connection attempts. Once connected, led is switched
-         * off and can be used for other functions.
+         * off and can be used for other functions. Led on signals that the ESP
+         * is trying to connect to a network.
          */
         oldState = NOTDEFINED;
         state = NOTCONFIGURED;
