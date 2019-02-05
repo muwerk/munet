@@ -67,12 +67,14 @@ Alternatively, credentials can be given in source code during Net.begin().
 #define __ESP__ 1   // Platform defines required, see doc, mainpage.
 #include "scheduler.h"
 #include "net.h"
-#include "ota.h"  // otpoinal for over-the-air software updates
+#include "ota.h"  // optional for over-the-air software updates
+#include "mqtt.h" // optional for connection to external MQTT server
 
 ustd::Scheduler sched;
 ustd::Net net(LED_BUILTIN);
 
 ustd::Ota ota();  // optional
+ustd::Mqtt mqtt();// optional
 
 void appLoop();
 
@@ -81,6 +83,7 @@ void setup() {
     net.begin(&sched);  // connect to WLAN and sync NTP time,
                         // credentials read from SPIFFS, (net.json)
     ota.begin(&sched);  // optional ota update
+    mqtt.begin(&sched); // optional connection to external MQTT server
 
     tID = sched.add(appLoop, "main");  // create task for your app code
 }
