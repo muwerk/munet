@@ -72,13 +72,15 @@ $(function() {
 <li>Network WLAN access, using credentials read from SPIFFS file system (s.b.), automatic connection to a WLAN is established. The library handles re-connect and error recovery gracefully.</li>
 <li>Over-the-air (OTA) update is supported with one line of code [optional]</li>
 <li>Time synchronization with NTP servers, including daylight saving handling [optional]</li>
-<li>Connection to an MQTT server (via PubSubClient) [optional]</li>
+<li>Connection to an MQTT server (via PubSubClient) [optional] This transparently connects the pub/sub inter-task communication that is provided by the muwerk scheduler with extern MQTT publishers and subscribers. Messages between muwerk tasks are published to the external MQTT server, and muwerk tasks can transparently subscribe to both other tasks on the same ESP and external topics via the MQTT interface.</li>
 </ul>
 <h2>Dependencies</h2>
-<p>Muwerk relies only on:</p>
+<p>Munet relies only on:</p>
 <ul>
 <li><a href="https://github.com/muwerk/ustd">ustd</a>. Check documentation for required platform defines.</li>
 <li><a href="https://github.com/muwerk/ustd">muwerk</a></li>
+<li><a href="https://github.com/knolleary/pubsubclient">PubSubClient</a></li>
+<li><a href="https://github.com/bblanchon/ArduinoJson">ArduinoJson</a></li>
 </ul>
 <h2>Configuration</h2>
 <p>The network configuration is stored in a <code>json</code> formatted file <code>net.json</code> in the SPIFFS file system of the ESP chip. Create a copy in your local file system of your project at <code>data/net.json</code>.</p>
@@ -109,7 +111,7 @@ $(function() {
 </ul>
 <h2>ESP32 notes</h2>
 <ul>
-<li>In order to build MQTT for ESP32, this patch needs to be applied: <a href="https://github.com/knolleary/pubsubclient/pull/336">https://github.com/knolleary/pubsubclient/pull/336</a></li>
+<li>In order to build MQTT for ESP32, PubSubClient v2.7 or newer is needed.</li>
 <li>SPIFFS filesystem: Optionally use this <a href="https://github.com/me-no-dev/arduino-esp32fs-plugin">Arduino plugin</a> to upload the SPIFFS filesystem to ESP32.</li>
 </ul>
 <h2>References</h2>
@@ -117,7 +119,8 @@ $(function() {
 <li><a href="https://github.com/muwerk/ustd">ustd</a> microWerk standard library</li>
 <li><a href="https://github.com/muwerk/muwerk">muWerk</a> microWerk scheduler</li>
 <li><a href="https://github.com/muwerk/mupplets">mupplets</a> sensor and io functionality blocks</li>
-<li><a href="https://github.com/knolleary/pubsubclient">pubsubclient</a> the excellent MQTT library used by munet.</li>
+<li><a href="https://github.com/knolleary/pubsubclient">PubSubClient</a> the excellent MQTT library used by munet.</li>
+<li><a href="https://github.com/bblanchon/ArduinoJson">ArduinoJson</a> a low-resource JSON library for Arduino</li>
 <li>Time zone rules: <a href="https://mm.icann.org/pipermail/tz/2016-April/023570.html">https://mm.icann.org/pipermail/tz/2016-April/023570.html</a> </li>
 </ul>
 </div></div><!-- PageDoc -->
