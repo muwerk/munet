@@ -40,7 +40,7 @@ The library provides:
 * Network WLAN access, using credentials read from SPIFFS file system (s.b.), automatic connection to a WLAN is established. The library handles re-connect and error recovery gracefully.
 * Over-the-air (OTA) update is supported with one line of code [optional]
 * Time synchronization with NTP servers, including daylight saving handling [optional]
-* Connection to an MQTT server (via PubSubClient) [optional]
+* Connection to an MQTT server (via PubSubClient) [optional] This transparently connects the pub/sub inter-task communication that is provided by the muwerk scheduler with extern MQTT publishers and subscribers. Messages between muwerk tasks are published to the external MQTT server, and muwerk tasks can transparently subscribe to both other tasks on the same ESP and external topics via the MQTT interface.
 
 ## Dependencies
 
