@@ -7,7 +7,7 @@
 #include <functional>
 
 #include <ArduinoJson.h>
-#include <PubSubClient.h>
+#include <PubSubClient.h>  // ESP32 requires v2.7 or later
 
 #include "platform.h"
 #include "array.h"
