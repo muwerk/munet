@@ -1,0 +1,22 @@
+matrix:
+  include:
+    - language: python
+      python:
+        - "2.7"
+      sudo: false
+      cache:
+        directories:
+          - "~/.platformio"
+
+      env:
+        - PLATFORMIO_CI_SRC=Examples/all_min/munet_test.cpp
+
+      install:
+        - pip install -U platformio
+        - platformio lib -g install 5710  # ustd
+        - platformio lib -g install 5818  # muwerk
+        - platformio lib -g install 64  # ArduinoJson
+        - platformio lib -g install 89  # PubSubClient
+
+      script:
+        - pio ci --lib="." --project-option="build_flags=-D __ESP__" --board=esp12e Examples/all_min/munet_test.cpp
