@@ -53,6 +53,13 @@ Munet relies only on:
 * [PubSubClient](https://github.com/knolleary/pubsubclient)
 * [ArduinoJson](https://github.com/bblanchon/ArduinoJson)
 
+| munet component | depends on ustd | muwerk | ArduinoJson | PubSubClient |
+| --------------- | --------------- | ------ | ----------- | ------------ |
+| Net.h           |  x              | x      |             |              |
+| Ota.h           |  x              | x      |             |              |
+| Mqtt.h          |  x              | x      | x           | x            |
+
+
 ## Configuration
 
 The network configuration is stored in a `json` formatted file `net.json` in the SPIFFS file system of the ESP chip. Create a copy in your local file system of your project at `data/net.json`.
