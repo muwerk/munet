@@ -6,7 +6,6 @@
 
 #include <functional>
 
-// ESP32: patch required currently: #if defined(ESP8266) || defined(ESP32)
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 
