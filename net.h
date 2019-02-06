@@ -48,7 +48,8 @@ namespace ustd {
 
 /*! \brief Munet, the muwerk network class for WLAN and NTP
 
-The library header-only and relies on the libraries ustd and muwerk.
+The library header-only and relies on the libraries ustd, muwerk, ArduinoJson,
+and PubSubClient.
 
 Make sure to provide the <a
 href="https://github.com/muwerk/ustd/blob/master/README.md">required platform

@@ -40,14 +40,16 @@ The library provides:
 * Network WLAN access, using credentials read from SPIFFS file system (s.b.), automatic connection to a WLAN is established. The library handles re-connect and error recovery gracefully.
 * Over-the-air (OTA) update is supported with one line of code [optional]
 * Time synchronization with NTP servers, including daylight saving handling [optional]
-* Connection to an MQTT server (via PubSubClient) [optional]
+* Connection to an MQTT server (via PubSubClient) [optional] This transparently connects the pub/sub inter-task communication that is provided by the muwerk scheduler with extern MQTT publishers and subscribers. Messages between muwerk tasks are published to the external MQTT server, and muwerk tasks can transparently subscribe to both other tasks on the same ESP and external topics via the MQTT interface.
 
 ## Dependencies
 
-Muwerk relies only on:
+Munet relies only on:
 
 * [ustd](https://github.com/muwerk/ustd). Check documentation for required [platform defines](https://github.com/muwerk/ustd/blob/master/README.md).
 * [muwerk](https://github.com/muwerk/ustd)
+* [PubSubClient](https://github.com/knolleary/pubsubclient)
+* [ArduinoJson](https://github.com/bblanchon/ArduinoJson)
 
 ## Configuration
 
@@ -94,12 +96,13 @@ pio run -t updatefs
 
 ## ESP32 notes
 
-* In order to build MQTT for ESP32, this patch needs to be applied: https://github.com/knolleary/pubsubclient/pull/336
+* In order to build MQTT for ESP32, PubSubClient v2.7 or newer is needed.
 * SPIFFS filesystem: Optionally use this [Arduino plugin](https://github.com/me-no-dev/arduino-esp32fs-plugin) to upload the SPIFFS filesystem to ESP32.
 
 ## References
 * [ustd](https://github.com/muwerk/ustd) microWerk standard library
 * [muWerk](https://github.com/muwerk/muwerk) microWerk scheduler
 * [mupplets](https://github.com/muwerk/mupplets) sensor and io functionality blocks
-* [pubsubclient](https://github.com/knolleary/pubsubclient) the excellent MQTT library used by munet.
+* [PubSubClient](https://github.com/knolleary/pubsubclient) the excellent MQTT library used by munet.
+* [ArduinoJson](https://github.com/bblanchon/ArduinoJson) a low-resource JSON library for Arduino
 * Time zone rules: https://mm.icann.org/pipermail/tz/2016-April/023570.html

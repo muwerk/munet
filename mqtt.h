@@ -264,9 +264,8 @@ class Mqtt {
                     [=](char *t, unsigned char *m, unsigned int l) {
                         this->mqttReceive(t, m, l);
                     };
-                // If this breaks for ESP32, patch pubsubclient, l.76:
-                // #if defined(ESP8266) or defined(ESP32)
-                // to allow functionals for callback signature
+                // If this breaks for ESP32, update pubsubclient to v2.7 or
+                // newer
                 mqttClient.setCallback(f);
                 bMqInit = true;
             }
