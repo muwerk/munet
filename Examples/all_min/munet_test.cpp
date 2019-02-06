@@ -18,7 +18,7 @@ void setup() {
     mqtt.begin(&sched);  // connect to MQTT server
     ota.begin(&sched);   // enable OTA updates
 
-    tID = sched.add(appLoop, "main");  // create task for your app code
+    int tID = sched.add(appLoop, "main");  // create task for your app code
 }
 
 void appLoop() {
