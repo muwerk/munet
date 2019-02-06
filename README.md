@@ -90,7 +90,7 @@ pio run -t updatefs
 
 ## Documentation
 
-* [ustd::munet documentation.](https://muwerk.github.io/munet/docs/index.html) [WIP]
+* [ustd::munet documentation.](https://muwerk.github.io/munet/docs/index.html)
 * [ustd::muwerk documentation.](https://muwerk.github.io/muwerk/docs/index.html)
 * `ustd` required [platform defines.](https://github.com/muwerk/ustd/blob/master/README.md)
 * [ustd::ustd documentation.](https://muwerk.github.io/ustd/docs/index.html)
