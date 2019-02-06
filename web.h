@@ -1,6 +1,8 @@
 // web.h
 #pragma once
 
+// TODO: THIS IS NOT YET IMPLEMENTED
+
 #if defined(__ESP__)
 
 // Not yet available on ESP32!

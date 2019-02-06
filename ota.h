@@ -132,7 +132,7 @@ class Ota {
          *
          * This activates the OTA interface. As soon as a network connection
          * is available, listening for OTA requests are started. Handling of
-         * network connections and disconnnects is handled automatically and
+         * network connections and disconnnects is done automatically and
          * does not require further interaction.
          *
          * @param _pSched Pointer to the muwerk scheduler.
