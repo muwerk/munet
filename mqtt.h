@@ -243,7 +243,7 @@ class Mqtt {
             Serial.println(("MQTT can't publish, MQTT down: " + topic).c_str());
 #endif
         }
-        DynamicJsonBuffer jsonBuffer(200);
+        DynamicJsonBuffer jsonBuffer(512);
         JsonObject &root = jsonBuffer.parseObject(msg);
         if (!root.success()) {
 #ifdef USE_SERIAL_DBG

@@ -166,7 +166,7 @@ class Ota {
     }
 
     void subsMsg(String topic, String msg, String originator) {
-        DynamicJsonBuffer jsonBuffer(200);
+        DynamicJsonBuffer jsonBuffer(512);
         JsonObject &root = jsonBuffer.parseObject(msg);
         if (!root.success()) {
             // DBG("mqtt: Invalid JSON received: " + String(msg));

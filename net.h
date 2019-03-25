@@ -298,7 +298,7 @@ class Net {
                 String lin = f.readStringUntil('\n');
                 jsonstr = jsonstr + lin;
             }
-            DynamicJsonBuffer jsonBuffer(200);
+            DynamicJsonBuffer jsonBuffer(512);
             JsonObject &root = jsonBuffer.parseObject(jsonstr);
             if (!root.success()) {
                 return false;
