@@ -51,7 +51,7 @@ Munet relies only on:
 * [ustd](https://github.com/muwerk/ustd). Check documentation for required [platform defines](https://github.com/muwerk/ustd/blob/master/README.md).
 * [muwerk](https://github.com/muwerk/ustd)
 * [PubSubClient](https://github.com/knolleary/pubsubclient)
-* [ArduinoJson](https://github.com/bblanchon/ArduinoJson)
+* [ArduinoJson](https://github.com/bblanchon/ArduinoJson). **Note**: Version 6.x is not yet supported. Use 5.13.4.
 
 | munet component | depends on ustd | muwerk | ArduinoJson | PubSubClient |
 | --------------- | --------------- | ------ | ----------- | ------------ |
