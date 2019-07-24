@@ -15,7 +15,7 @@ matrix:
         - pip install -U platformio
         - platformio lib -g install 5710  # ustd
         - platformio lib -g install 5818  # muwerk
-        - platformio lib -g install 64 --version=5.13.4  # ArduinoJson
+        - platformio lib -g install 64@5.13.4 # guess?! --version=5.13.4  # ArduinoJson
         - platformio lib -g install 89  # PubSubClient
 
       script:
