@@ -96,7 +96,7 @@ pio run -t updatefs
 
 ## History
 
-* 0.1.5: This version uses Arduino_JSON for JSON parsing. Older versions relied on outdated versions of the older library ArduinoJson which is no longer supported with muwerk.
+* 0.1.5 (2019-07-24): This version uses [Arduino_JSON](https://github.com/arduino-libraries/Arduino_JSON) for JSON parsing. Older versions relied on outdated versions of the older library `ArduinoJson` which is no longer supported with `muwerk`.
 
 ## Documentation
 
