@@ -1,7 +1,7 @@
 // This example requires the arduino libraries:
 // - ustd
 // - muwerk
-// - ArduinoJson
+// - Arduino_JSON
 // - PubSubClient
 
 #define __ESP__  // Platform define, add #define __ESP32__ for ESP32 (see

@@ -1,7 +1,7 @@
 {
     "name": "munet",
     "keywords": "esp networking",
-    "description": "modular networking libraries for ESP32 and ESP8266 for muwerk scheduler for WLAN-Client, NTP, OTA, MQTT, requires libs: ustd, muwerk, ArduinoJson and PubSubClient",
+    "description": "modular networking libraries for ESP32 and ESP8266 for muwerk scheduler for WLAN-Client, NTP, OTA, MQTT, requires libs: ustd, muwerk, Arduino_JSON and PubSubClient",
     "repository": {
         "type": "git",
         "url": "https://github.com/muwerk/munet.git"
@@ -24,7 +24,7 @@
         "authors": "Dominik Schösser, Leo Moll",
         "frameworks": "arduino"
     }],
-    "version": "0.1.4",
+    "version": "0.1.5",
     "frameworks": "arduino",
     "platforms": "espressif8266,espressif32"
 }
