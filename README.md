@@ -51,7 +51,13 @@ Munet relies only on:
 * [ustd](https://github.com/muwerk/ustd). Check documentation for required [platform defines](https://github.com/muwerk/ustd/blob/master/README.md).
 * [muwerk](https://github.com/muwerk/ustd)
 * [PubSubClient](https://github.com/knolleary/pubsubclient)
-* [ArduinoJson](https://github.com/bblanchon/ArduinoJson)
+* [Arduino_JSON](https://github.com/arduino-libraries/Arduino_JSON). **Note**: Earlier versions used a different lib: ArduinoJson.
+
+| munet component | depends on ustd | muwerk | Arduino_JSON | PubSubClient |
+| --------------- | --------------- | ------ | ------------ | ------------ |
+| Net.h           |  x              | x      | x            |              |
+| Ota.h           |  x              | x      | x            |              |
+| Mqtt.h          |  x              | x      | x            | x            |
 
 ## Configuration
 
@@ -88,13 +94,16 @@ pio run -t buildfs
 pio run -t updatefs
 ```
 
+## History
+
+* 0.1.5: This version uses Arduino_JSON for JSON parsing. Older versions relied on outdated versions of the older library ArduinoJson which is no longer supported with muwerk.
+
 ## Documentation
 
-* [ustd::munet documentation.](https://muwerk.github.io/munet/docs/index.html) [WIP]
+* [ustd::munet documentation.](https://muwerk.github.io/munet/docs/index.html)
 * [ustd::muwerk documentation.](https://muwerk.github.io/muwerk/docs/index.html)
 * `ustd` required [platform defines.](https://github.com/muwerk/ustd/blob/master/README.md)
 * [ustd::ustd documentation.](https://muwerk.github.io/ustd/docs/index.html)
-
 
 ## ESP32 notes
 
@@ -102,9 +111,10 @@ pio run -t updatefs
 * SPIFFS filesystem: Optionally use this [Arduino plugin](https://github.com/me-no-dev/arduino-esp32fs-plugin) to upload the SPIFFS filesystem to ESP32.
 
 ## References
+
 * [ustd](https://github.com/muwerk/ustd) microWerk standard library
 * [muWerk](https://github.com/muwerk/muwerk) microWerk scheduler
 * [mupplets](https://github.com/muwerk/mupplets) sensor and io functionality blocks
 * [PubSubClient](https://github.com/knolleary/pubsubclient) the excellent MQTT library used by munet.
-* [ArduinoJson](https://github.com/bblanchon/ArduinoJson) a low-resource JSON library for Arduino
+* [Arduino_JSON](https://github.com/arduino-libraries/Arduino_JSON) JSON library for Arduino
 * Time zone rules: https://mm.icann.org/pipermail/tz/2016-April/023570.html

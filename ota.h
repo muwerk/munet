@@ -13,6 +13,8 @@
 
 #include <ArduinoOTA.h>
 
+#include <Arduino_JSON.h>
+
 namespace ustd {
 
 class Ota {
@@ -166,15 +168,15 @@ class Ota {
     }
 
     void subsMsg(String topic, String msg, String originator) {
-        DynamicJsonBuffer jsonBuffer(200);
-        JsonObject &root = jsonBuffer.parseObject(msg);
-        if (!root.success()) {
-            // DBG("mqtt: Invalid JSON received: " + String(msg));
+        JSONVar mqttJsonMsg = JSON.parse(msg);
+
+        if (JSON.typeof(mqttJsonMsg) == "undefined") {
             return;
         }
 
         if (topic == "net/network") {
-            String state = root["state"];
+            String state =
+                (const char *)mqttJsonMsg["state"];  // root["state"];
             if (state == "connected") {
                 if (!bNetUp) {
                     bNetUp = true;
