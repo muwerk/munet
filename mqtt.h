@@ -6,7 +6,7 @@
 
 #include <functional>
 
-#include <ArduinoJson.h>
+#include <Arduino_JSON.h>
 #include <PubSubClient.h>  // ESP32 requires v2.7 or later
 
 #include "platform.h"
@@ -243,8 +243,10 @@ class Mqtt {
             Serial.println(("MQTT can't publish, MQTT down: " + topic).c_str());
 #endif
         }
+        /*
         DynamicJsonBuffer jsonBuffer(512);
         JsonObject &root = jsonBuffer.parseObject(msg);
+
         if (!root.success()) {
 #ifdef USE_SERIAL_DBG
             Serial.println(
@@ -252,9 +254,17 @@ class Mqtt {
 #endif
             return;
         }
+        */
+        JSONVar mqttJsonMsg = JSON.parse(msg);
+
+        if (JSON.typeof(mqttJsonMsg) == "undefined") {
+            return;
+        }
+
         if (topic == "net/services/mqttserver") {
             if (!bMqInit) {
-                mqttServer = root["server"].as<char *>();
+                mqttServer = (const char *)
+                    mqttJsonMsg["server"];  // root["server"].as<char *>();
                 bCheckConnection = true;
                 mqttClient.setServer(mqttServer.c_str(), 1883);
                 // give a c++11 lambda as callback for incoming mqtt
@@ -270,7 +280,8 @@ class Mqtt {
             }
         }
         if (topic == "net/network") {
-            String state = root["state"];
+            String state =
+                (const char *)mqttJsonMsg["state"];  // root["state"];
             if (state == "connected") {
                 if (!netUp) {
                     netUp = true;

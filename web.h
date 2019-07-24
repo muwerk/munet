@@ -19,7 +19,6 @@
 
 #include "scheduler.h"
 
-#include <ArduinoJson.h>
 #include <ESP8266WebServer.h>
 
 namespace ustd {
@@ -71,27 +70,8 @@ class Web {
         }
     }
 
-    void subsMsg(String topic, String msg, String originator) {
-        DynamicJsonBuffer jsonBuffer(200);
-        JsonObject &root = jsonBuffer.parseObject(msg);
-        if (!root.success()) {
-            // DBG("web: Invalid JSON received: " + String(msg));
-            return;
-        }
-        if (topic == "net/services/webserver") {
-            webServer = root["server"].as<char *>();
-        }
-        if (topic == "net/network") {
-            String state = root["state"];
-            if (state == "connected") {
-                if (!netUp) {
-                    netUp = true;
-                }
-            } else {
-                netUp = false;
-            }
-        }
-    };
+    void subsMsg(String topic, String msg, String originator){};
+
 };  // namespace ustd
 
 }  // namespace ustd

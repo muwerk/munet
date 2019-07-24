@@ -40,7 +40,7 @@ used by:
 #include "scheduler.h"
 #include "sensors.h"
 
-#include <ArduinoJson.h>
+#include <Arduino_JSON.h>  // Platformio lib no. 6249
 
 #define RECONNECT_MAX_TRIES 4
 
@@ -48,7 +48,7 @@ namespace ustd {
 
 /*! \brief Munet, the muwerk network class for WLAN and NTP
 
-The library header-only and relies on the libraries ustd, muwerk, ArduinoJson,
+The library header-only and relies on the libraries ustd, muwerk, Arduino_JSON,
 and PubSubClient.
 
 Make sure to provide the <a
@@ -127,7 +127,6 @@ class Net {
     bool bOnceConnected = false;
     int deathCounter = RECONNECT_MAX_TRIES;
     int initialCounter = RECONNECT_MAX_TRIES;
-    // unsigned int tz_sec = 3600, dst_sec = 3600;
 
   public:
     Net(uint8_t signalLed = 0xff) : signalLed(signalLed) {
@@ -298,19 +297,27 @@ class Net {
                 String lin = f.readStringUntil('\n');
                 jsonstr = jsonstr + lin;
             }
-            DynamicJsonBuffer jsonBuffer(512);
-            JsonObject &root = jsonBuffer.parseObject(jsonstr);
-            if (!root.success()) {
+            JSONVar configObj = JSON.parse(jsonstr);
+            if (JSON.typeof(configObj) == "undefined") {
+#ifdef USE_SERIAL_DEBUG
+                Serial.println(
+                    "publishNetworks, config data: Parsing input failed!");
+                Serial.println(jsonstr);
+#endif
                 return false;
-            } else {
-                SSID = root["SSID"].as<char *>();
-                password = root["password"].as<char *>();
-                localHostname = root["hostname"].as<char *>();
-                JsonArray &servs = root["services"];
-                for (unsigned int i = 0; i < servs.size(); i++) {
-                    JsonObject &srv = servs[i];
-                    for (auto obj : srv) {
-                        netServices[obj.key] = obj.value.as<char *>();
+            }
+            SSID = (const char *)configObj["SSID"];
+            password = (const char *)configObj["password"];
+            localHostname = (const char *)configObj["hostname"];
+
+            if (configObj.hasOwnProperty("services")) {
+                JSONVar arr = configObj["services"];
+                for (int i = 0; i < arr.length(); i++) {
+                    JSONVar dc = arr[i];
+                    JSONVar keys = dc.keys();
+                    for (int j = 0; j < keys.length(); j++) {
+                        netServices[(const char *)keys[j]] =
+                            (const char *)dc[keys[j]];
                     }
                 }
             }
