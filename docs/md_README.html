@@ -82,8 +82,18 @@ $(function() {
 <li><a href="https://github.com/muwerk/ustd">ustd</a>. Check documentation for required platform defines.</li>
 <li><a href="https://github.com/muwerk/ustd">muwerk</a></li>
 <li><a href="https://github.com/knolleary/pubsubclient">PubSubClient</a></li>
-<li><a href="https://github.com/bblanchon/ArduinoJson">ArduinoJson</a></li>
+<li><a href="https://github.com/arduino-libraries/Arduino_JSON">Arduino_JSON</a>. <b>Note</b>: Earlier versions used a different lib: ArduinoJson.</li>
 </ul>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadNone">munet component  </th><th class="markdownTableHeadNone">depends on ustd  </th><th class="markdownTableHeadNone">muwerk  </th><th class="markdownTableHeadNone">Arduino_JSON  </th><th class="markdownTableHeadNone">PubSubClient   </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Net.h  </td><td class="markdownTableBodyNone">x  </td><td class="markdownTableBodyNone">x  </td><td class="markdownTableBodyNone">x  </td><td class="markdownTableBodyNone"></td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Ota.h  </td><td class="markdownTableBodyNone">x  </td><td class="markdownTableBodyNone">x  </td><td class="markdownTableBodyNone">x  </td><td class="markdownTableBodyNone"></td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Mqtt.h  </td><td class="markdownTableBodyNone">x  </td><td class="markdownTableBodyNone">x  </td><td class="markdownTableBodyNone">x  </td><td class="markdownTableBodyNone">x   </td></tr>
+</table>
 <h2>Configuration</h2>
 <p>The network configuration is stored in a <code>json</code> formatted file <code>net.json</code> in the SPIFFS file system of the ESP chip. Create a copy in your local file system of your project at <code>data/net.json</code>.</p>
 <h3>Sample <code>net.json</code></h3>
@@ -104,9 +114,13 @@ $(function() {
 <td class="markdownTableBodyNone">mqttserver  </td><td class="markdownTableBodyNone">optional address of MQTT server ESP connects to   </td></tr>
 </table>
 <p>Using platformio, <code>data/net.conf</code> is saved to the ESP chip using:</p>
-<div class="fragment"><div class="line">pio run -t buildfs</div><div class="line">pio run -t updatefs</div></div><!-- fragment --><h2>Documentation</h2>
+<div class="fragment"><div class="line">pio run -t buildfs</div><div class="line">pio run -t updatefs</div></div><!-- fragment --><h2>History</h2>
 <ul>
-<li><a href="https://muwerk.github.io/munet/docs/index.html">ustd::munet documentation.</a> [WIP]</li>
+<li>0.1.5: This version uses Arduino_JSON for JSON parsing. Older versions relied on outdated versions of the older library ArduinoJson which is no longer supported with muwerk.</li>
+</ul>
+<h2>Documentation</h2>
+<ul>
+<li><a href="https://muwerk.github.io/munet/docs/index.html">ustd::munet documentation.</a></li>
 <li><a href="https://muwerk.github.io/muwerk/docs/index.html">ustd::muwerk documentation.</a></li>
 <li><code>ustd</code> required platform defines.</li>
 <li><a href="https://muwerk.github.io/ustd/docs/index.html">ustd::ustd documentation.</a></li>
@@ -122,7 +136,7 @@ $(function() {
 <li><a href="https://github.com/muwerk/muwerk">muWerk</a> microWerk scheduler</li>
 <li><a href="https://github.com/muwerk/mupplets">mupplets</a> sensor and io functionality blocks</li>
 <li><a href="https://github.com/knolleary/pubsubclient">PubSubClient</a> the excellent MQTT library used by munet.</li>
-<li><a href="https://github.com/bblanchon/ArduinoJson">ArduinoJson</a> a low-resource JSON library for Arduino</li>
+<li><a href="https://github.com/arduino-libraries/Arduino_JSON">Arduino_JSON</a> JSON library for Arduino</li>
 <li>Time zone rules: <a href="https://mm.icann.org/pipermail/tz/2016-April/023570.html">https://mm.icann.org/pipermail/tz/2016-April/023570.html</a> </li>
 </ul>
 </div></div><!-- PageDoc -->
