@@ -87,7 +87,7 @@ The network configuration is stored in a `json` formatted file `net.json` in the
 | dstrules      | optional timezone and daylight saving rules in [unix format](https://mm.icann.org/pipermail/tz/2016-April/023570.html)                      |
 | mqttserver    | optional address of MQTT server ESP connects to                                 |
 
-Using platformio, `data/net.conf` is saved to the ESP chip using:
+Using platformio, `data/net.json` is saved to the ESP chip using:
 
 ```bash
 pio run -t buildfs
