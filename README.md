@@ -87,7 +87,7 @@ The network configuration is stored in a `json` formatted file `net.json` in the
 | dstrules      | optional timezone and daylight saving rules in [unix format](https://mm.icann.org/pipermail/tz/2016-April/023570.html)                      |
 | mqttserver    | optional address of MQTT server ESP connects to                                 |
 
-Using platformio, `data/net.conf` is saved to the ESP chip using:
+Using platformio, `data/net.json` is saved to the ESP chip using:
 
 ```bash
 pio run -t buildfs
@@ -96,7 +96,10 @@ pio run -t updatefs
 
 ## History
 
-* 0.1.5: This version uses Arduino_JSON for JSON parsing. Older versions relied on outdated versions of the older library ArduinoJson which is no longer supported with muwerk.
+* 0.1.6 (2019-08-06): Outgoing messages (from ESP to MQTT server) are now prefixed by an additional outDomainToken in order
+to prevent recursions. Older versions did only prefix with ESP's hostname, but at the same time the ESP MQTT client also subscribes
+to topics starting with it's hostname. This design error caused duplicated messages.
+* 0.1.5 (2019-07-24): This version uses [Arduino_JSON](https://github.com/arduino-libraries/Arduino_JSON) for JSON parsing. Older versions relied on outdated versions of the older library `ArduinoJson` which is no longer supported with `muwerk`.
 
 ## Documentation
 
