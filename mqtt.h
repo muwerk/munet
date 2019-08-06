@@ -23,6 +23,7 @@ class Mqtt {
     bool bMqInit = false;
     Scheduler *pSched;
     String domainToken = "mu";
+    String outDomainToken = "omu";
     int tID;
 
     bool isOn = false;
@@ -50,11 +51,12 @@ class Mqtt {
          *
          * This object extends the internal communication
          * to external MQTT servers. All internal muwerk messages are published
-         * to the external MQTT server with prefix <hostname>/. E.g. if a muwerk
-         * task ustd::Scheduler.publish('led/set', 'on'); and hostname of ESP is
-         * 'myhost', an MQTT publish message with topic 'myhost/led/set' and msg
-         * 'on' is sent to the external server.
-         *
+         * to the external MQTT server with prefix <outDomainPrefix>/<hostname>/. 
+         * E.g. if a muwerk task ustd::Scheduler.publish('led/set', 'on'); and 
+         * hostname of ESP is 'myhost', an MQTT publish message with topic 
+         * 'omu/myhost/led/set' and msg 'on' is sent to the external server.
+         * Default outDomainPrefix is 'omu'.
+         * 
          * Subscribes to external server:
          *
          * This object subscribes to two wild-card topics on the external
@@ -109,7 +111,7 @@ class Mqtt {
     }
 
     void begin(Scheduler *_pSched, String _clientName = "",
-               String _domainToken = "") {
+               String _domainToken = "", String _outDomainToken = "omu") {
         /*! Connect to external MQTT server as soon as network is available
          *
          * This function starts the connection to an MQTT server.
@@ -122,6 +124,9 @@ class Mqtt {
          * to message topics <_clientName>/# and <_domainToken>/#, strips both
          * _domainToken and _clientName from received topics and publishes those
          * messages to the internal muwerk interface ustd::scheduler.publish();
+         * @param _outDomainToken (optional, default is "omu") All publications
+         * from this client to outside MQTT-servers have their topic prefixed
+         * by <outDomainName>/<clientName>/topic. This is to prevent recursions.
          */
 
         pSched = _pSched;
@@ -131,6 +136,9 @@ class Mqtt {
         mqttTicker = millis();
         if (_domainToken != "") {
             domainToken = _domainToken;
+        }
+        if (_outDomainToken != "omu") {
+            outDomainToken = _outDomainToken;
         }
         if (clientName == "") {
 #if defined(__ESP32__)
@@ -217,7 +225,7 @@ class Mqtt {
             return;  // avoid loops
         if (mqttConnected) {
             unsigned int len = msg.length() + 1;
-            String tpc = clientName + "/" + topic;
+            String tpc = outDomainToken + "/" + clientName + "/" + topic;
             if (mqttClient.publish(tpc.c_str(), msg.c_str(), len)) {
 #ifdef USE_SERIAL_DBG
                 Serial.println(
