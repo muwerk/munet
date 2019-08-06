@@ -113,10 +113,11 @@ $(function() {
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">mqttserver  </td><td class="markdownTableBodyNone">optional address of MQTT server ESP connects to   </td></tr>
 </table>
-<p>Using platformio, <code>data/net.conf</code> is saved to the ESP chip using:</p>
+<p>Using platformio, <code>data/net.json</code> is saved to the ESP chip using:</p>
 <div class="fragment"><div class="line">pio run -t buildfs</div><div class="line">pio run -t updatefs</div></div><!-- fragment --><h2>History</h2>
 <ul>
-<li>0.1.5: This version uses Arduino_JSON for JSON parsing. Older versions relied on outdated versions of the older library ArduinoJson which is no longer supported with muwerk.</li>
+<li>0.1.6 (2019-08-06): Outgoing messages (from ESP to MQTT server) are now prefixed by an additional outDomainToken in order to prevent recursions. Older versions did only prefix with ESP's hostname, but at the same time the ESP MQTT client also subscribes to topics starting with it's hostname. This design error caused duplicated messages.</li>
+<li>0.1.5 (2019-07-24): This version uses <a href="https://github.com/arduino-libraries/Arduino_JSON">Arduino_JSON</a> for JSON parsing. Older versions relied on outdated versions of the older library <code>ArduinoJson</code> which is no longer supported with <code>muwerk</code>.</li>
 </ul>
 <h2>Documentation</h2>
 <ul>

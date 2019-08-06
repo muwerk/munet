@@ -82,8 +82,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:acf5f14eae3b54a704e2ccb6f278e2f3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aab94e0b4553a4ad5bcb3524cf17888b8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classustd_1_1Mqtt.html#aab94e0b4553a4ad5bcb3524cf17888b8">~Mqtt</a> ()</td></tr>
 <tr class="separator:aab94e0b4553a4ad5bcb3524cf17888b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a856c2ad2f0405dc589a5d71bcc8d3d91"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classustd_1_1Mqtt.html#a856c2ad2f0405dc589a5d71bcc8d3d91">begin</a> (Scheduler *_pSched, String _clientName=&quot;&quot;, String _domainToken=&quot;&quot;)</td></tr>
-<tr class="separator:a856c2ad2f0405dc589a5d71bcc8d3d91"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a877c8cf4c93fb0bc0a849316304c1967"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classustd_1_1Mqtt.html#a877c8cf4c93fb0bc0a849316304c1967">begin</a> (Scheduler *_pSched, String _clientName=&quot;&quot;, String _domainToken=&quot;&quot;, String _outDomainToken=&quot;omu&quot;)</td></tr>
+<tr class="separator:a877c8cf4c93fb0bc0a849316304c1967"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="acf5f14eae3b54a704e2ccb6f278e2f3b"></a>
@@ -112,16 +112,16 @@ Public Member Functions</h2></td></tr>
 <p>This object connects to an external MQTT server as soon as a network connection is available.</p>
 <p>The muwerk scheduler implements pub/sub inter-task communication between muwerk tasks. Tasks can subscribe to MQTT formatted topics and publish messages.</p>
 <p>Publish to external server:</p>
-<p>This object extends the internal communication to external MQTT servers. All internal muwerk messages are published to the external MQTT server with prefix &lt;hostname&gt;/. E.g. if a muwerk task ustd::Scheduler.publish('led/set', 'on'); and hostname of ESP is 'myhost', an MQTT publish message with topic 'myhost/led/set' and msg 'on' is sent to the external server.</p>
+<p>This object extends the internal communication to external MQTT servers. All internal muwerk messages are published to the external MQTT server with prefix &lt;outDomainPrefix&gt;/&lt;hostname&gt;/. E.g. if a muwerk task ustd::Scheduler.publish('led/set', 'on'); and hostname of ESP is 'myhost', an MQTT publish message with topic 'omu/myhost/led/set' and msg 'on' is sent to the external server. Default outDomainPrefix is 'omu'.</p>
 <p>Subscribes to external server:</p>
 <p>This object subscribes to two wild-card topics on the external server:</p>
 <p>&lt;hostname&gt;/#</p>
 <p>and</p>
 <p>&lt;domainToken&gt;/#</p>
-<p>Hostname is by default the hostname of the ESP chip, but can be overwritten using _clientName in <a class="el" href="classustd_1_1Mqtt.html#a856c2ad2f0405dc589a5d71bcc8d3d91">ustd::Mqtt.begin()</a>;. domainToken is "mu" by default and can be overwritten using _domainToken in <a class="el" href="classustd_1_1Mqtt.html#a856c2ad2f0405dc589a5d71bcc8d3d91">ustd::Mqtt.begin()</a>;</p>
+<p>Hostname is by default the hostname of the ESP chip, but can be overwritten using _clientName in <a class="el" href="classustd_1_1Mqtt.html#a877c8cf4c93fb0bc0a849316304c1967">ustd::Mqtt.begin()</a>;. domainToken is "mu" by default and can be overwritten using _domainToken in <a class="el" href="classustd_1_1Mqtt.html#a877c8cf4c93fb0bc0a849316304c1967">ustd::Mqtt.begin()</a>;</p>
 <p>Received messsages are stripped of hostname or domainToken prefix and published into ustd::Scheduler.publish();. That way external MQTT messages are routed to any muwerk task that uses the internal muwerk ustd::Scheduler.subscribe(); mechanism, and all muwerk tasks can publish to external MQTT entities transparently.</p>
 <p>Network failures and reconnects to the extern MQTT server are handled automatically.</p>
-<p>Simply add to your code: </p><div class="fragment"><div class="line"><span class="preprocessor">#define __ESP__ 1   // Platform defines required, see doc, mainpage.</span></div><div class="line"><span class="preprocessor">#include &quot;scheduler.h&quot;</span></div><div class="line"><span class="preprocessor">#include &quot;<a class="code" href="net_8h.html">net.h</a>&quot;</span></div><div class="line"><span class="preprocessor">#include &quot;<a class="code" href="mqtt_8h.html">mqtt.h</a>&quot;</span></div><div class="line"></div><div class="line">ustd::Scheduler sched;</div><div class="line"><a class="code" href="classustd_1_1Net.html">ustd::Net</a> net();</div><div class="line"><a class="code" href="classustd_1_1Mqtt.html">ustd::Mqtt</a> mqtt;</div><div class="line"></div><div class="line"><span class="keywordtype">void</span> setup() {</div><div class="line">    net.<a class="code" href="classustd_1_1Mqtt.html#a856c2ad2f0405dc589a5d71bcc8d3d91">begin</a>(&amp;sched);</div><div class="line">    mqtt.<a class="code" href="classustd_1_1Mqtt.html#a856c2ad2f0405dc589a5d71bcc8d3d91">begin</a>(&amp;sched);</div><div class="line">}</div></div><!-- fragment -->
+<p>Simply add to your code: </p><div class="fragment"><div class="line"><span class="preprocessor">#define __ESP__ 1   // Platform defines required, see doc, mainpage.</span></div><div class="line"><span class="preprocessor">#include &quot;scheduler.h&quot;</span></div><div class="line"><span class="preprocessor">#include &quot;<a class="code" href="net_8h.html">net.h</a>&quot;</span></div><div class="line"><span class="preprocessor">#include &quot;<a class="code" href="mqtt_8h.html">mqtt.h</a>&quot;</span></div><div class="line"></div><div class="line">ustd::Scheduler sched;</div><div class="line"><a class="code" href="classustd_1_1Net.html">ustd::Net</a> net();</div><div class="line"><a class="code" href="classustd_1_1Mqtt.html">ustd::Mqtt</a> mqtt;</div><div class="line"></div><div class="line"><span class="keywordtype">void</span> setup() {</div><div class="line">    net.<a class="code" href="classustd_1_1Mqtt.html#a877c8cf4c93fb0bc0a849316304c1967">begin</a>(&amp;sched);</div><div class="line">    mqtt.<a class="code" href="classustd_1_1Mqtt.html#a877c8cf4c93fb0bc0a849316304c1967">begin</a>(&amp;sched);</div><div class="line">}</div></div><!-- fragment -->
 </div>
 </div>
 <a id="aab94e0b4553a4ad5bcb3524cf17888b8"></a>
@@ -150,8 +150,8 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a856c2ad2f0405dc589a5d71bcc8d3d91"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a856c2ad2f0405dc589a5d71bcc8d3d91">&#9670;&nbsp;</a></span>begin()</h2>
+<a id="a877c8cf4c93fb0bc0a849316304c1967"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a877c8cf4c93fb0bc0a849316304c1967">&#9670;&nbsp;</a></span>begin()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -175,7 +175,13 @@ Public Member Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">String&#160;</td>
-          <td class="paramname"><em>_domainToken</em> = <code>&quot;&quot;</code>&#160;</td>
+          <td class="paramname"><em>_domainToken</em> = <code>&quot;&quot;</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">String&#160;</td>
+          <td class="paramname"><em>_outDomainToken</em> = <code>&quot;omu&quot;</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -195,7 +201,8 @@ Public Member Functions</h2></td></tr>
   <table class="params">
     <tr><td class="paramname">_pSched</td><td>Pointer to the muwerk scheduler. </td></tr>
     <tr><td class="paramname">_clientName</td><td>(optional, default is hostname) the MQTT client name. WARNING: this name mus tbe unique! Otherwise the MQTT server will rapidly disconnect. </td></tr>
-    <tr><td class="paramname">_domainToken</td><td>(optional, default is "mu") The MQTT client subs to message topics &lt;_clientName&gt;/# and &lt;_domainToken&gt;/#, strips both _domainToken and _clientName from received topics and publishes those messages to the internal muwerk interface ustd::scheduler.publish();</td></tr>
+    <tr><td class="paramname">_domainToken</td><td>(optional, default is "mu") The MQTT client subs to message topics &lt;_clientName&gt;/# and &lt;_domainToken&gt;/#, strips both _domainToken and _clientName from received topics and publishes those messages to the internal muwerk interface ustd::scheduler.publish(); </td></tr>
+    <tr><td class="paramname">_outDomainToken</td><td>(optional, default is "omu") All publications from this client to outside MQTT-servers have their topic prefixed by &lt;outDomainName&gt;/&lt;clientName&gt;/topic. This is to prevent recursions.</td></tr>
   </table>
   </dd>
 </dl>
