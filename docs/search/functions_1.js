@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['mqtt',['Mqtt',['../classustd_1_1Mqtt.html#acf5f14eae3b54a704e2ccb6f278e2f3b',1,'ustd::Mqtt']]]
+  ['configurentp_37',['configureNTP',['../classustd_1_1Net.html#a26e41f33f0e8a159e639c5940e84aff9',1,'ustd::Net']]]
 ];
