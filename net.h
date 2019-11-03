@@ -159,6 +159,22 @@ class Net {
         }
     }
 
+    void configureNTP() {
+        if (netServices.find("timeserver") != -1) {
+#define RTC_TEST 0  // = put a time_t from RTC in here...
+
+            timeval tv = {RTC_TEST, 0};
+            timezone tz = {0, 0};
+            settimeofday(&tv, &tz);
+            configTime(0, 0, netServices["timeserver"].c_str());
+            if (netServices.find("dstrules") != -1) {
+                String dstrules = netServices["dstrules"];
+                setenv("TZ", dstrules.c_str(), 3);
+                tzset();
+            }
+        }
+    }
+
     void begin(Scheduler *_pSched, bool _restartEspOnRepeatedFailure = true,
                String _ssid = "", String _password = "", Netmode _mode = AP) {
         /*! Connect to WLAN network and request NTP time
@@ -196,20 +212,6 @@ class Net {
             directInit = true;
 
         readNetConfig();
-
-        if (netServices.find("timeserver") != -1) {
-#define RTC_TEST 0  // = put a time_t from RTC in here...
-
-            timeval tv = {RTC_TEST, 0};
-            timezone tz = {0, 0};
-            settimeofday(&tv, &tz);
-            configTime(0, 0, netServices["timeserver"].c_str());
-            if (netServices.find("dstrules") != -1) {
-                String dstrules = netServices["dstrules"];
-                setenv("TZ", dstrules.c_str(), 3);
-                tzset();
-            }
-        }
 
         if (directInit) {
             SSID = _ssid;
@@ -394,6 +396,9 @@ class Net {
         case WIFI_AUTH_WPA2_ENTERPRISE:
             return "WPA2_ENTERPRISE";
             break;
+        default:
+            return "unknown";
+            break;
         }
 #endif
     }
@@ -507,6 +512,9 @@ class Net {
         case CONNECTED:
             bOnceConnected = true;
             deathCounter = RECONNECT_MAX_TRIES;
+            if (oldState!=CONNECTED) {
+                configureNTP();
+            }
             if (timeDiff(tick1sec, millis()) > 1000) {
                 tick1sec = millis();
                 if (WiFi.status() == WL_CONNECTED) {
