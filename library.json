@@ -24,7 +24,7 @@
         "authors": "Dominik Schösser, Leo Moll",
         "frameworks": "arduino"
     }],
-    "version": "0.1.6",
+    "version": "0.1.7",
     "frameworks": "arduino",
     "platforms": "espressif8266,espressif32"
 }
