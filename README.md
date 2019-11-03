@@ -96,6 +96,7 @@ pio run -t updatefs
 
 ## History
 
+* 0.1.8 (2019-11-03): NTP Init was unreliable, fixed.
 * 0.1.7 (2019-11-03): ESP32 crashes, if configTime() [for NTP setup] is called while WLAN is not connected. Fixes #2.
 * 0.1.6 (2019-08-06): Outgoing messages (from ESP to MQTT server) are now prefixed by an additional outDomainToken in order
 to prevent recursions. Older versions did only prefix with ESP's hostname, but at the same time the ESP MQTT client also subscribes

@@ -467,6 +467,7 @@ class Net {
                 IPAddress ip = WiFi.localIP();
                 ipAddress = String(ip[0]) + '.' + String(ip[1]) + '.' +
                             String(ip[2]) + '.' + String(ip[3]);
+                configureNTP();
             } else {
                 if (ustd::timeDiff(conTime, millis()) > conTimeout) {
 #ifdef USE_SERIAL_DBG
@@ -512,9 +513,7 @@ class Net {
         case CONNECTED:
             bOnceConnected = true;
             deathCounter = RECONNECT_MAX_TRIES;
-            if (oldState!=CONNECTED) {
-                configureNTP();
-            }
+
             if (timeDiff(tick1sec, millis()) > 1000) {
                 tick1sec = millis();
                 if (WiFi.status() == WL_CONNECTED) {
