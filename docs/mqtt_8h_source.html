@@ -173,12 +173,12 @@ $(function() {
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;                            mqttClient.subscribe((clientName + <span class="stringliteral">&quot;/#&quot;</span>).c_str());</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;                            mqttClient.subscribe((domainToken + <span class="stringliteral">&quot;/#&quot;</span>).c_str());</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;                            bWarned = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;                            pSched-&gt;publish(<span class="stringliteral">&quot;mqtt/state&quot;</span>,<span class="stringliteral">&quot;connected&quot;</span>);</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;                            pSched-&gt;publish(<span class="stringliteral">&quot;mqtt/state&quot;</span>,<span class="stringliteral">&quot;connected,&quot;</span>+outDomainToken + <span class="stringliteral">&quot;/&quot;</span> + clientName);</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;                        } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;                            mqttConnected = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;                            <span class="keywordflow">if</span> (!bWarned) {</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;                                bWarned = <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;                                pSched-&gt;publish(<span class="stringliteral">&quot;mqtt/state&quot;</span>,<span class="stringliteral">&quot;disconnected&quot;</span>);</div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;                                pSched-&gt;publish(<span class="stringliteral">&quot;mqtt/state&quot;</span>,<span class="stringliteral">&quot;disconnected,&quot;</span>+outDomainToken + <span class="stringliteral">&quot;/&quot;</span> + clientName);</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;                            }</div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;                        }</div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;                    }</div>
@@ -265,42 +265,49 @@ $(function() {
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;            <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;        }</div>
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160; </div>
-<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;        <span class="keywordflow">if</span> (topic == <span class="stringliteral">&quot;net/services/mqttserver&quot;</span>) {</div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;            <span class="keywordflow">if</span> (!bMqInit) {</div>
-<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;                mqttServer = (<span class="keyword">const</span> <span class="keywordtype">char</span> *)</div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;                    mqttJsonMsg[<span class="stringliteral">&quot;server&quot;</span>];  <span class="comment">// root[&quot;server&quot;].as&lt;char *&gt;();</span></div>
-<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;                bCheckConnection = <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;                mqttClient.setServer(mqttServer.c_str(), 1883);</div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;                <span class="comment">// give a c++11 lambda as callback for incoming mqtt</span></div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;                <span class="comment">// messages:</span></div>
-<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;                std::function&lt;void(<span class="keywordtype">char</span> *, <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> *, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>)&gt; f =</div>
-<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;                    [=](<span class="keywordtype">char</span> *t, <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> *m, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> l) {</div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;                        this-&gt;mqttReceive(t, m, l);</div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;                    };</div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;                <span class="comment">// If this breaks for ESP32, update pubsubclient to v2.7 or</span></div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;                <span class="comment">// newer</span></div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;                mqttClient.setCallback(f);</div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;                bMqInit = <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;            }</div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;        }</div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;        <span class="keywordflow">if</span> (topic == <span class="stringliteral">&quot;net/network&quot;</span>) {</div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;            String state =</div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;                (<span class="keyword">const</span> <span class="keywordtype">char</span> *)mqttJsonMsg[<span class="stringliteral">&quot;state&quot;</span>];  <span class="comment">// root[&quot;state&quot;];</span></div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;            <span class="keywordflow">if</span> (state == <span class="stringliteral">&quot;connected&quot;</span>) {</div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;                <span class="keywordflow">if</span> (!netUp) {</div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;                    netUp = <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;                    bCheckConnection = <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;                }</div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;            } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;                netUp = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;            }</div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;        }</div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;    };</div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;};</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160; </div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;}  <span class="comment">// namespace ustd</span></div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160; </div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;<span class="comment">// #endif  // defined(__ESP__)</span></div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;        <span class="keywordflow">if</span> (topic == <span class="stringliteral">&quot;mqtt/state/get&quot;</span>) {</div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;            <span class="keywordflow">if</span> (mqttConnected) {</div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;                pSched-&gt;publish(<span class="stringliteral">&quot;mqtt/state&quot;</span>,<span class="stringliteral">&quot;connected,&quot;</span>+outDomainToken + <span class="stringliteral">&quot;/&quot;</span> + clientName);</div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;            } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;                pSched-&gt;publish(<span class="stringliteral">&quot;mqtt/state&quot;</span>,<span class="stringliteral">&quot;disconnected,&quot;</span>+outDomainToken + <span class="stringliteral">&quot;/&quot;</span> + clientName);</div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;            }</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;        }</div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;        <span class="keywordflow">if</span> (topic == <span class="stringliteral">&quot;net/services/mqttserver&quot;</span>) {</div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;            <span class="keywordflow">if</span> (!bMqInit) {</div>
+<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;                mqttServer = (<span class="keyword">const</span> <span class="keywordtype">char</span> *)</div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;                    mqttJsonMsg[<span class="stringliteral">&quot;server&quot;</span>];  <span class="comment">// root[&quot;server&quot;].as&lt;char *&gt;();</span></div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;                bCheckConnection = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;                mqttClient.setServer(mqttServer.c_str(), 1883);</div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;                <span class="comment">// give a c++11 lambda as callback for incoming mqtt</span></div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;                <span class="comment">// messages:</span></div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;                std::function&lt;void(<span class="keywordtype">char</span> *, <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> *, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>)&gt; f =</div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;                    [=](<span class="keywordtype">char</span> *t, <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> *m, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> l) {</div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;                        this-&gt;mqttReceive(t, m, l);</div>
+<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;                    };</div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;                <span class="comment">// If this breaks for ESP32, update pubsubclient to v2.7 or</span></div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;                <span class="comment">// newer</span></div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;                mqttClient.setCallback(f);</div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;                bMqInit = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;            }</div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;        }</div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;        <span class="keywordflow">if</span> (topic == <span class="stringliteral">&quot;net/network&quot;</span>) {</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;            String state =</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;                (<span class="keyword">const</span> <span class="keywordtype">char</span> *)mqttJsonMsg[<span class="stringliteral">&quot;state&quot;</span>];  <span class="comment">// root[&quot;state&quot;];</span></div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;            <span class="keywordflow">if</span> (state == <span class="stringliteral">&quot;connected&quot;</span>) {</div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;                <span class="keywordflow">if</span> (!netUp) {</div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;                    netUp = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;                    bCheckConnection = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;                }</div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;            } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;                netUp = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;            }</div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;        }</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;    };</div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;};</div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160; </div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;}  <span class="comment">// namespace ustd</span></div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160; </div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;<span class="comment">// #endif  // defined(__ESP__)</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="anamespaceustd_html"><div class="ttname"><a href="namespaceustd.html">ustd</a></div><div class="ttdef"><b>Definition:</b> mqtt.h:18</div></div>
 <div class="ttc" id="aclassustd_1_1Mqtt_html"><div class="ttname"><a href="classustd_1_1Mqtt.html">ustd::Mqtt</a></div><div class="ttdef"><b>Definition:</b> mqtt.h:19</div></div>

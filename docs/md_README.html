@@ -155,12 +155,12 @@ $(function() {
 <p>Using platformio, <code>data/net.json</code> is saved to the ESP chip using:</p>
 <div class="fragment"><div class="line">pio run -t buildfs</div>
 <div class="line">pio run -t updatefs</div>
-</div><!-- fragment --><h3>_Internal_ Messages sent by munet to other muwerk processes:</h3>
+</div><!-- fragment --><h3>Internal Messages sent by munet to other muwerk processes:</h3>
 <table class="markdownTable">
 <tr class="markdownTableHead">
 <th class="markdownTableHeadNone">topic  </th><th class="markdownTableHeadNone">message body  </th><th class="markdownTableHeadNone">comment   </th></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>mqtt/state</code>  </td><td class="markdownTableBodyNone"><code>connected</code> or <code>disconnected</code>  </td><td class="markdownTableBodyNone">muwerk processes that subscribe to <code>mqtt/state</code> are that way informed, if mqtt external connection is available.   </td></tr>
+<td class="markdownTableBodyNone"><code>mqtt/state</code>  </td><td class="markdownTableBodyNone"><code>connected,prefix</code> or <code>disconnected,prefix</code>  </td><td class="markdownTableBodyNone">muwerk processes that subscribe to <code>mqtt/state</code> are that way informed, if mqtt external connection is available. <code>prefix</code> is the mqtt prefix automatically prefixed to outgoing messages, composed of <code>omu</code> (set with mqtt) and <code>hostname</code>, e.g. <code>connected,omu/myhost</code>. <code>prefix</code> can be useful for mupplets to know the actual topic names that get published externally.   </td></tr>
 </table>
 <h1>History</h1>
 <ul>
