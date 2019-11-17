@@ -155,8 +155,16 @@ $(function() {
 <p>Using platformio, <code>data/net.json</code> is saved to the ESP chip using:</p>
 <div class="fragment"><div class="line">pio run -t buildfs</div>
 <div class="line">pio run -t updatefs</div>
-</div><!-- fragment --><h1>History</h1>
+</div><!-- fragment --><h3>_Internal_ Messages sent by munet to other muwerk processes:</h3>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadNone">topic  </th><th class="markdownTableHeadNone">message body  </th><th class="markdownTableHeadNone">comment   </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone"><code>mqtt/state</code>  </td><td class="markdownTableBodyNone"><code>connected</code> or <code>disconnected</code>  </td><td class="markdownTableBodyNone">muwerk processes that subscribe to <code>mqtt/state</code> are that way informed, if mqtt external connection is available.   </td></tr>
+</table>
+<h1>History</h1>
 <ul>
+<li>0.1.9 (2019-11-17): Allow publishing to unmodified topics using <code>!</code> topic-prefix. Send internal messages with topic <code>mqtt/state</code></li>
 <li>0.1.8 (2019-11-03): NTP Init was unreliable, fixed.</li>
 <li>0.1.7 (2019-11-03): ESP32 crashes, if configTime() [for NTP setup] is called while WLAN is not connected. Fixes #2.</li>
 <li>0.1.6 (2019-08-06): Outgoing messages (from ESP to MQTT server) are now prefixed by an additional outDomainToken in order to prevent recursions. Older versions did only prefix with ESP's hostname, but at the same time the ESP MQTT client also subscribes to topics starting with it's hostname. This design error caused duplicated messages.</li>

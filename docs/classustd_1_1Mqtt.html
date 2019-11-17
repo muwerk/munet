@@ -112,7 +112,7 @@ Public Member Functions</h2></td></tr>
 <p>This object connects to an external MQTT server as soon as a network connection is available.</p>
 <p>The muwerk scheduler implements pub/sub inter-task communication between muwerk tasks. Tasks can subscribe to MQTT formatted topics and publish messages.</p>
 <p>Publish to external server:</p>
-<p>This object extends the internal communication to external MQTT servers. All internal muwerk messages are published to the external MQTT server with prefix &lt;outDomainPrefix&gt;/&lt;hostname&gt;/. E.g. if a muwerk task ustd::Scheduler.publish('led/set', 'on'); and hostname of ESP is 'myhost', an MQTT publish message with topic 'omu/myhost/led/set' and msg 'on' is sent to the external server. Default outDomainPrefix is 'omu'.</p>
+<p>This object extends the internal communication to external MQTT servers. All internal muwerk messages are published to the external MQTT server with prefix &lt;outDomainPrefix&gt;/&lt;hostname&gt;/. E.g. if a muwerk task ustd::Scheduler.publish('led/set', 'on'); and hostname of ESP is 'myhost', an MQTT publish message with topic 'omu/myhost/led/set' and msg 'on' is sent to the external server. Default outDomainPrefix is 'omu'. In order to publish to an unmodified topic, prefix the topic with '!', then neither outDomainPrefix nor hostname are prepended. E.g. publish to topic !system/urgent will cause an MQTT publish to system/urgent with no additional prefixes. Note: this can cause recursions.</p>
 <p>Subscribes to external server:</p>
 <p>This object subscribes to two wild-card topics on the external server:</p>
 <p>&lt;hostname&gt;/#</p>
@@ -229,7 +229,7 @@ Public Member Functions</h2></td></tr>
 <div class="ttc" id="aclassustd_1_1Mqtt_html"><div class="ttname"><a href="classustd_1_1Mqtt.html">ustd::Mqtt</a></div><div class="ttdef"><b>Definition:</b> mqtt.h:19</div></div>
 <div class="ttc" id="aclassustd_1_1Net_html"><div class="ttname"><a href="classustd_1_1Net.html">ustd::Net</a></div><div class="ttdoc">Munet, the muwerk network class for WLAN and NTP.</div><div class="ttdef"><b>Definition:</b> net.h:103</div></div>
 <div class="ttc" id="anet_8h_html"><div class="ttname"><a href="net_8h.html">net.h</a></div></div>
-<div class="ttc" id="aclassustd_1_1Mqtt_html_a877c8cf4c93fb0bc0a849316304c1967"><div class="ttname"><a href="classustd_1_1Mqtt.html#a877c8cf4c93fb0bc0a849316304c1967">ustd::Mqtt::begin</a></div><div class="ttdeci">void begin(Scheduler *_pSched, String _clientName=&quot;&quot;, String _domainToken=&quot;&quot;, String _outDomainToken=&quot;omu&quot;)</div><div class="ttdef"><b>Definition:</b> mqtt.h:113</div></div>
+<div class="ttc" id="aclassustd_1_1Mqtt_html_a877c8cf4c93fb0bc0a849316304c1967"><div class="ttname"><a href="classustd_1_1Mqtt.html#a877c8cf4c93fb0bc0a849316304c1967">ustd::Mqtt::begin</a></div><div class="ttdeci">void begin(Scheduler *_pSched, String _clientName=&quot;&quot;, String _domainToken=&quot;&quot;, String _outDomainToken=&quot;omu&quot;)</div><div class="ttdef"><b>Definition:</b> mqtt.h:117</div></div>
 <div class="ttc" id="amqtt_8h_html"><div class="ttname"><a href="mqtt_8h.html">mqtt.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
