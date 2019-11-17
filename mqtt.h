@@ -184,11 +184,13 @@ class Mqtt {
                             mqttClient.subscribe((clientName + "/#").c_str());
                             mqttClient.subscribe((domainToken + "/#").c_str());
                             bWarned = false;
+                            pSched->publish("mqtt/state","connected");
                         } else {
+                            mqttConnected = false;
                             if (!bWarned) {
                                 bWarned = true;
+                                pSched->publish("mqtt/state","disconnected");
                             }
-                            mqttConnected = false;
                         }
                     }
                 }
@@ -225,7 +227,12 @@ class Mqtt {
             return;  // avoid loops
         if (mqttConnected) {
             unsigned int len = msg.length() + 1;
-            String tpc = outDomainToken + "/" + clientName + "/" + topic;
+            String tpc;
+            if (topic.c_str()[0]=='!') {
+                tpc = &(topic.c_str()[1]);
+            } else {
+                tpc = outDomainToken + "/" + clientName + "/" + topic;
+            }
             if (mqttClient.publish(tpc.c_str(), msg.c_str(), len)) {
 #ifdef USE_SERIAL_DBG
                 Serial.println(
