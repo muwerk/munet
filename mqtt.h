@@ -188,12 +188,12 @@ class Mqtt {
                             mqttClient.subscribe((clientName + "/#").c_str());
                             mqttClient.subscribe((domainToken + "/#").c_str());
                             bWarned = false;
-                            pSched->publish("mqtt/state","connected");
+                            pSched->publish("mqtt/state","connected,"+outDomainToken + "/" + clientName);
                         } else {
                             mqttConnected = false;
                             if (!bWarned) {
                                 bWarned = true;
-                                pSched->publish("mqtt/state","disconnected");
+                                pSched->publish("mqtt/state","disconnected,"+outDomainToken + "/" + clientName);
                             }
                         }
                     }
@@ -280,6 +280,13 @@ class Mqtt {
             return;
         }
 
+        if (topic == "mqtt/state/get") {
+            if (mqttConnected) {
+                pSched->publish("mqtt/state","connected,"+outDomainToken + "/" + clientName);
+            } else {
+                pSched->publish("mqtt/state","disconnected,"+outDomainToken + "/" + clientName);
+            }
+        }
         if (topic == "net/services/mqttserver") {
             if (!bMqInit) {
                 mqttServer = (const char *)
