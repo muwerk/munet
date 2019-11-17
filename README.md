@@ -102,6 +102,7 @@ pio run -t updatefs
 
 ## History
 
+* 0.1.10 (2019-11-17): Add information about external prefix to `mqtt/state` messages. (HA registration of mupplets requirement)
 * 0.1.9 (2019-11-17): Allow publishing to unmodified topics using `!` topic-prefix. Send internal messages with topic `mqtt/state`
 * 0.1.8 (2019-11-03): NTP Init was unreliable, fixed.
 * 0.1.7 (2019-11-03): ESP32 crashes, if configTime() [for NTP setup] is called while WLAN is not connected. Fixes #2.
