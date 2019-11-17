@@ -98,7 +98,7 @@ pio run -t updatefs
 
 | topic | message body | comment
 | ----- | ------------ | -------
-| `mqtt/state` | `connected` or `disconnected` | muwerk processes that subscribe to `mqtt/state` are that way informed, if mqtt external connection is available.
+| `mqtt/state` | `connected,prefix` or `disconnected,prefix` | muwerk processes that subscribe to `mqtt/state` are that way informed, if mqtt external connection is available. `prefix` is the mqtt prefix automatically prefixed to outgoing messages, composed of `omu` (set with mqtt) and `hostname`, e.g. `connected,omu/myhost`. `prefix` can be useful for mupplets to know the actual topic names that get published externally.
 
 ## History
 
