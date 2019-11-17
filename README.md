@@ -94,7 +94,7 @@ pio run -t buildfs
 pio run -t updatefs
 ```
 
-#### _Internal_ Messages sent by munet to other muwerk processes:
+#### Internal Messages sent by munet to other muwerk processes:
 
 | topic | message body | comment
 | ----- | ------------ | -------
