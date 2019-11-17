@@ -94,8 +94,15 @@ pio run -t buildfs
 pio run -t updatefs
 ```
 
+#### _Internal_ Messages sent by munet to other muwerk processes:
+
+| topic | message body | comment
+| ----- | ------------ | -------
+| `mqtt/state` | `connected` or `disconnected` | muwerk processes that subscribe to `mqtt/state` are that way informed, if mqtt external connection is available.
+
 ## History
 
+* 0.1.9 (2019-11-17): Allow publishing to unmodified topics using `!` topic-prefix. Send internal messages with topic `mqtt/state`
 * 0.1.8 (2019-11-03): NTP Init was unreliable, fixed.
 * 0.1.7 (2019-11-03): ESP32 crashes, if configTime() [for NTP setup] is called while WLAN is not connected. Fixes #2.
 * 0.1.6 (2019-08-06): Outgoing messages (from ESP to MQTT server) are now prefixed by an additional outDomainToken in order

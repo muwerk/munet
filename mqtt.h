@@ -56,6 +56,10 @@ class Mqtt {
          * hostname of ESP is 'myhost', an MQTT publish message with topic 
          * 'omu/myhost/led/set' and msg 'on' is sent to the external server.
          * Default outDomainPrefix is 'omu'.
+         * In order to publish to an unmodified topic, prefix the topic with '!',
+         * then neither outDomainPrefix nor hostname are prepended. E.g. publish
+         * to topic !system/urgent will cause an MQTT publish to system/urgent
+         * with no additional prefixes. Note: this can cause recursions.
          * 
          * Subscribes to external server:
          *
