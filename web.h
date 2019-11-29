@@ -25,6 +25,7 @@ class Web {
     Scheduler *pSched;
     int tID;
     bool netUp = false;
+    bool webUp = false;
     String webServer;
     #ifdef __ESP32__
     WebServer *pWebServer;
@@ -55,10 +56,10 @@ class Web {
         auto fnall = [=](String topic, String msg, String originator) {
                 this->subsMsg(topic, msg, originator);
             };
-        pSched->subscribe(tID, "&", fnall);
+        pSched->subscribe(tID, "net/network", fnall);
 
         pSched->publish("net/network/get");
-        pSched->publish("net/services/webserver/get");
+        //pSched->publish("net/services/webserver/get");
     }
 
     void handleRoot() {
@@ -125,11 +126,12 @@ class Web {
             JSONVar jsonMsg = JSON.parse(msg);
             String state = (const char *)jsonMsg["state"];  // root["state"];
             if (state == "connected") {
-                if (!netUp) {
+                if (!webUp) {
                     netUp = true;
                     MDNS.begin("esp8266");
                     pWebServer->begin();
                     initHandles();
+                    webUp=true;
                 }
             } else {
                 netUp = false;
