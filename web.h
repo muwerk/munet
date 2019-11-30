@@ -42,6 +42,7 @@ class Web {
 
     void begin(Scheduler *_pSched) {
         pSched = _pSched;
+        SPIFFS.begin();
 
         #ifdef __ESP32__
         pWebServer = new WebServer(80);
@@ -63,7 +64,29 @@ class Web {
     }
 
     void handleRoot() {
-        pWebServer->send(200, "text/plain", "hello from esp8266!");
+        
+    }
+    String getContentType(String fileName) {
+        if (fileName.endsWith(".html")) return "text/html";
+        if (fileName.endsWith(".css")) return "text/css";
+        if(fileName.endsWith(".png")) return "image/png";
+        if (fileName.endsWith(".js")) return "application/javascript";
+        if (fileName.endsWith(".ico")) return "image/x-icon";
+        return "text/plain";
+    }
+
+    void handleFileSystem() {
+        String fileName=pWebServer->uri();
+        if (fileName=="/") fileName="index.html";
+        String contentType=getContentType(fileName);
+        if (SPIFFS.exists(fileName)) {                            // If the file exists
+            fs::File f = SPIFFS.open(fileName, "r");                 // Open it
+            /*size_t sent = */pWebServer->streamFile(f, contentType); // And send it to the client
+            f.close();                                       // Then close the file again
+            return;
+        } else {
+            handleNotFound();
+        }
     }
 
     void handleNotFound() {
@@ -81,7 +104,6 @@ class Web {
         pWebServer->send(404, "text/plain", message);
     }
 
-
     void initHandles() {
         auto frt = [=]() { this->handleRoot(); };
         pWebServer->on("/", frt);
@@ -90,7 +112,7 @@ class Web {
             pWebServer->send(200, "text/plain", "this works as well");
         });
     
-        auto fnf = [=]() { this->handleNotFound(); };
+        auto fnf = [=]() { this->handleFileSystem(); };
         pWebServer->onNotFound(fnf);
     }
 
