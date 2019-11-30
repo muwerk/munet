@@ -64,7 +64,7 @@ class Web {
     }
 
     void handleRoot() {
-        
+        handleFileSystem();
     }
     String getContentType(String fileName) {
         if (fileName.endsWith(".html")) return "text/html";
@@ -77,7 +77,7 @@ class Web {
 
     void handleFileSystem() {
         String fileName=pWebServer->uri();
-        if (fileName=="/") fileName="index.html";
+        if (fileName=="/") fileName="/index.html";
         String contentType=getContentType(fileName);
         if (SPIFFS.exists(fileName)) {                            // If the file exists
             fs::File f = SPIFFS.open(fileName, "r");                 // Open it
