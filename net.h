@@ -299,6 +299,7 @@ class Net {
                 String lin = f.readStringUntil('\n');
                 jsonstr = jsonstr + lin;
             }
+            f.close();
             JSONVar configObj = JSON.parse(jsonstr);
             if (JSON.typeof(configObj) == "undefined") {
 #ifdef USE_SERIAL_DEBUG
