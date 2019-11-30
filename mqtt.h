@@ -237,7 +237,8 @@ class Mqtt {
             } else {
                 tpc = outDomainToken + "/" + clientName + "/" + topic;
             }
-            if (mqttClient.publish(tpc.c_str(), msg.c_str(), len)) {
+            bool bRetain=true;
+            if (mqttClient.publish(tpc.c_str(), msg.c_str(), bRetain)) {
 #ifdef USE_SERIAL_DBG
                 Serial.println(
                     ("MQTT publish: " + topic + " | " + String(msg)).c_str());
