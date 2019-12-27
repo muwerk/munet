@@ -1,6 +1,7 @@
 # munet
 
 [![ESP12e build](https://travis-ci.org/muwerk/munet.svg?branch=master)](https://travis-ci.org/muwerk/munet)
+[![Dev Docs](https://img.shields.io/badge/docs-dev-blue.svg)](https://muwerk.github.io/munet/docs/index.html)
 
 The munet libraries use the [muwerk scheduler](https://github.com/muwerk/muwerk) to provide a comprehensive set of network functionality: WLAN connection, NTP time sync, OTA software update and MQTT communication for ESP8266 and ESP32 chips with a minimum of code:
 
@@ -102,6 +103,9 @@ pio run -t updatefs
 
 ## History
 
+* 0.1.11 (2019-12-27): New mqtt.h api functions `addSubscription()`, `removeSubscription()` that
+allow to import additional topics from external MQTT server. See [API doc](https://muwerk.github.io/munet/docs/classustd_1_1Mqtt.html) for details.
+* 0.1.10 (2019-11-17): Add information about external prefix to `mqtt/state` messages. (HA registration of mupplets requirement)
 * 0.1.9 (2019-11-17): Allow publishing to unmodified topics using `!` topic-prefix. Send internal messages with topic `mqtt/state`
 * 0.1.8 (2019-11-03): NTP Init was unreliable, fixed.
 * 0.1.7 (2019-11-03): ESP32 crashes, if configTime() [for NTP setup] is called while WLAN is not connected. Fixes #2.
