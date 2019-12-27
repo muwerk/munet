@@ -1,9 +1,6 @@
 var searchData=
 [
-  ['net_10',['Net',['../classustd_1_1Net.html',1,'ustd::Net'],['../classustd_1_1Net.html#a9506090d3b6ba2969144eee25ac40c5a',1,'ustd::Net::Net()']]],
-  ['net_2eh_11',['net.h',['../net_8h.html',1,'']]],
-  ['netmode_12',['Netmode',['../classustd_1_1Net.html#acf779baf5524454de435b60e8ded369c',1,'ustd::Net']]],
-  ['netstate_13',['Netstate',['../classustd_1_1Net.html#a4494dd2ae48ff42082708cbc75e56ca9',1,'ustd::Net']]],
-  ['notconfigured_14',['NOTCONFIGURED',['../classustd_1_1Net.html#a4494dd2ae48ff42082708cbc75e56ca9a92106b569cd1c659078b11189881fcf6',1,'ustd::Net']]],
-  ['notdefined_15',['NOTDEFINED',['../classustd_1_1Net.html#a4494dd2ae48ff42082708cbc75e56ca9a9664c0befc981d1dee772f6987d3b85e',1,'ustd::Net']]]
+  ['handlefilesystem_7',['handleFileSystem',['../classustd_1_1Web.html#a00c6ca325a6352dea6195c581710dcf7',1,'ustd::Web']]],
+  ['handlenotfound_8',['handleNotFound',['../classustd_1_1Web.html#ab61130e3df05baf363d8b7cd77816210',1,'ustd::Web']]],
+  ['handleroot_9',['handleRoot',['../classustd_1_1Web.html#aa31b5301cc140092a00d955dc48cde92',1,'ustd::Web']]]
 ];

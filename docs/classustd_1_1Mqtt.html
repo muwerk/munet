@@ -84,6 +84,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aab94e0b4553a4ad5bcb3524cf17888b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a877c8cf4c93fb0bc0a849316304c1967"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classustd_1_1Mqtt.html#a877c8cf4c93fb0bc0a849316304c1967">begin</a> (Scheduler *_pSched, String _clientName=&quot;&quot;, String _domainToken=&quot;&quot;, String _outDomainToken=&quot;omu&quot;)</td></tr>
 <tr class="separator:a877c8cf4c93fb0bc0a849316304c1967"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a278b44030a8a96926b02d28106bc1db1"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classustd_1_1Mqtt.html#a278b44030a8a96926b02d28106bc1db1">addSubscription</a> (int taskID, String topic, T_SUBS subs, String originator=&quot;&quot;)</td></tr>
+<tr class="separator:a278b44030a8a96926b02d28106bc1db1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a557f8139ed4edeff0f2f79cdb287890a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classustd_1_1Mqtt.html#a557f8139ed4edeff0f2f79cdb287890a">removeSubscription</a> (int subscriptionHandle, String topic)</td></tr>
+<tr class="separator:a557f8139ed4edeff0f2f79cdb287890a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="acf5f14eae3b54a704e2ccb6f278e2f3b"></a>
@@ -120,6 +124,7 @@ Public Member Functions</h2></td></tr>
 <p>&lt;domainToken&gt;/#</p>
 <p>Hostname is by default the hostname of the ESP chip, but can be overwritten using _clientName in <a class="el" href="classustd_1_1Mqtt.html#a877c8cf4c93fb0bc0a849316304c1967">ustd::Mqtt.begin()</a>;. domainToken is "mu" by default and can be overwritten using _domainToken in <a class="el" href="classustd_1_1Mqtt.html#a877c8cf4c93fb0bc0a849316304c1967">ustd::Mqtt.begin()</a>;</p>
 <p>Received messsages are stripped of hostname or domainToken prefix and published into ustd::Scheduler.publish();. That way external MQTT messages are routed to any muwerk task that uses the internal muwerk ustd::Scheduler.subscribe(); mechanism, and all muwerk tasks can publish to external MQTT entities transparently.</p>
+<p>Additionally, arbitrary topics can be subscribed to via <a class="el" href="classustd_1_1Mqtt.html#a278b44030a8a96926b02d28106bc1db1">addSubscription()</a>. Topics that are added via <a class="el" href="classustd_1_1Mqtt.html#a278b44030a8a96926b02d28106bc1db1">addSubscription()</a> are transparently forwarded. Nothing is stripped, and it is user's responsibility to prevent loops.</p>
 <p>Network failures and reconnects to the extern MQTT server are handled automatically.</p>
 <p>Simply add to your code: </p><div class="fragment"><div class="line"><span class="preprocessor">#define __ESP__ 1   // Platform defines required, see doc, mainpage.</span></div>
 <div class="line"><span class="preprocessor">#include &quot;scheduler.h&quot;</span></div>
@@ -163,6 +168,67 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a278b44030a8a96926b02d28106bc1db1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a278b44030a8a96926b02d28106bc1db1">&#9670;&nbsp;</a></span>addSubscription()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int ustd::Mqtt::addSubscription </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>taskID</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">String&#160;</td>
+          <td class="paramname"><em>topic</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T_SUBS&#160;</td>
+          <td class="paramname"><em>subs</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">String&#160;</td>
+          <td class="paramname"><em>originator</em> = <code>&quot;&quot;</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Subscribe via MQTT server to a topic to receive messages published to this topic</p>
+<p>This function is similar to muwerk's subscribe() function, but in addition, this function does an external MQTT subscribe. By default, munet's mqtt only subscribes to topics that either start with clientName or with an optional domainName. Via this function, arbitrary MQTT subscriptions can be added.</p>
+<p><a class="el" href="classustd_1_1Mqtt.html#a278b44030a8a96926b02d28106bc1db1">addSubscription()</a> subscribes on two layers: locally to muwerk's scheduler, and externally with the MQTT server.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">taskID</td><td>taskID of the task that is associated with this subscriptions (only used for statistics) </td></tr>
+    <tr><td class="paramname">topic</td><td>MQTT-style topic to be subscribed, can contain MQTT wildcards '#' and '*'. (A subscription to '#' receives all pubs) </td></tr>
+    <tr><td class="paramname">subs</td><td>Callback of type void myCallback(String topic, String msg, String originator) that is called, if a matching message is received. On ESP or Unixoid platforms, this can be a member function. </td></tr>
+    <tr><td class="paramname">originator</td><td>Optional name of associated task. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>subscriptionHandle on success (needed for unsubscribe), or -1 on error.</dd></dl>
+
+</div>
+</div>
 <a id="a877c8cf4c93fb0bc0a849316304c1967"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a877c8cf4c93fb0bc0a849316304c1967">&#9670;&nbsp;</a></span>begin()</h2>
 
@@ -222,6 +288,51 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a557f8139ed4edeff0f2f79cdb287890a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a557f8139ed4edeff0f2f79cdb287890a">&#9670;&nbsp;</a></span>removeSubscription()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool ustd::Mqtt::removeSubscription </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>subscriptionHandle</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">String&#160;</td>
+          <td class="paramname"><em>topic</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Unsubscribe a subscription</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">subscriptionHandle</td><td>Handle to subscription as returned by Subscribe(), used for unsubscribe with muwerk's scheduler. </td></tr>
+    <tr><td class="paramname">topic</td><td>The topic string that was used in addSubscription, used for unsubscribe via MQTT server. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true on successful unsubscription, false if no corresponding subscription is found.</dd></dl>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li><a class="el" href="mqtt_8h_source.html">mqtt.h</a></li>
 </ul>
@@ -229,7 +340,7 @@ Public Member Functions</h2></td></tr>
 <div class="ttc" id="aclassustd_1_1Mqtt_html"><div class="ttname"><a href="classustd_1_1Mqtt.html">ustd::Mqtt</a></div><div class="ttdef"><b>Definition:</b> mqtt.h:19</div></div>
 <div class="ttc" id="aclassustd_1_1Net_html"><div class="ttname"><a href="classustd_1_1Net.html">ustd::Net</a></div><div class="ttdoc">Munet, the muwerk network class for WLAN and NTP.</div><div class="ttdef"><b>Definition:</b> net.h:103</div></div>
 <div class="ttc" id="anet_8h_html"><div class="ttname"><a href="net_8h.html">net.h</a></div></div>
-<div class="ttc" id="aclassustd_1_1Mqtt_html_a877c8cf4c93fb0bc0a849316304c1967"><div class="ttname"><a href="classustd_1_1Mqtt.html#a877c8cf4c93fb0bc0a849316304c1967">ustd::Mqtt::begin</a></div><div class="ttdeci">void begin(Scheduler *_pSched, String _clientName=&quot;&quot;, String _domainToken=&quot;&quot;, String _outDomainToken=&quot;omu&quot;)</div><div class="ttdef"><b>Definition:</b> mqtt.h:117</div></div>
+<div class="ttc" id="aclassustd_1_1Mqtt_html_a877c8cf4c93fb0bc0a849316304c1967"><div class="ttname"><a href="classustd_1_1Mqtt.html#a877c8cf4c93fb0bc0a849316304c1967">ustd::Mqtt::begin</a></div><div class="ttdeci">void begin(Scheduler *_pSched, String _clientName=&quot;&quot;, String _domainToken=&quot;&quot;, String _outDomainToken=&quot;omu&quot;)</div><div class="ttdef"><b>Definition:</b> mqtt.h:122</div></div>
 <div class="ttc" id="amqtt_8h_html"><div class="ttname"><a href="mqtt_8h.html">mqtt.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

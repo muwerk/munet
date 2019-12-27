@@ -66,7 +66,7 @@ $(function() {
 <div class="title">munet </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a href="https://travis-ci.org/muwerk/munet"><img src="https://travis-ci.org/muwerk/munet.svg?branch=master" alt="ESP12e build" class="inline"/></a></p>
+<div class="textblock"><p><a href="https://travis-ci.org/muwerk/munet"><img src="https://travis-ci.org/muwerk/munet.svg?branch=master" alt="ESP12e build" class="inline"/></a> <a href="https://muwerk.github.io/munet/docs/index.html"><img src="https://img.shields.io/badge/docs-dev-blue.svg" alt="Dev Docs" class="inline"/></a></p>
 <p>The munet libraries use the <a href="https://github.com/muwerk/muwerk">muwerk scheduler</a> to provide a comprehensive set of network functionality: WLAN connection, NTP time sync, OTA software update and MQTT communication for ESP8266 and ESP32 chips with a minimum of code:</p>
 <div class="fragment"><div class="line"> {c++}</div>
 <div class="line">#define __ESP__   // Platform define, add #define __ESP32__ for ESP32 (see dependencies)</div>
@@ -164,6 +164,8 @@ $(function() {
 </table>
 <h1>History</h1>
 <ul>
+<li>0.1.11 (2019-12-27): New <a class="el" href="mqtt_8h.html">mqtt.h</a> api functions <code>addSubscription()</code>, <code>removeSubscription()</code> that allow to import additional topics from external MQTT server. See <a href="https://muwerk.github.io/munet/docs/classustd_1_1Mqtt.html">API doc</a> for details.</li>
+<li>0.1.10 (2019-11-17): Add information about external prefix to <code>mqtt/state</code> messages. (HA registration of mupplets requirement)</li>
 <li>0.1.9 (2019-11-17): Allow publishing to unmodified topics using <code>!</code> topic-prefix. Send internal messages with topic <code>mqtt/state</code></li>
 <li>0.1.8 (2019-11-03): NTP Init was unreliable, fixed.</li>
 <li>0.1.7 (2019-11-03): ESP32 crashes, if configTime() [for NTP setup] is called while WLAN is not connected. Fixes #2.</li>

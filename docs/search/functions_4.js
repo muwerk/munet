@@ -1,4 +1,6 @@
 var searchData=
 [
-  ['ota_40',['Ota',['../classustd_1_1Ota.html#af83b7dcb119bbd3af7c064f061c8a31c',1,'ustd::Ota']]]
+  ['handlefilesystem_58',['handleFileSystem',['../classustd_1_1Web.html#a00c6ca325a6352dea6195c581710dcf7',1,'ustd::Web']]],
+  ['handlenotfound_59',['handleNotFound',['../classustd_1_1Web.html#ab61130e3df05baf363d8b7cd77816210',1,'ustd::Web']]],
+  ['handleroot_60',['handleRoot',['../classustd_1_1Web.html#aa31b5301cc140092a00d955dc48cde92',1,'ustd::Web']]]
 ];
