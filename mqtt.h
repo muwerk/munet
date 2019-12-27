@@ -35,6 +35,7 @@ class Mqtt {
     String clientName;
     String mqttServer;
     IPAddress mqttserverIP;
+    ustd::array<String> subsList;
 
   public:
     Mqtt() {
@@ -83,6 +84,10 @@ class Mqtt {
          * MQTT messages are routed to any muwerk task that uses the internal
          * muwerk ustd::Scheduler.subscribe(); mechanism, and all muwerk
          * tasks can publish to external MQTT entities transparently.
+         * 
+         * Additionally, arbitrary topics can be subscribed to via addSubscription().
+         * Topics that are added via addSubscription() are transparently forwarded.
+         * Nothing is stripped, and it is user's responsibility to prevent loops.
          *
          * Network failures and reconnects to the extern MQTT server
          * are handled automatically.
@@ -168,6 +173,61 @@ class Mqtt {
         isOn = true;
     }
 
+    int addSubscription(int taskID, String topic, T_SUBS subs,
+                  String originator = "") {
+        /*! Subscribe via MQTT server to a topic to receive messages published to this topic
+         *
+         * This function is similar to muwerk's subscribe() function, but in
+         * addition, this function does an external MQTT subscribe. By default,
+         * munet's mqtt only subscribes to topics that either start with
+         * clientName or with an optional domainName. Via this function, arbitrary
+         * MQTT subscriptions can be added.
+         * 
+         * addSubscription() subscribes on two layers: locally to muwerk's scheduler,
+         * and externally with the MQTT server.
+         * 
+         * @param taskID taskID of the task that is associated with this
+         * subscriptions (only used for statistics)
+         * @param topic MQTT-style topic to be subscribed, can contain MQTT
+         * wildcards '#' and '*'. (A subscription to '#' receives all pubs)
+         * @param subs Callback of type void myCallback(String topic, String
+         * msg, String originator) that is called, if a matching message is
+         * received. On ESP or Unixoid platforms, this can be a member function.
+         * @param originator Optional name of associated task.
+         * @return subscriptionHandle on success (needed for unsubscribe), or -1
+         * on error.
+         */
+
+        int handle;
+        pSched->subscribe(taskID, topic, subs, originator);
+        for (unsigned int i=0; i<subsList.length(); i++) {
+            if (topic==subsList[i]) return handle; // Already subbed via mqtt.
+        }
+        if (mqttConnected) {
+            mqttClient.subscribe(topic.c_str());
+        }
+        subsList.add(topic);
+        return handle;
+    }
+
+    bool removeSubscription(int subscriptionHandle, String topic) {
+        /*! Unsubscribe a subscription
+         *
+         * @param subscriptionHandle Handle to subscription as returned by
+         * Subscribe(), used for unsubscribe with muwerk's scheduler.
+         * @param topic The topic string that was used in addSubscription, used for 
+         * unsubscribe via MQTT server.
+         * @return true on successful unsubscription, false if no corresponding
+         * subscription is found.
+         */
+
+        bool ret=pSched->unsubscribe(subscriptionHandle);
+        for (unsigned int i=0; i<subsList.length(); i++) {
+            if (topic==subsList[i]) subsList.erase(i);
+        }
+        return ret;
+    }
+
   private:
     bool bWarned = false;
     void loop() {
@@ -187,6 +247,9 @@ class Mqtt {
                             mqttConnected = true;
                             mqttClient.subscribe((clientName + "/#").c_str());
                             mqttClient.subscribe((domainToken + "/#").c_str());
+                            for (unsigned int i=0; i<subsList.length(); i++) {
+                                mqttClient.subscribe(subsList[i].c_str());
+                            }
                             bWarned = false;
                             pSched->publish("mqtt/state","connected,"+outDomainToken + "/" + clientName);
                         } else {
@@ -208,9 +271,17 @@ class Mqtt {
         String topic;
         String tokn;
         ustd::array<String> toks;
+
         msg = "";
         for (unsigned int i = 0; i < length; i++) {
             msg += (char)payload[i];
+        }
+        topic=String(ctopic);
+        for (unsigned int i=0; i<subsList.length(); i++) {
+            if (pSched->mqttmatch(topic,subsList[i])) {
+                    pSched->publish(topic, msg, "mqtt");
+                    return;
+            }
         }
         toks.add(clientName);
         String genTok = domainToken;
