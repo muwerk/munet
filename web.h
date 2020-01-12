@@ -111,6 +111,14 @@ class Web {
         pWebServer->on("/inline", [&]() {
             pWebServer->send(200, "text/plain", "this works as well");
         });
+
+        pWebServer->on("/result", [&]() {
+            String ssid=pWebServer->arg("ssid");
+            String hostname=pWebServer->arg("hostname");
+            String response="{\"ssid\": \""+ssid+"\", \"hostname\": \""+hostname+"\"}";
+            pWebServer->send(200, "text/plain", response.c_str());
+            pSched->publish("webserver/data",response);
+        });
     
         auto fnf = [=]() { this->handleFileSystem(); };
         pWebServer->onNotFound(fnf);
