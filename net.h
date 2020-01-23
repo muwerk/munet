@@ -121,7 +121,7 @@ class Net {
     int tID;
     unsigned long tick1sec;
     unsigned long tick10sec;
-    ustd::sensorprocessor rssival = ustd::sensorprocessor(10, 600, 0.9);
+    ustd::sensorprocessor rssival = ustd::sensorprocessor(20, 1800, 2.0);
     ustd::map<String, String> netServices;
     String macAddress;
     bool bOnceConnected = false;
