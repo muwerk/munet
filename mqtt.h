@@ -35,6 +35,10 @@ class Mqtt {
     String clientName;
     String mqttServer;
     IPAddress mqttserverIP;
+    String mqttUsername="";
+    String mqttPassword="";
+    String willTopic="";
+    String willMessage="";
     ustd::array<String> subsList;
 
   public:
@@ -120,7 +124,8 @@ class Mqtt {
     }
 
     void begin(Scheduler *_pSched, String _clientName = "",
-               String _domainToken = "", String _outDomainToken = "omu") {
+               String _domainToken = "", String _outDomainToken = "omu",
+               String _mqttUsername="", String _mqttPassword="", String _willTopic="", String _willMessage="") {
         /*! Connect to external MQTT server as soon as network is available
          *
          * This function starts the connection to an MQTT server.
@@ -136,6 +141,12 @@ class Mqtt {
          * @param _outDomainToken (optional, default is "omu") All publications
          * from this client to outside MQTT-servers have their topic prefixed
          * by <outDomainName>/<clientName>/topic. This is to prevent recursions.
+         * @param _mqttUsername Username for mqtt server authentication, leave empty ""
+         * for no username.
+         * @param _mqttPassword Password for mqtt server authentication, leave empty ""
+         * for no password.
+         * @param _willTopic Topic of mqtt last will.
+         * @param _willMessage Message content for last will message.
          */
 
         pSched = _pSched;
@@ -156,6 +167,11 @@ class Mqtt {
             clientName = String(WiFi.hostname().c_str());
 #endif
         }
+
+        willTopic=_willTopic;
+        willMessage=_willMessage;
+        mqttUsername=_mqttUsername;
+        mqttPassword=_mqttPassword;
 
         // give a c++11 lambda as callback scheduler task registration of
         // this.loop():
@@ -240,10 +256,20 @@ class Mqtt {
                 if (bCheckConnection ||
                     timeDiff(mqttTicker, millis()) > mqttTickerTimeout) {
                     mqttTicker = millis();
-                    bCheckConnection = false;
+                    bCheckConnection = false;                    
                     if (!mqttClient.connected()) {
                         // Attempt to connect
-                        if (mqttClient.connect(clientName.c_str())) {
+                        const char *usr=NULL;
+                        const char *pwd=NULL;
+                        if (mqttUsername!="") usr=mqttUsername.c_str();
+                        if (mqttPassword!="") pwd=mqttPassword.c_str();
+                        bool conRes=false;
+                        if (willTopic=="") {
+                            conRes=mqttClient.connect(clientName.c_str(),usr,pwd);
+                        } else {
+                            conRes=mqttClient.connect(clientName.c_str(),usr,pwd,willTopic.c_str(),0,true,willMessage.c_str());
+                        }
+                        if (conRes) {
                             mqttConnected = true;
                             mqttClient.subscribe((clientName + "/#").c_str());
                             mqttClient.subscribe((domainToken + "/#").c_str());
