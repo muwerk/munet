@@ -42,7 +42,7 @@ used by:
 
 #include <Arduino_JSON.h>  // Platformio lib no. 6249
 
-#define RECONNECT_MAX_TRIES 4
+
 
 namespace ustd {
 
@@ -105,6 +105,10 @@ class Net {
     enum Netstate { NOTDEFINED, NOTCONFIGURED, CONNECTINGAP, CONNECTED };
     enum Netmode { AP, STATION };
 
+    unsigned int reconnectMaxRetries = 40;
+    unsigned int wifiConnectTimeout = 15;
+    bool bRebootOnContinuedWifiFailure = true;
+
   private:
     Netstate state;
     Netstate oldState;
@@ -117,7 +121,6 @@ class Net {
     String localHostname;
     String ipAddress;
     Scheduler *pSched;
-    bool bReboot;
     int tID;
     unsigned long tick1sec;
     unsigned long tick10sec;
@@ -125,8 +128,9 @@ class Net {
     ustd::map<String, String> netServices;
     String macAddress;
     bool bOnceConnected = false;
-    int deathCounter = RECONNECT_MAX_TRIES;
-    int initialCounter = RECONNECT_MAX_TRIES;
+    int deathCounter;
+    int initialCounter;
+
 
   public:
     Net(uint8_t signalLed = 0xff) : signalLed(signalLed) {
@@ -200,7 +204,12 @@ class Net {
          * @param _mode (optional, default AP) Currently unused network mode.
          */
         pSched = _pSched;
-        bReboot = _restartEspOnRepeatedFailure;
+
+        deathCounter = reconnectMaxRetries;
+        initialCounter = reconnectMaxRetries;
+
+        bRebootOnContinuedWifiFailure = _restartEspOnRepeatedFailure;
+
         SSID = _ssid;
         password = _password;
         mode = _mode;
@@ -475,12 +484,12 @@ class Net {
                     Serial.println("Timeout connecting!");
 #endif
                     if (bOnceConnected) {
-                        --deathCounter;
+                        if (bRebootOnContinuedWifiFailure) --deathCounter;
                         if (deathCounter == 0) {
 #ifdef USE_SERIAL_DBG
                             Serial.println("Final failure, restarting...");
 #endif
-                            if (bReboot)
+                            if (bRebootOnContinuedWifiFailure)
                                 ESP.restart();
                         }
 #ifdef USE_SERIAL_DBG
@@ -493,7 +502,7 @@ class Net {
                         Serial.println("retrying to connect...");
 #endif
                         if (initialCounter > 0) {
-                            --initialCounter;
+                            if (bRebootOnContinuedWifiFailure) --initialCounter;
                             WiFi.reconnect();
                             conTime = millis();
                             state = CONNECTINGAP;
@@ -504,7 +513,7 @@ class Net {
                                            "configuration invalid?");
 #endif
                             state = NOTCONFIGURED;
-                            if (bReboot)
+                            if (bRebootOnContinuedWifiFailure)
                                 ESP.restart();
                         }
                     }
@@ -513,7 +522,7 @@ class Net {
             break;
         case CONNECTED:
             bOnceConnected = true;
-            deathCounter = RECONNECT_MAX_TRIES;
+            deathCounter = reconnectMaxRetries;
 
             if (timeDiff(tick1sec, millis()) > 1000) {
                 tick1sec = millis();
