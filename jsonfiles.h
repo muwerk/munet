@@ -80,9 +80,9 @@ class ConfigFile {
         return true;
     }
 
-    bool readNetJsonString(String key, String& value) {
+    bool readJsonString(String filename, String key, String& value) {
         String jsonstr;
-        if (readJson("/net.json", jsonstr)) {
+        if (readJson(filename, jsonstr)) {
             JSONVar configObj = JSON.parse(jsonstr);
             if (JSON.typeof(configObj) == "undefined") {
                 return false;
@@ -96,6 +96,9 @@ class ConfigFile {
         } else {
             return false;
         }
+
+    bool readNetJsonString(String key, String& value) {
+        return readJsonString("/net.json", key, value);
     }
 
 
