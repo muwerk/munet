@@ -42,7 +42,11 @@ class Web {
 
     void begin(Scheduler *_pSched) {
         pSched = _pSched;
+#ifdef __USE_OLD_FS__
         SPIFFS.begin();
+#else
+        LittleFS.begin();
+#endif
 
 #ifdef __ESP32__
         pWebServer = new WebServer(80);
@@ -85,8 +89,13 @@ class Web {
         if (fileName == "/")
             fileName = "/index.html";
         String contentType = getContentType(fileName);
+#ifdef __USE_OLD_FS__
         if (SPIFFS.exists(fileName)) {                // If the file exists
             fs::File f = SPIFFS.open(fileName, "r");  // Open it
+#else
+        if (LittleFS.exists(fileName)) {                // If the file exists
+            fs::File f = LittleFS.open(fileName, "r");  // Open it
+#endif
             /*size_t sent = */ pWebServer->streamFile(
                 f, contentType);  // And send it to the client
             f.close();            // Then close the file again
