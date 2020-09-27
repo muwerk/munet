@@ -42,8 +42,6 @@ used by:
 
 #include <Arduino_JSON.h>  // Platformio lib no. 6249
 
-
-
 namespace ustd {
 
 /*! \brief Munet, the muwerk network class for WLAN and NTP
@@ -82,7 +80,7 @@ void appLoop();
 void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
     net.begin(&sched);  // connect to WLAN and sync NTP time,
-                        // credentials read from SPIFFS, (net.json)
+                        // credentials read from LittleFS, (net.json)
     ota.begin(&sched);  // optional ota update
     mqtt.begin(&sched); // optional connection to external MQTT server
 
@@ -130,7 +128,6 @@ class Net {
     bool bOnceConnected = false;
     int deathCounter;
     int initialCounter;
-
 
   public:
     Net(uint8_t signalLed = 0xff) : signalLed(signalLed) {
@@ -297,8 +294,13 @@ class Net {
 #ifdef USE_SERIAL_DBG
         Serial.println("Reading net.json");
 #endif
+#ifdef __USE_OLD_FS__
         SPIFFS.begin();
         fs::File f = SPIFFS.open("/net.json", "r");
+#else
+        LittleFS.begin();
+        fs::File f = LittleFS.open("/net.json", "r");
+#endif
         if (!f) {
             return false;
         } else {
@@ -484,7 +486,8 @@ class Net {
                     Serial.println("Timeout connecting!");
 #endif
                     if (bOnceConnected) {
-                        if (bRebootOnContinuedWifiFailure) --deathCounter;
+                        if (bRebootOnContinuedWifiFailure)
+                            --deathCounter;
                         if (deathCounter == 0) {
 #ifdef USE_SERIAL_DBG
                             Serial.println("Final failure, restarting...");
@@ -502,7 +505,8 @@ class Net {
                         Serial.println("retrying to connect...");
 #endif
                         if (initialCounter > 0) {
-                            if (bRebootOnContinuedWifiFailure) --initialCounter;
+                            if (bRebootOnContinuedWifiFailure)
+                                --initialCounter;
                             WiFi.reconnect();
                             conTime = millis();
                             state = CONNECTINGAP;

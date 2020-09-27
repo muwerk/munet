@@ -1,7 +1,7 @@
 // web.h
 #pragma once
 
-//#if defined(__ESP__)
+#if defined(__ESP__)
 
 #include "../ustd/platform.h"
 
@@ -27,11 +27,11 @@ class Web {
     bool netUp = false;
     bool webUp = false;
     String webServer;
-    #ifdef __ESP32__
+#ifdef __ESP32__
     WebServer *pWebServer;
-    #else
+#else
     ESP8266WebServer *pWebServer;
-    #endif
+#endif
 
     Web() {
         webServer = "";
@@ -44,45 +44,52 @@ class Web {
         pSched = _pSched;
         SPIFFS.begin();
 
-        #ifdef __ESP32__
+#ifdef __ESP32__
         pWebServer = new WebServer(80);
-        #else
+#else
         pWebServer = new ESP8266WebServer(80);
-        #endif
-        netUp=false;
+#endif
+        netUp = false;
 
         auto ft = [=]() { this->loop(); };
         tID = pSched->add(ft, "web");
 
         auto fnall = [=](String topic, String msg, String originator) {
-                this->subsMsg(topic, msg, originator);
-            };
+            this->subsMsg(topic, msg, originator);
+        };
         pSched->subscribe(tID, "net/network", fnall);
 
         pSched->publish("net/network/get");
-        //pSched->publish("net/services/webserver/get");
+        // pSched->publish("net/services/webserver/get");
     }
 
     void handleRoot() {
         handleFileSystem();
     }
     String getContentType(String fileName) {
-        if (fileName.endsWith(".html")) return "text/html";
-        if (fileName.endsWith(".css")) return "text/css";
-        if(fileName.endsWith(".png")) return "image/png";
-        if (fileName.endsWith(".js")) return "application/javascript";
-        if (fileName.endsWith(".ico")) return "image/x-icon";
+        if (fileName.endsWith(".html"))
+            return "text/html";
+        if (fileName.endsWith(".css"))
+            return "text/css";
+        if (fileName.endsWith(".png"))
+            return "image/png";
+        if (fileName.endsWith(".js"))
+            return "application/javascript";
+        if (fileName.endsWith(".ico"))
+            return "image/x-icon";
         return "text/plain";
     }
 
     void handleFileSystem() {
-        String fileName=pWebServer->uri();
-        if (fileName=="/") fileName="/index.html";
-        String contentType=getContentType(fileName);
-        if (SPIFFS.exists(fileName)) {                            // If the file exists
-            fs::File f = SPIFFS.open(fileName, "r");                 // Open it
-            /*size_t sent = */pWebServer->streamFile(f, contentType); // And send it to the client
-            f.close();                                       // Then close the file again
+        String fileName = pWebServer->uri();
+        if (fileName == "/")
+            fileName = "/index.html";
+        String contentType = getContentType(fileName);
+        if (SPIFFS.exists(fileName)) {                // If the file exists
+            fs::File f = SPIFFS.open(fileName, "r");  // Open it
+            /*size_t sent = */ pWebServer->streamFile(
+                f, contentType);  // And send it to the client
+            f.close();            // Then close the file again
             return;
         } else {
             handleNotFound();
@@ -99,7 +106,8 @@ class Web {
         message += pWebServer->args();
         message += "\n";
         for (uint8_t i = 0; i < pWebServer->args(); i++) {
-            message += " " + pWebServer->argName(i) + ": " + pWebServer->arg(i) + "\n";
+            message +=
+                " " + pWebServer->argName(i) + ": " + pWebServer->arg(i) + "\n";
         }
         pWebServer->send(404, "text/plain", message);
     }
@@ -113,29 +121,30 @@ class Web {
         });
 
         pWebServer->on("/result", [&]() {
-            String ssid=pWebServer->arg("ssid");
-            String hostname=pWebServer->arg("hostname");
-            String response="{\"ssid\": \""+ssid+"\", \"hostname\": \""+hostname+"\"}";
+            String ssid = pWebServer->arg("ssid");
+            String hostname = pWebServer->arg("hostname");
+            String response = "{\"ssid\": \"" + ssid + "\", \"hostname\": \"" +
+                              hostname + "\"}";
             pWebServer->send(200, "text/plain", response.c_str());
-            pSched->publish("webserver/data",response);
+            pSched->publish("webserver/data", response);
         });
-    
+
         auto fnf = [=]() { this->handleFileSystem(); };
         pWebServer->onNotFound(fnf);
     }
 
-   void loop() {
+    void loop() {
         if (netUp) {
             pWebServer->handleClient();
-            #ifndef __ESP32__
+#ifndef __ESP32__
             MDNS.update();
-            #endif
+#endif
         }
     }
 
     void subsMsg(String topic, String msg, String originator) {
 
-        if (topic=="net/network") {
+        if (topic == "net/network") {
             JSONVar jsonMsg = JSON.parse(msg);
             String state = (const char *)jsonMsg["state"];  // root["state"];
             if (state == "connected") {
@@ -144,15 +153,15 @@ class Web {
                     MDNS.begin("esp8266");
                     pWebServer->begin();
                     initHandles();
-                    webUp=true;
+                    webUp = true;
                 }
             } else {
                 netUp = false;
-            }   
+            }
         }
     }
 };  // Web
 
 }  // namespace ustd
 
-//#endif  // defined(__ESP__)
+#endif  // defined(__ESP__)
