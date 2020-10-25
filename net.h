@@ -286,8 +286,15 @@ class Net {
             break;
         }
         pSched->publish("net/network", json);
-        if (state == CONNECTED)
-            publishServices();
+        #ifdef USE_SERIAL_DBG
+        Serial.println("Net: published net/network");
+        #endif
+        if (state == CONNECTED) {
+            publishServices();   
+            #ifdef USE_SERIAL_DBG
+            Serial.println("Net: published services");
+            #endif
+        }
     }
 
     bool readNetConfig() {
@@ -297,11 +304,20 @@ class Net {
 #ifdef __USE_OLD_FS__
         SPIFFS.begin();
         fs::File f = SPIFFS.open("/net.json", "r");
+#ifdef USE_SERIAL_DBG
+        Serial.println("Reading net.json via SPIFFS");
+#endif
 #else
         LittleFS.begin();
         fs::File f = LittleFS.open("/net.json", "r");
+#ifdef USE_SERIAL_DBG
+        Serial.println("Reading net.json via LittleFS");
+#endif
 #endif
         if (!f) {
+            #ifdef USE_SERIAL_DBG
+            Serial.println("Failed to open /net.json");
+            #endif
             return false;
         } else {
             String jsonstr = "";
@@ -313,7 +329,7 @@ class Net {
             f.close();
             JSONVar configObj = JSON.parse(jsonstr);
             if (JSON.typeof(configObj) == "undefined") {
-#ifdef USE_SERIAL_DEBUG
+#ifdef USE_SERIAL_DBG
                 Serial.println(
                     "publishNetworks, config data: Parsing input failed!");
                 Serial.println(jsonstr);
@@ -325,6 +341,9 @@ class Net {
             localHostname = (const char *)configObj["hostname"];
 
             if (configObj.hasOwnProperty("services")) {
+                #ifdef USE_SERIAL_DBG
+                Serial.println("Net: Found services config");
+                #endif
                 JSONVar arr = configObj["services"];
                 for (int i = 0; i < arr.length(); i++) {
                     JSONVar dc = arr[i];
@@ -332,8 +351,15 @@ class Net {
                     for (int j = 0; j < keys.length(); j++) {
                         netServices[(const char *)keys[j]] =
                             (const char *)dc[keys[j]];
+                        #ifdef USE_SERIAL_DBG
+                        Serial.println((const char *)keys[j]);
+                        #endif
                     }
                 }
+            } else {
+                #ifdef USE_SERIAL_DBG
+                Serial.println("Net: no services configured, that is probably unexpected!");
+                #endif
             }
             return true;
         }

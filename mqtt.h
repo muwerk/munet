@@ -270,6 +270,9 @@ class Mqtt {
                             conRes=mqttClient.connect(clientName.c_str(),usr,pwd,willTopic.c_str(),0,true,willMessage.c_str());
                         }
                         if (conRes) {
+                            #ifdef USE_SERIAL_DBG
+                            Serial.println("Connected to mqtt server");
+                            #endif
                             mqttConnected = true;
                             mqttClient.subscribe((clientName + "/#").c_str());
                             mqttClient.subscribe((domainToken + "/#").c_str());
@@ -283,6 +286,9 @@ class Mqtt {
                             if (!bWarned) {
                                 bWarned = true;
                                 pSched->publish("mqtt/state","disconnected,"+outDomainToken + "/" + clientName);
+                                #ifdef USE_SERIAL_DBG
+                                Serial.println("MQTT disconnected.");
+                                #endif
                             }
                         }
                     }
@@ -335,6 +341,9 @@ class Mqtt {
                 tpc = outDomainToken + "/" + clientName + "/" + topic;
             }
             bool bRetain=true;
+            #ifdef USE_SERIAL_DBG
+            Serial.println("MQTT: publishing...");
+            #endif
             if (mqttClient.publish(tpc.c_str(), msg.c_str(), bRetain)) {
 #ifdef USE_SERIAL_DBG
                 Serial.println(
@@ -401,18 +410,30 @@ class Mqtt {
                 // newer
                 mqttClient.setCallback(f);
                 bMqInit = true;
+                #ifdef USE_SERIAL_DBG
+                Serial.println("MQTT received config info.");
+                #endif
             }
         }
         if (topic == "net/network") {
             String state =
                 (const char *)mqttJsonMsg["state"];  // root["state"];
             if (state == "connected") {
+                #ifdef USE_SERIAL_DBG
+                Serial.println("MQTT received network connect");
+                #endif
                 if (!netUp) {
                     netUp = true;
                     bCheckConnection = true;
+                    #ifdef USE_SERIAL_DBG
+                    Serial.println("MQTT net state online");
+                    #endif
                 }
             } else {
                 netUp = false;
+                #ifdef USE_SERIAL_DBG
+                Serial.println("MQTT net state offline");
+                #endif
             }
         }
     };
