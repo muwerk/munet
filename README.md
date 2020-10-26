@@ -74,6 +74,8 @@ board_build.filesystem = littlefs
 
 SPIFFS and LittleFS are not compatible, if the library is updated, a new file system needs to be created and upload with `pio run -t buildfs` and `pio run -t uploadfs`.
 
+Since ESP32 currently does not (yet) support LittleFS, ESP32 projects require the define `__USE_OLD_FS__` to continue to use SPIFFS for the time being.
+
 ### Sample `net.json`
 
 ```json
@@ -124,6 +126,10 @@ pio run -t updatefs
   to prevent recursions. Older versions did only prefix with ESP's hostname, but at the same time the ESP MQTT client also subscribes
   to topics starting with it's hostname. This design error caused duplicated messages.
 - 0.1.5 (2019-07-24): This version uses [Arduino_JSON](https://github.com/arduino-libraries/Arduino_JSON) for JSON parsing. Older versions relied on outdated versions of the older library `ArduinoJson` which is no longer supported with `muwerk`.
+
+## Errata
+- MQTT doesn't seem to run stable with latest `PubSubClient` v2.8. It is recommended to use `PubSubClient@2.7` for the time being. This seems to affect
+  both ESP8266 and ESP32
 
 ## Documentation
 
