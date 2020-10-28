@@ -19,4 +19,4 @@ matrix:
         - platformio lib -g install 89  # PubSubClient
 
       script:
-        - pio ci --lib="." --project-option="build_flags=-D __ESP__" --board=esp12e Examples/all_min/munet_test.cpp
+        - pio ci --lib="." --project-option="build_flags=-D __ESP__" --project-option="board_build.filesystem=littlefs" --board=esp12e Examples/all_min/munet_test.cpp
