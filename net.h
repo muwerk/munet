@@ -577,6 +577,10 @@ class Net {
             char msg[128];
             sprintf(msg, "Netstate: %d->%d", oldState, state);
             Serial.println(msg);
+            if (state==3) { // connected!
+                Serial.print("RSSI: ");
+                Serial.println(WiFi.RSSI());
+            }
 #endif
             if (state == NOTCONFIGURED || state == CONNECTED) {
                 if (signalLed != 0xff) {
