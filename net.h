@@ -355,13 +355,12 @@ class Net {
                 }
             } else {
 #ifdef USE_SERIAL_DBG
-<<<<<<< HEAD
                 Serial.println("Net: no services configured, that is probably unexpected!");
-=======
-                Serial.println("Net: no services configured, that is probably "
-                               "unexpected!");
 #endif
-
+            }
+            return true;
+        }
+    }
                 void connectAP() {
 #ifdef USE_SERIAL_DBG
                     Serial.println("Connect-AP");

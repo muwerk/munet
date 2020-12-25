@@ -286,8 +286,8 @@ class Mqtt {
                                 bWarned = true;
                                 pSched->publish("mqtt/state", "disconnected," + outDomainToken +
                                                                   "/" + clientName);
-#ifdef USE_SERIAL_DBG Serial
-                                println("MQTT disconnected.");
+#ifdef USE_SERIAL_DBG
+                                Serial.println("MQTT disconnected.");
 #endif
                             }
                         }
@@ -386,15 +386,9 @@ class Mqtt {
 
         if (topic == "mqtt/state/get") {
             if (mqttConnected) {
-<<<<<<< HEAD
                 pSched->publish("mqtt/state", "connected," + outDomainToken + "/" + clientName);
             } else {
                 pSched->publish("mqtt/state", "disconnected," + outDomainToken + "/" + clientName);
-=======
-                pSched->publish("mqtt/state", "connected," + outDomainToken + "/" + clientName);
-            } else {
-                pSched->publish("mqtt/state", "disconnected," + outDomainToken + "/" + clientName);
->>>>>>> ff044f7da33894f52effa9f283bad1ab772e031b
             }
         }
         if (topic == "net/services/mqttserver") {
