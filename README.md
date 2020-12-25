@@ -115,6 +115,7 @@ pio run -t updatefs
 
 ## History
 
+- 0.2.0 (2020-12-25): Initial support for LittleFS on ESP8266.
 - 0.1.99 2020-09 (not yet released): Ongoing preparations for switch to LittleFS, since SPIFFS is deprecated.
 - 0.1.11 (2019-12-27): New mqtt.h api functions `addSubscription()`, `removeSubscription()` that
   allow to import additional topics from external MQTT server. See [API doc](https://muwerk.github.io/munet/docs/classustd_1_1Mqtt.html) for details.
