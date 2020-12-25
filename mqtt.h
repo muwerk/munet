@@ -61,7 +61,8 @@ class Mqtt {
          * hostname of ESP is 'myhost', an MQTT publish message with topic
          * 'omu/myhost/led/set' and msg 'on' is sent to the external server.
          * Default outDomainPrefix is 'omu'.
-         * In order to publish to an unmodified topic, prefix the topic with '!',
+         * In order to publish to an unmodified topic, prefix the topic with
+        '!',
          * then neither outDomainPrefix nor hostname are prepended. E.g. publish
          * to topic !system/urgent will cause an MQTT publish to system/urgent
          * with no additional prefixes. Note: this can cause recursions.
@@ -89,14 +90,14 @@ class Mqtt {
          * muwerk ustd::Scheduler.subscribe(); mechanism, and all muwerk
          * tasks can publish to external MQTT entities transparently.
          *
+<<<<<<< HEAD
          * Additionally, arbitrary topics can be subscribed to via addSubscription().
          * Topics that are added via addSubscription() are transparently forwarded.
          * Nothing is stripped, and it is user's responsibility to prevent loops.
-         *
-         * Network failures and reconnects to the extern MQTT server
-         * are handled automatically.
-         *
-         * Simply add to your code:
+=======
+        addSubscription().
+         * Topics that are added via addSubscription() are transparently
+        forwarded.
         \code{cpp}
         #define __ESP__ 1   // Platform defines required, see doc, mainpage.
         #include "scheduler.h"
@@ -141,10 +142,10 @@ class Mqtt {
          * @param _outDomainToken (optional, default is "omu") All publications
          * from this client to outside MQTT-servers have their topic prefixed
          * by <outDomainName>/<clientName>/topic. This is to prevent recursions.
-         * @param _mqttUsername Username for mqtt server authentication, leave empty ""
-         * for no username.
-         * @param _mqttPassword Password for mqtt server authentication, leave empty ""
-         * for no password.
+         * @param _mqttUsername Username for mqtt server authentication, leave
+         * empty "" for no username.
+         * @param _mqttPassword Password for mqtt server authentication, leave
+         * empty "" for no password.
          * @param _willTopic Topic of mqtt last will.
          * @param _willMessage Message content for last will message.
          */
@@ -189,17 +190,32 @@ class Mqtt {
         isOn = true;
     }
 
+<<<<<<< HEAD
     int addSubscription(int taskID, String topic, T_SUBS subs, String originator = "") {
         /*! Subscribe via MQTT server to a topic to receive messages published to this topic
+=======
+    int addSubscription(int taskID, String topic, T_SUBS subs,
+                        String originator = "") {
+        /*! Subscribe via MQTT server to a topic to receive messages published
+         * to this topic
+>>>>>>> ff044f7da33894f52effa9f283bad1ab772e031b
          *
          * This function is similar to muwerk's subscribe() function, but in
          * addition, this function does an external MQTT subscribe. By default,
          * munet's mqtt only subscribes to topics that either start with
+<<<<<<< HEAD
          * clientName or with an optional domainName. Via this function, arbitrary
          * MQTT subscriptions can be added.
          *
          * addSubscription() subscribes on two layers: locally to muwerk's scheduler,
          * and externally with the MQTT server.
+=======
+         * clientName or with an optional domainName. Via this function,
+         * arbitrary MQTT subscriptions can be added.
+         *
+         * addSubscription() subscribes on two layers: locally to muwerk's
+         * scheduler, and externally with the MQTT server.
+>>>>>>> ff044f7da33894f52effa9f283bad1ab772e031b
          *
          * @param taskID taskID of the task that is associated with this
          * subscriptions (only used for statistics)
@@ -231,8 +247,13 @@ class Mqtt {
          *
          * @param subscriptionHandle Handle to subscription as returned by
          * Subscribe(), used for unsubscribe with muwerk's scheduler.
+<<<<<<< HEAD
          * @param topic The topic string that was used in addSubscription, used for
          * unsubscribe via MQTT server.
+=======
+         * @param topic The topic string that was used in addSubscription, used
+         * for unsubscribe via MQTT server.
+>>>>>>> ff044f7da33894f52effa9f283bad1ab772e031b
          * @return true on successful unsubscription, false if no corresponding
          * subscription is found.
          */
@@ -267,11 +288,20 @@ class Mqtt {
                             pwd = mqttPassword.c_str();
                         bool conRes = false;
                         if (willTopic == "") {
+<<<<<<< HEAD
                             conRes = mqttClient.connect(clientName.c_str(), usr, pwd);
                         } else {
                             conRes =
                                 mqttClient.connect(clientName.c_str(), usr, pwd, willTopic.c_str(),
                                                    0, true, willMessage.c_str());
+=======
+                            conRes = mqttClient.connect(clientName.c_str(), usr,
+                                                        pwd);
+                        } else {
+                            conRes = mqttClient.connect(
+                                clientName.c_str(), usr, pwd, willTopic.c_str(),
+                                0, true, willMessage.c_str());
+>>>>>>> ff044f7da33894f52effa9f283bad1ab772e031b
                         }
                         if (conRes) {
 #ifdef USE_SERIAL_DBG
@@ -280,18 +310,36 @@ class Mqtt {
                             mqttConnected = true;
                             mqttClient.subscribe((clientName + "/#").c_str());
                             mqttClient.subscribe((domainToken + "/#").c_str());
+<<<<<<< HEAD
                             for (unsigned int i = 0; i < subsList.length(); i++) {
                                 mqttClient.subscribe(subsList[i].c_str());
                             }
                             bWarned = false;
                             pSched->publish("mqtt/state",
                                             "connected," + outDomainToken + "/" + clientName);
+=======
+                            for (unsigned int i = 0; i < subsList.length();
+                                 i++) {
+                                mqttClient.subscribe(subsList[i].c_str());
+                            }
+                            bWarned = false;
+                            pSched->publish("mqtt/state", "connected," +
+                                                              outDomainToken +
+                                                              "/" + clientName);
+>>>>>>> ff044f7da33894f52effa9f283bad1ab772e031b
                         } else {
                             mqttConnected = false;
                             if (!bWarned) {
                                 bWarned = true;
+<<<<<<< HEAD
                                 pSched->publish("mqtt/state", "disconnected," + outDomainToken +
                                                                   "/" + clientName);
+=======
+                                pSched->publish("mqtt/state",
+                                                "disconnected," +
+                                                    outDomainToken + "/" +
+                                                    clientName);
+>>>>>>> ff044f7da33894f52effa9f283bad1ab772e031b
 #ifdef USE_SERIAL_DBG
                                 Serial.println("MQTT disconnected.");
 #endif
@@ -392,9 +440,17 @@ class Mqtt {
 
         if (topic == "mqtt/state/get") {
             if (mqttConnected) {
+<<<<<<< HEAD
                 pSched->publish("mqtt/state", "connected," + outDomainToken + "/" + clientName);
             } else {
                 pSched->publish("mqtt/state", "disconnected," + outDomainToken + "/" + clientName);
+=======
+                pSched->publish("mqtt/state", "connected," + outDomainToken +
+                                                  "/" + clientName);
+            } else {
+                pSched->publish("mqtt/state", "disconnected," + outDomainToken +
+                                                  "/" + clientName);
+>>>>>>> ff044f7da33894f52effa9f283bad1ab772e031b
             }
         }
         if (topic == "net/services/mqttserver") {
