@@ -42,7 +42,7 @@ class Web {
 
     void begin(Scheduler *_pSched) {
         pSched = _pSched;
-#ifdef __USE_OLD_FS__
+#ifdef __USE_SPIFFS_FS__
         SPIFFS.begin();
 #else
         LittleFS.begin();
@@ -89,7 +89,7 @@ class Web {
         if (fileName == "/")
             fileName = "/index.html";
         String contentType = getContentType(fileName);
-#ifdef __USE_OLD_FS__
+#ifdef __USE_SPIFFS_FS__
         if (SPIFFS.exists(fileName)) {                // If the file exists
             fs::File f = SPIFFS.open(fileName, "r");  // Open it
 #else

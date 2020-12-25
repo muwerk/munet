@@ -29,7 +29,7 @@ muSplit(String source, char separator, array<String> result) {
 
 bool muInitFs() {
     bool ret;
-#ifdef __USE_OLD_FS__
+#ifdef __USE_SPIFFS_FS__
     ret = SPIFFS.begin();
 #else
     ret = LittleFS.begin();
@@ -42,7 +42,7 @@ bool muInitFs() {
 fs : File muOpen(String filename, String mode) {
     if (!muFsIsInit)
         return False;
-#ifdef __USE_OLD_FS__
+#ifdef __USE_SPIFFS_FS__
     return SPIFFS.open(filename, mode);
 #else
     return LittleFS.open(filename, mode);

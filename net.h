@@ -300,7 +300,7 @@ class Net {
 #ifdef USE_SERIAL_DBG
         Serial.println("Reading net.json");
 #endif
-#ifdef __USE_OLD_FS__
+#ifdef __USE_SPIFFS_FS__
         SPIFFS.begin();
         fs::File f = SPIFFS.open("/net.json", "r");
 #ifdef USE_SERIAL_DBG
