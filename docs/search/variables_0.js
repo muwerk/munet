@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['netup_72',['netUp',['../classustd_1_1Web.html#a17b27fc43e2148703dcfa271f4219650',1,'ustd::Web']]]
+  ['brebootoncontinuedwififailure_51',['bRebootOnContinuedWifiFailure',['../classustd_1_1Net.html#aa179e260d40d2a4778deaf795cf30658',1,'ustd::Net']]]
 ];

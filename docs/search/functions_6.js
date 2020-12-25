@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['loop_62',['loop',['../classustd_1_1Web.html#a87b9943f926b13e919a0570aea3fbe3e',1,'ustd::Web']]]
+  ['removesubscription_48',['removeSubscription',['../classustd_1_1Mqtt.html#a557f8139ed4edeff0f2f79cdb287890a',1,'ustd::Mqtt']]]
 ];
