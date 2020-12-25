@@ -35,10 +35,10 @@ class Mqtt {
     String clientName;
     String mqttServer;
     IPAddress mqttserverIP;
-    String mqttUsername="";
-    String mqttPassword="";
-    String willTopic="";
-    String willMessage="";
+    String mqttUsername = "";
+    String mqttPassword = "";
+    String willTopic = "";
+    String willMessage = "";
     ustd::array<String> subsList;
 
   public:
@@ -56,16 +56,16 @@ class Mqtt {
          *
          * This object extends the internal communication
          * to external MQTT servers. All internal muwerk messages are published
-         * to the external MQTT server with prefix <outDomainPrefix>/<hostname>/. 
-         * E.g. if a muwerk task ustd::Scheduler.publish('led/set', 'on'); and 
-         * hostname of ESP is 'myhost', an MQTT publish message with topic 
+         * to the external MQTT server with prefix <outDomainPrefix>/<hostname>/.
+         * E.g. if a muwerk task ustd::Scheduler.publish('led/set', 'on'); and
+         * hostname of ESP is 'myhost', an MQTT publish message with topic
          * 'omu/myhost/led/set' and msg 'on' is sent to the external server.
          * Default outDomainPrefix is 'omu'.
          * In order to publish to an unmodified topic, prefix the topic with '!',
          * then neither outDomainPrefix nor hostname are prepended. E.g. publish
          * to topic !system/urgent will cause an MQTT publish to system/urgent
          * with no additional prefixes. Note: this can cause recursions.
-         * 
+         *
          * Subscribes to external server:
          *
          * This object subscribes to two wild-card topics on the external
@@ -88,7 +88,7 @@ class Mqtt {
          * MQTT messages are routed to any muwerk task that uses the internal
          * muwerk ustd::Scheduler.subscribe(); mechanism, and all muwerk
          * tasks can publish to external MQTT entities transparently.
-         * 
+         *
          * Additionally, arbitrary topics can be subscribed to via addSubscription().
          * Topics that are added via addSubscription() are transparently forwarded.
          * Nothing is stripped, and it is user's responsibility to prevent loops.
@@ -123,9 +123,9 @@ class Mqtt {
         }
     }
 
-    void begin(Scheduler *_pSched, String _clientName = "",
-               String _domainToken = "", String _outDomainToken = "omu",
-               String _mqttUsername="", String _mqttPassword="", String _willTopic="", String _willMessage="") {
+    void begin(Scheduler *_pSched, String _clientName = "", String _domainToken = "",
+               String _outDomainToken = "omu", String _mqttUsername = "", String _mqttPassword = "",
+               String _willTopic = "", String _willMessage = "") {
         /*! Connect to external MQTT server as soon as network is available
          *
          * This function starts the connection to an MQTT server.
@@ -168,20 +168,20 @@ class Mqtt {
 #endif
         }
 
-        willTopic=_willTopic;
-        willMessage=_willMessage;
-        mqttUsername=_mqttUsername;
-        mqttPassword=_mqttPassword;
+        willTopic = _willTopic;
+        willMessage = _willMessage;
+        mqttUsername = _mqttUsername;
+        mqttPassword = _mqttPassword;
 
         // give a c++11 lambda as callback scheduler task registration of
         // this.loop():
         std::function<void()> ft = [=]() { this->loop(); };
         tID = pSched->add(ft, "mqtt");
 
-        std::function<void(String, String, String)> fnall =
-            [=](String topic, String msg, String originator) {
-                this->subsMsg(topic, msg, originator);
-            };
+        std::function<void(String, String, String)> fnall = [=](String topic, String msg,
+                                                                String originator) {
+            this->subsMsg(topic, msg, originator);
+        };
         pSched->subscribe(tID, "#", fnall);
 
         pSched->publish("net/network/get");
@@ -189,8 +189,7 @@ class Mqtt {
         isOn = true;
     }
 
-    int addSubscription(int taskID, String topic, T_SUBS subs,
-                  String originator = "") {
+    int addSubscription(int taskID, String topic, T_SUBS subs, String originator = "") {
         /*! Subscribe via MQTT server to a topic to receive messages published to this topic
          *
          * This function is similar to muwerk's subscribe() function, but in
@@ -198,10 +197,10 @@ class Mqtt {
          * munet's mqtt only subscribes to topics that either start with
          * clientName or with an optional domainName. Via this function, arbitrary
          * MQTT subscriptions can be added.
-         * 
+         *
          * addSubscription() subscribes on two layers: locally to muwerk's scheduler,
          * and externally with the MQTT server.
-         * 
+         *
          * @param taskID taskID of the task that is associated with this
          * subscriptions (only used for statistics)
          * @param topic MQTT-style topic to be subscribed, can contain MQTT
@@ -216,8 +215,9 @@ class Mqtt {
 
         int handle;
         pSched->subscribe(taskID, topic, subs, originator);
-        for (unsigned int i=0; i<subsList.length(); i++) {
-            if (topic==subsList[i]) return handle; // Already subbed via mqtt.
+        for (unsigned int i = 0; i < subsList.length(); i++) {
+            if (topic == subsList[i])
+                return handle;  // Already subbed via mqtt.
         }
         if (mqttConnected) {
             mqttClient.subscribe(topic.c_str());
@@ -231,15 +231,16 @@ class Mqtt {
          *
          * @param subscriptionHandle Handle to subscription as returned by
          * Subscribe(), used for unsubscribe with muwerk's scheduler.
-         * @param topic The topic string that was used in addSubscription, used for 
+         * @param topic The topic string that was used in addSubscription, used for
          * unsubscribe via MQTT server.
          * @return true on successful unsubscription, false if no corresponding
          * subscription is found.
          */
 
-        bool ret=pSched->unsubscribe(subscriptionHandle);
-        for (unsigned int i=0; i<subsList.length(); i++) {
-            if (topic==subsList[i]) subsList.erase(i);
+        bool ret = pSched->unsubscribe(subscriptionHandle);
+        for (unsigned int i = 0; i < subsList.length(); i++) {
+            if (topic == subsList[i])
+                subsList.erase(i);
         }
         return ret;
     }
@@ -253,42 +254,47 @@ class Mqtt {
                     mqttClient.loop();
                 }
 
-                if (bCheckConnection ||
-                    timeDiff(mqttTicker, millis()) > mqttTickerTimeout) {
+                if (bCheckConnection || timeDiff(mqttTicker, millis()) > mqttTickerTimeout) {
                     mqttTicker = millis();
-                    bCheckConnection = false;                    
+                    bCheckConnection = false;
                     if (!mqttClient.connected()) {
                         // Attempt to connect
-                        const char *usr=NULL;
-                        const char *pwd=NULL;
-                        if (mqttUsername!="") usr=mqttUsername.c_str();
-                        if (mqttPassword!="") pwd=mqttPassword.c_str();
-                        bool conRes=false;
-                        if (willTopic=="") {
-                            conRes=mqttClient.connect(clientName.c_str(),usr,pwd);
+                        const char *usr = NULL;
+                        const char *pwd = NULL;
+                        if (mqttUsername != "")
+                            usr = mqttUsername.c_str();
+                        if (mqttPassword != "")
+                            pwd = mqttPassword.c_str();
+                        bool conRes = false;
+                        if (willTopic == "") {
+                            conRes = mqttClient.connect(clientName.c_str(), usr, pwd);
                         } else {
-                            conRes=mqttClient.connect(clientName.c_str(),usr,pwd,willTopic.c_str(),0,true,willMessage.c_str());
+                            conRes =
+                                mqttClient.connect(clientName.c_str(), usr, pwd, willTopic.c_str(),
+                                                   0, true, willMessage.c_str());
                         }
                         if (conRes) {
-                            #ifdef USE_SERIAL_DBG
+#ifdef USE_SERIAL_DBG
                             Serial.println("Connected to mqtt server");
-                            #endif
+#endif
                             mqttConnected = true;
                             mqttClient.subscribe((clientName + "/#").c_str());
                             mqttClient.subscribe((domainToken + "/#").c_str());
-                            for (unsigned int i=0; i<subsList.length(); i++) {
+                            for (unsigned int i = 0; i < subsList.length(); i++) {
                                 mqttClient.subscribe(subsList[i].c_str());
                             }
                             bWarned = false;
-                            pSched->publish("mqtt/state","connected,"+outDomainToken + "/" + clientName);
+                            pSched->publish("mqtt/state",
+                                            "connected," + outDomainToken + "/" + clientName);
                         } else {
                             mqttConnected = false;
                             if (!bWarned) {
                                 bWarned = true;
-                                pSched->publish("mqtt/state","disconnected,"+outDomainToken + "/" + clientName);
-                                #ifdef USE_SERIAL_DBG
+                                pSched->publish("mqtt/state", "disconnected," + outDomainToken +
+                                                                  "/" + clientName);
+#ifdef USE_SERIAL_DBG
                                 Serial.println("MQTT disconnected.");
-                                #endif
+#endif
                             }
                         }
                     }
@@ -297,8 +303,7 @@ class Mqtt {
         }
     }
 
-    void mqttReceive(char *ctopic, unsigned char *payload,
-                     unsigned int length) {
+    void mqttReceive(char *ctopic, unsigned char *payload, unsigned int length) {
         String msg;
         String topic;
         String tokn;
@@ -308,11 +313,11 @@ class Mqtt {
         for (unsigned int i = 0; i < length; i++) {
             msg += (char)payload[i];
         }
-        topic=String(ctopic);
-        for (unsigned int i=0; i<subsList.length(); i++) {
-            if (pSched->mqttmatch(topic,subsList[i])) {
-                    pSched->publish(topic, msg, "mqtt");
-                    return;
+        topic = String(ctopic);
+        for (unsigned int i = 0; i < subsList.length(); i++) {
+            if (pSched->mqttmatch(topic, subsList[i])) {
+                pSched->publish(topic, msg, "mqtt");
+                return;
             }
         }
         toks.add(clientName);
@@ -335,25 +340,23 @@ class Mqtt {
         if (mqttConnected) {
             unsigned int len = msg.length() + 1;
             String tpc;
-            if (topic.c_str()[0]=='!') {
+            if (topic.c_str()[0] == '!') {
                 tpc = &(topic.c_str()[1]);
             } else {
                 tpc = outDomainToken + "/" + clientName + "/" + topic;
             }
-            bool bRetain=true;
-            #ifdef USE_SERIAL_DBG
+            bool bRetain = true;
+#ifdef USE_SERIAL_DBG
             Serial.println("MQTT: publishing...");
-            #endif
+#endif
             if (mqttClient.publish(tpc.c_str(), msg.c_str(), bRetain)) {
 #ifdef USE_SERIAL_DBG
-                Serial.println(
-                    ("MQTT publish: " + topic + " | " + String(msg)).c_str());
+                Serial.println(("MQTT publish: " + topic + " | " + String(msg)).c_str());
 #endif
             } else {
 #ifdef USE_SERIAL_DBG
-                Serial.println(("MQTT ERROR len=" + String(len) +
-                                ", not published: " + topic + " | " +
-                                String(msg))
+                Serial.println(("MQTT ERROR len=" + String(len) + ", not published: " + topic +
+                                " | " + String(msg))
                                    .c_str());
 #endif
                 if (len > 128) {
@@ -389,51 +392,47 @@ class Mqtt {
 
         if (topic == "mqtt/state/get") {
             if (mqttConnected) {
-                pSched->publish("mqtt/state","connected,"+outDomainToken + "/" + clientName);
+                pSched->publish("mqtt/state", "connected," + outDomainToken + "/" + clientName);
             } else {
-                pSched->publish("mqtt/state","disconnected,"+outDomainToken + "/" + clientName);
+                pSched->publish("mqtt/state", "disconnected," + outDomainToken + "/" + clientName);
             }
         }
         if (topic == "net/services/mqttserver") {
             if (!bMqInit) {
-                mqttServer = (const char *)
-                    mqttJsonMsg["server"];  // root["server"].as<char *>();
+                mqttServer = (const char *)mqttJsonMsg["server"];  // root["server"].as<char *>();
                 bCheckConnection = true;
                 mqttClient.setServer(mqttServer.c_str(), 1883);
                 // give a c++11 lambda as callback for incoming mqtt
                 // messages:
                 std::function<void(char *, unsigned char *, unsigned int)> f =
-                    [=](char *t, unsigned char *m, unsigned int l) {
-                        this->mqttReceive(t, m, l);
-                    };
+                    [=](char *t, unsigned char *m, unsigned int l) { this->mqttReceive(t, m, l); };
                 // If this breaks for ESP32, update pubsubclient to v2.7 or
                 // newer
                 mqttClient.setCallback(f);
                 bMqInit = true;
-                #ifdef USE_SERIAL_DBG
+#ifdef USE_SERIAL_DBG
                 Serial.println("MQTT received config info.");
-                #endif
+#endif
             }
         }
         if (topic == "net/network") {
-            String state =
-                (const char *)mqttJsonMsg["state"];  // root["state"];
+            String state = (const char *)mqttJsonMsg["state"];  // root["state"];
             if (state == "connected") {
-                #ifdef USE_SERIAL_DBG
+#ifdef USE_SERIAL_DBG
                 Serial.println("MQTT received network connect");
-                #endif
+#endif
                 if (!netUp) {
                     netUp = true;
                     bCheckConnection = true;
-                    #ifdef USE_SERIAL_DBG
+#ifdef USE_SERIAL_DBG
                     Serial.println("MQTT net state online");
-                    #endif
+#endif
                 }
             } else {
                 netUp = false;
-                #ifdef USE_SERIAL_DBG
+#ifdef USE_SERIAL_DBG
                 Serial.println("MQTT net state offline");
-                #endif
+#endif
             }
         }
     };

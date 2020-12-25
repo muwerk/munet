@@ -96,9 +96,8 @@ class Web {
         if (LittleFS.exists(fileName)) {                // If the file exists
             fs::File f = LittleFS.open(fileName, "r");  // Open it
 #endif
-            /*size_t sent = */ pWebServer->streamFile(
-                f, contentType);  // And send it to the client
-            f.close();            // Then close the file again
+            /*size_t sent = */ pWebServer->streamFile(f, contentType);  // And send it to the client
+            f.close();                                                  // Then close the file again
             return;
         } else {
             handleNotFound();
@@ -115,8 +114,7 @@ class Web {
         message += pWebServer->args();
         message += "\n";
         for (uint8_t i = 0; i < pWebServer->args(); i++) {
-            message +=
-                " " + pWebServer->argName(i) + ": " + pWebServer->arg(i) + "\n";
+            message += " " + pWebServer->argName(i) + ": " + pWebServer->arg(i) + "\n";
         }
         pWebServer->send(404, "text/plain", message);
     }
@@ -125,15 +123,13 @@ class Web {
         auto frt = [=]() { this->handleRoot(); };
         pWebServer->on("/", frt);
 
-        pWebServer->on("/inline", [&]() {
-            pWebServer->send(200, "text/plain", "this works as well");
-        });
+        pWebServer->on("/inline",
+                       [&]() { pWebServer->send(200, "text/plain", "this works as well"); });
 
         pWebServer->on("/result", [&]() {
             String ssid = pWebServer->arg("ssid");
             String hostname = pWebServer->arg("hostname");
-            String response = "{\"ssid\": \"" + ssid + "\", \"hostname\": \"" +
-                              hostname + "\"}";
+            String response = "{\"ssid\": \"" + ssid + "\", \"hostname\": \"" + hostname + "\"}";
             pWebServer->send(200, "text/plain", response.c_str());
             pSched->publish("webserver/data", response);
         });

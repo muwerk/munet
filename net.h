@@ -176,8 +176,8 @@ class Net {
         }
     }
 
-    void begin(Scheduler *_pSched, bool _restartEspOnRepeatedFailure = true,
-               String _ssid = "", String _password = "", Netmode _mode = AP) {
+    void begin(Scheduler *_pSched, bool _restartEspOnRepeatedFailure = true, String _ssid = "",
+               String _password = "", Netmode _mode = AP) {
         /*! Connect to WLAN network and request NTP time
          *
          * This function starts the connection to a WLAN network, by default
@@ -236,25 +236,25 @@ class Net {
         tID = pSched->add(ft, "net");
 
         // give a c++11 lambda as callback for incoming mqttmessages:
-        std::function<void(String, String, String)> fng =
-            [=](String topic, String msg, String originator) {
-                this->subsNetGet(topic, msg, originator);
-            };
+        std::function<void(String, String, String)> fng = [=](String topic, String msg,
+                                                              String originator) {
+            this->subsNetGet(topic, msg, originator);
+        };
         pSched->subscribe(tID, "net/network/get", fng);
-        std::function<void(String, String, String)> fns =
-            [=](String topic, String msg, String originator) {
-                this->subsNetSet(topic, msg, originator);
-            };
+        std::function<void(String, String, String)> fns = [=](String topic, String msg,
+                                                              String originator) {
+            this->subsNetSet(topic, msg, originator);
+        };
         pSched->subscribe(tID, "net/network/set", fns);
-        std::function<void(String, String, String)> fnsg =
-            [=](String topic, String msg, String originator) {
-                this->subsNetsGet(topic, msg, originator);
-            };
+        std::function<void(String, String, String)> fnsg = [=](String topic, String msg,
+                                                               String originator) {
+            this->subsNetsGet(topic, msg, originator);
+        };
         pSched->subscribe(tID, "net/networks/get", fnsg);
-        std::function<void(String, String, String)> fsg =
-            [=](String topic, String msg, String originator) {
-                this->subsNetServicesGet(topic, msg, originator);
-            };
+        std::function<void(String, String, String)> fsg = [=](String topic, String msg,
+                                                              String originator) {
+            this->subsNetServicesGet(topic, msg, originator);
+        };
         pSched->subscribe(tID, "net/services/+/get", fsg);
     }
 
@@ -277,23 +277,22 @@ class Net {
             json += "\"state\":\"connectingap\",\"SSID\":\"" + SSID + "\"}";
             break;
         case CONNECTED:
-            json += "\"state\":\"connected\",\"SSID\":\"" + SSID +
-                    "\",\"hostname\":\"" + localHostname + "\",\"ip\":\"" +
-                    ipAddress + "\"}";
+            json += "\"state\":\"connected\",\"SSID\":\"" + SSID + "\",\"hostname\":\"" +
+                    localHostname + "\",\"ip\":\"" + ipAddress + "\"}";
             break;
         default:
             json += "\"state\":\"undefined\"}";
             break;
         }
         pSched->publish("net/network", json);
-        #ifdef USE_SERIAL_DBG
+#ifdef USE_SERIAL_DBG
         Serial.println("Net: published net/network");
-        #endif
+#endif
         if (state == CONNECTED) {
-            publishServices();   
-            #ifdef USE_SERIAL_DBG
+            publishServices();
+#ifdef USE_SERIAL_DBG
             Serial.println("Net: published services");
-            #endif
+#endif
         }
     }
 
@@ -315,9 +314,9 @@ class Net {
 #endif
 #endif
         if (!f) {
-            #ifdef USE_SERIAL_DBG
+#ifdef USE_SERIAL_DBG
             Serial.println("Failed to open /net.json");
-            #endif
+#endif
             return false;
         } else {
             String jsonstr = "";
@@ -330,8 +329,7 @@ class Net {
             JSONVar configObj = JSON.parse(jsonstr);
             if (JSON.typeof(configObj) == "undefined") {
 #ifdef USE_SERIAL_DBG
-                Serial.println(
-                    "publishNetworks, config data: Parsing input failed!");
+                Serial.println("publishNetworks, config data: Parsing input failed!");
                 Serial.println(jsonstr);
 #endif
                 return false;
@@ -341,25 +339,24 @@ class Net {
             localHostname = (const char *)configObj["hostname"];
 
             if (configObj.hasOwnProperty("services")) {
-                #ifdef USE_SERIAL_DBG
+#ifdef USE_SERIAL_DBG
                 Serial.println("Net: Found services config");
-                #endif
+#endif
                 JSONVar arr = configObj["services"];
                 for (int i = 0; i < arr.length(); i++) {
                     JSONVar dc = arr[i];
                     JSONVar keys = dc.keys();
                     for (int j = 0; j < keys.length(); j++) {
-                        netServices[(const char *)keys[j]] =
-                            (const char *)dc[keys[j]];
-                        #ifdef USE_SERIAL_DBG
+                        netServices[(const char *)keys[j]] = (const char *)dc[keys[j]];
+#ifdef USE_SERIAL_DBG
                         Serial.println((const char *)keys[j]);
-                        #endif
+#endif
                     }
                 }
             } else {
-                #ifdef USE_SERIAL_DBG
+#ifdef USE_SERIAL_DBG
                 Serial.println("Net: no services configured, that is probably unexpected!");
-                #endif
+#endif
             }
             return true;
         }
@@ -452,10 +449,8 @@ class Net {
         for (int thisNet = 0; thisNet < numSsid; thisNet++) {
             if (thisNet > 0)
                 netlist += ",";
-            netlist += "\"" + WiFi.SSID(thisNet) +
-                       "\":{\"rssi\":" + String(WiFi.RSSI(thisNet)) +
-                       ",\"enc\":\"" +
-                       strEncryptionType(WiFi.encryptionType(thisNet)) + "\"}";
+            netlist += "\"" + WiFi.SSID(thisNet) + "\":{\"rssi\":" + String(WiFi.RSSI(thisNet)) +
+                       ",\"enc\":\"" + strEncryptionType(WiFi.encryptionType(thisNet)) + "\"}";
         }
         netlist += "}";
         pSched->publish("net/networks", netlist);
@@ -482,8 +477,7 @@ class Net {
         for (unsigned int i = 0; i < netServices.length(); i++) {
             if (topic == "net/services/" + netServices.keys[i] + "/get") {
                 pSched->publish("net/services/" + netServices.keys[i],
-                                "{\"server\":\"" + netServices.values[i] +
-                                    "\"}");
+                                "{\"server\":\"" + netServices.values[i] + "\"}");
             }
         }
     }
@@ -503,8 +497,8 @@ class Net {
 #endif
                 state = CONNECTED;
                 IPAddress ip = WiFi.localIP();
-                ipAddress = String(ip[0]) + '.' + String(ip[1]) + '.' +
-                            String(ip[2]) + '.' + String(ip[3]);
+                ipAddress =
+                    String(ip[0]) + '.' + String(ip[1]) + '.' + String(ip[2]) + '.' + String(ip[3]);
                 configureNTP();
             } else {
                 if (ustd::timeDiff(conTime, millis()) > conTimeout) {
@@ -559,8 +553,7 @@ class Net {
                 if (WiFi.status() == WL_CONNECTED) {
                     long rssi = WiFi.RSSI();
                     if (rssival.filter(&rssi)) {
-                        pSched->publish("net/rssi",
-                                        "{\"rssi\":" + String(rssi) + "}");
+                        pSched->publish("net/rssi", "{\"rssi\":" + String(rssi) + "}");
                     }
                 } else {
                     WiFi.reconnect();
@@ -577,7 +570,7 @@ class Net {
             char msg[128];
             sprintf(msg, "Netstate: %d->%d", oldState, state);
             Serial.println(msg);
-            if (state==3) { // connected!
+            if (state == 3) {  // connected!
                 Serial.print("RSSI: ");
                 Serial.println(WiFi.RSSI());
             }

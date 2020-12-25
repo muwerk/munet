@@ -151,10 +151,10 @@ class Ota {
         std::function<void()> ft = [=]() { this->loop(); };
         tID = pSched->add(ft, "ota", 25000L);  // check for ota every 25ms
 
-        std::function<void(String, String, String)> fnall =
-            [=](String topic, String msg, String originator) {
-                this->subsMsg(topic, msg, originator);
-            };
+        std::function<void(String, String, String)> fnall = [=](String topic, String msg,
+                                                                String originator) {
+            this->subsMsg(topic, msg, originator);
+        };
         pSched->subscribe(tID, "#", fnall);
 
         pSched->publish("net/network/get");
@@ -175,8 +175,7 @@ class Ota {
         }
 
         if (topic == "net/network") {
-            String state =
-                (const char *)mqttJsonMsg["state"];  // root["state"];
+            String state = (const char *)mqttJsonMsg["state"];  // root["state"];
             if (state == "connected") {
                 if (!bNetUp) {
                     bNetUp = true;
