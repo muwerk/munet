@@ -61,16 +61,14 @@ class Mqtt {
          * hostname of ESP is 'myhost', an MQTT publish message with topic
          * 'omu/myhost/led/set' and msg 'on' is sent to the external server.
          * Default outDomainPrefix is 'omu'.
-         * In order to publish to an unmodified topic, prefix the topic with
-        '!',
+         * In order to publish to an unmodified topic, prefix the topic with '!',
          * then neither outDomainPrefix nor hostname are prepended. E.g. publish
          * to topic !system/urgent will cause an MQTT publish to system/urgent
          * with no additional prefixes. Note: this can cause recursions.
          *
          * Subscribes to external server:
          *
-         * This object subscribes to two wild-card topics on the external
-        server:
+         * This object subscribes to two wild-card topics on the external server:
          *
          * <hostname>/#
          *
@@ -90,14 +88,9 @@ class Mqtt {
          * muwerk ustd::Scheduler.subscribe(); mechanism, and all muwerk
          * tasks can publish to external MQTT entities transparently.
          *
-<<<<<<< HEAD
          * Additionally, arbitrary topics can be subscribed to via addSubscription().
          * Topics that are added via addSubscription() are transparently forwarded.
          * Nothing is stripped, and it is user's responsibility to prevent loops.
-=======
-        addSubscription().
-         * Topics that are added via addSubscription() are transparently
-        forwarded.
         \code{cpp}
         #define __ESP__ 1   // Platform defines required, see doc, mainpage.
         #include "scheduler.h"
@@ -295,12 +288,11 @@ class Mqtt {
                                 mqttClient.connect(clientName.c_str(), usr, pwd, willTopic.c_str(),
                                                    0, true, willMessage.c_str());
 =======
-                            conRes = mqttClient.connect(clientName.c_str(), usr,
-                                                        pwd);
+                            conRes = mqttClient.connect(clientName.c_str(), usr, pwd);
                         } else {
-                            conRes = mqttClient.connect(
-                                clientName.c_str(), usr, pwd, willTopic.c_str(),
-                                0, true, willMessage.c_str());
+                            conRes =
+                                mqttClient.connect(clientName.c_str(), usr, pwd, willTopic.c_str(),
+                                                   0, true, willMessage.c_str());
 >>>>>>> ff044f7da33894f52effa9f283bad1ab772e031b
                         }
                         if (conRes) {
@@ -318,14 +310,12 @@ class Mqtt {
                             pSched->publish("mqtt/state",
                                             "connected," + outDomainToken + "/" + clientName);
 =======
-                            for (unsigned int i = 0; i < subsList.length();
-                                 i++) {
+                            for (unsigned int i = 0; i < subsList.length(); i++) {
                                 mqttClient.subscribe(subsList[i].c_str());
                             }
                             bWarned = false;
-                            pSched->publish("mqtt/state", "connected," +
-                                                              outDomainToken +
-                                                              "/" + clientName);
+                            pSched->publish("mqtt/state",
+                                            "connected," + outDomainToken + "/" + clientName);
 >>>>>>> ff044f7da33894f52effa9f283bad1ab772e031b
                         } else {
                             mqttConnected = false;
@@ -335,13 +325,10 @@ class Mqtt {
                                 pSched->publish("mqtt/state", "disconnected," + outDomainToken +
                                                                   "/" + clientName);
 =======
-                                pSched->publish("mqtt/state",
-                                                "disconnected," +
-                                                    outDomainToken + "/" +
-                                                    clientName);
+                                pSched->publish("mqtt/state", "disconnected," + outDomainToken +
+                                                                  "/" + clientName);
 >>>>>>> ff044f7da33894f52effa9f283bad1ab772e031b
-#ifdef USE_SERIAL_DBG
-                                Serial.println("MQTT disconnected.");
+#ifdef USE_SERIAL_DBG Serial.println("MQTT disconnected.");
 #endif
                             }
                         }
@@ -445,11 +432,9 @@ class Mqtt {
             } else {
                 pSched->publish("mqtt/state", "disconnected," + outDomainToken + "/" + clientName);
 =======
-                pSched->publish("mqtt/state", "connected," + outDomainToken +
-                                                  "/" + clientName);
-            } else {
-                pSched->publish("mqtt/state", "disconnected," + outDomainToken +
-                                                  "/" + clientName);
+            pSched->publish("mqtt/state", "connected," + outDomainToken + "/" + clientName);
+        } else {
+            pSched->publish("mqtt/state", "disconnected," + outDomainToken + "/" + clientName);
 >>>>>>> ff044f7da33894f52effa9f283bad1ab772e031b
             }
         }
