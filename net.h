@@ -286,14 +286,14 @@ class Net {
             break;
         }
         pSched->publish("net/network", json);
-        #ifdef USE_SERIAL_DBG
+#ifdef USE_SERIAL_DBG
         Serial.println("Net: published net/network");
-        #endif
+#endif
         if (state == CONNECTED) {
-            publishServices();   
-            #ifdef USE_SERIAL_DBG
+            publishServices();
+#ifdef USE_SERIAL_DBG
             Serial.println("Net: published services");
-            #endif
+#endif
         }
     }
 
@@ -315,9 +315,9 @@ class Net {
 #endif
 #endif
         if (!f) {
-            #ifdef USE_SERIAL_DBG
+#ifdef USE_SERIAL_DBG
             Serial.println("Failed to open /net.json");
-            #endif
+#endif
             return false;
         } else {
             String jsonstr = "";
@@ -341,9 +341,9 @@ class Net {
             localHostname = (const char *)configObj["hostname"];
 
             if (configObj.hasOwnProperty("services")) {
-                #ifdef USE_SERIAL_DBG
+#ifdef USE_SERIAL_DBG
                 Serial.println("Net: Found services config");
-                #endif
+#endif
                 JSONVar arr = configObj["services"];
                 for (int i = 0; i < arr.length(); i++) {
                     JSONVar dc = arr[i];
@@ -351,15 +351,16 @@ class Net {
                     for (int j = 0; j < keys.length(); j++) {
                         netServices[(const char *)keys[j]] =
                             (const char *)dc[keys[j]];
-                        #ifdef USE_SERIAL_DBG
+#ifdef USE_SERIAL_DBG
                         Serial.println((const char *)keys[j]);
-                        #endif
+#endif
                     }
                 }
             } else {
-                #ifdef USE_SERIAL_DBG
-                Serial.println("Net: no services configured, that is probably unexpected!");
-                #endif
+#ifdef USE_SERIAL_DBG
+                Serial.println("Net: no services configured, that is probably "
+                               "unexpected!");
+#endif
             }
             return true;
         }
@@ -577,7 +578,7 @@ class Net {
             char msg[128];
             sprintf(msg, "Netstate: %d->%d", oldState, state);
             Serial.println(msg);
-            if (state==3) { // connected!
+            if (state == 3) {  // connected!
                 Serial.print("RSSI: ");
                 Serial.println(WiFi.RSSI());
             }
