@@ -2,7 +2,6 @@
 
 #pragma once
 
-
 // #if defined(__ESP__)
 
 #include "platform.h"
@@ -13,59 +12,96 @@
 
 namespace ustd {
 
+bool muFsIsInit = false;
+
+muSplit(String source, char separator, array<String> result) {
+    while (true) {
+        ind = source.indexOf(separator);
+        if (ind == -1) {
+            result.add(source);
+            return;
+        } else {
+            result.add(source.substring(0, ind));
+            source = source.substring(ind + 1);
+        }
+    }
+}
+
+bool muInitFs() {
+    bool ret;
+#ifdef __USE_OLD_FS__
+    ret = SPIFFS.begin();
+#else
+    ret = LittleFS.begin();
+#endif
+    if (ret)
+        muFsIsInit = True;
+    return ret;
+}
+
+fs : File muOpen(String filename, String mode) {
+    if (!muFsIsInit)
+        return False;
+#ifdef __USE_OLD_FS__
+    return SPIFFS.open(filename, mode);
+#else
+    return LittleFS.open(filename, mode);
+}
+
+String muReadVal(String key, String val) {
+}
 class ConfigFile {
   public:
-    bool init=false;
+    bool init = false;
     String fileName;
     ustd::map<String, String> globalConfig;
     ustd::map<String, ustd::map<String, String>> servicesConfig;
 
-    ConfigFile(String fileName="/config.json"): fileName(fileName) {
+    ConfigFile(String fileName = "/config.json") : fileName(fileName) {
     }
 
     ~ConfigFile() {
     }
 
     bool begin(ustd::map<String, String> &userdefaults) {
-        SPIFFS.begin();
+        if __USE_
+            SPIFFS.begin();
         checkMigration();
-
     }
 
-
     genUuid(String &uuid) {
-
     }
 
     bool fsMigrateConfig() {
-
     }
 
     bool checkMigration() {
-        bool ret=true;
+        bool ret = true;
         fs::File f = SPIFFS.open("\net.json", "r");
         if (f) {
             close(f);
-            ret=fsMigrateConfig();
+            ret = fsMigrateConfig();
         }
         return ret;
     }
 
     bool writeJsonObj(String filename, JSONVar jsonobj) {
-        if (!init) return false;
+        if (!init)
+            return false;
 
         fs::File f = SPIFFS.open(filename, "w");
         if (!f) {
             return false;
         }
-        String jsonstr=JSON.stringify(jsonobj);
+        String jsonstr = JSON.stringify(jsonobj);
         f.println(jsonstr);
         f.close();
         return true;
     }
 
-    bool readJson(String filename, String& content) {
-        if (!fsInitCheck()) return false;
+    bool readJson(String filename, String &content) {
+        if (!fsInitCheck())
+            return false;
         content = "";
         fs::File f = SPIFFS.open(filename, "r");
         if (!f) {
@@ -80,7 +116,7 @@ class ConfigFile {
         return true;
     }
 
-    bool readJsonString(String filename, String key, String& value) {
+    bool readJsonString(String filename, String key, String &value) {
         String jsonstr;
         if (readJson(filename, jsonstr)) {
             JSONVar configObj = JSON.parse(jsonstr);
@@ -97,17 +133,18 @@ class ConfigFile {
             return false;
         }
 
-    bool readNetJsonString(String key, String& value) {
-        return readJsonString("/net.json", key, value);
-    }
+        bool readNetJsonString(String key, String & value) {
+            return readJsonString("/net.json", key, value);
+        }
 
-
-    bool readFriendlyName(String& friendlyName) {
-        if (readNetJsonString("friendlyname",friendlyName)) return true;
-        if (readNetJsonString("hostname",friendlyName)) return true;
-        return false;
-    }
-}; // ConfigFile class
+        bool readFriendlyName(String & friendlyName) {
+            if (readNetJsonString("friendlyname", friendlyName))
+                return true;
+            if (readNetJsonString("hostname", friendlyName))
+                return true;
+            return false;
+        }
+    };  // ConfigFile class
 
 }  // namespace ustd
 
