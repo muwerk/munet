@@ -139,8 +139,10 @@ class Mqtt {
          * empty "" for no username.
          * @param _mqttPassword Password for mqtt server authentication, leave
          * empty "" for no password.
-         * @param _willTopic Topic of mqtt last will.
-         * @param _willMessage Message content for last will message.
+         * @param _willTopic Topic of mqtt last will. Default is "omu/<clientName>/mqtt/state".
+         * Note: it is not recommended to change will-configuration, when using the home-assistant
+         * configuration.
+         * @param _willMessage Message content for last will message. Default is "disconnected"
          */
 
         pSched = _pSched;
@@ -162,8 +164,13 @@ class Mqtt {
 #endif
         }
 
-        willTopic = _willTopic;
-        willMessage = _willMessage;
+        if (_willTopic == "") {
+            willTopic = outDomainToken + "/" + clientName + "/mqtt/state";
+            willMessage = "disconnected";
+        } else {
+            willTopic = _willTopic;
+            willMessage = _willMessage;
+        }
         mqttUsername = _mqttUsername;
         mqttPassword = _mqttPassword;
 
@@ -260,13 +267,12 @@ class Mqtt {
                         if (mqttPassword != "")
                             pwd = mqttPassword.c_str();
                         bool conRes = false;
-                        if (willTopic == "") {
-                            conRes = mqttClient.connect(clientName.c_str(), usr, pwd);
-                        } else {
-                            conRes =
-                                mqttClient.connect(clientName.c_str(), usr, pwd, willTopic.c_str(),
-                                                   0, true, willMessage.c_str());
-                        }
+                        // if (willTopic == "") {  // xxx can't happen any more
+                        //    conRes = mqttClient.connect(clientName.c_str(), usr, pwd);
+                        //} else {
+                        conRes = mqttClient.connect(clientName.c_str(), usr, pwd, willTopic.c_str(),
+                                                    0, true, willMessage.c_str());
+                        //}
                         if (conRes) {
 #ifdef USE_SERIAL_DBG
                             Serial.println("Connected to mqtt server");
@@ -278,14 +284,22 @@ class Mqtt {
                                 mqttClient.subscribe(subsList[i].c_str());
                             }
                             bWarned = false;
-                            pSched->publish("mqtt/state",
-                                            "connected," + outDomainToken + "/" + clientName);
+                            // if (willTopic == "") {
+                            //    pSched->publish("mqtt/state",
+                            //                    "connected," + outDomainToken + "/" + clientName);
+                            //} else {
+                            pSched->publish(
+                                "mqtt/state",
+                                "connected");  // Note: this is sent *after* the next msg! XXX
+                            pSched->publish("mqtt/config", outDomainToken + "/" + clientName + "+" +
+                                                               willTopic + "+" + willMessage);
+                            //}
                         } else {
                             mqttConnected = false;
                             if (!bWarned) {
                                 bWarned = true;
-                                pSched->publish("mqtt/state", "disconnected," + outDomainToken +
-                                                                  "/" + clientName);
+                                pSched->publish("mqtt/state", "disconnected");
+                                //+ outDomainToken + "/" + clientName);
 #ifdef USE_SERIAL_DBG
                                 Serial.println("MQTT disconnected.");
 #endif
