@@ -288,11 +288,11 @@ class Mqtt {
                             //    pSched->publish("mqtt/state",
                             //                    "connected," + outDomainToken + "/" + clientName);
                             //} else {
-                            pSched->publish(
-                                "mqtt/state",
-                                "connected");  // Note: this is sent *after* the next msg! XXX
                             pSched->publish("mqtt/config", outDomainToken + "/" + clientName + "+" +
                                                                willTopic + "+" + willMessage);
+                            pSched->publish("mqtt/state", "connected");
+                            // pSched->publish("mqtt/config", outDomainToken + "/" + clientName +
+                            // "+" + willTopic + "+" + willMessage);
                             //}
                         } else {
                             mqttConnected = false;
