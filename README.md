@@ -111,10 +111,12 @@ pio run -t updatefs
 
 | topic        | message body                                | comment                                                                                                                                                                                                                                                                                                                                                                    |
 | ------------ | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `mqtt/state` | `connected,prefix` or `disconnected,prefix` | muwerk processes that subscribe to `mqtt/state` are that way informed, if mqtt external connection is available. `prefix` is the mqtt prefix automatically prefixed to outgoing messages, composed of `omu` (set with mqtt) and `hostname`, e.g. `connected,omu/myhost`. `prefix` can be useful for mupplets to know the actual topic names that get published externally. |
+| `mqtt/config` | `<prefix>+<will_topic>+<will_message>` | The message contains three parts separated bei `+`: prefix, the last-will-topic and last-will message, if mqtt external connection is available: `prefix` is the mqtt topic-prefix automatically prefixed to outgoing messages, composed of `omu` (set with mqtt) and `hostname`, e.g. `omu/myhost`. `prefix` can be useful for mupplets to know the actual topic names that get published externally. |
+| `mqtt/state` | `connected` or `disconnected` | muwerk processes that subscribe to `mqtt/state` are that way informed, if mqtt external connection is available. The `mqtt/state` topic with message `disconnected` is also the default configuration for mqtt's last will topic and message. |
 
 ## History
 
+- 0.2.x : Small breaking change: the format of the `mqtt/state` has been simplified: the message contains either `connected` or `disconnected`. Configuration information has been moved into a separate message `mqtt/config`.
 - 0.2.0 (2020-12-25): Initial support for LittleFS on ESP8266.
 - 0.1.99 2020-09 (not yet released): Ongoing preparations for switch to LittleFS, since SPIFFS is deprecated.
 - 0.1.11 (2019-12-27): New mqtt.h api functions `addSubscription()`, `removeSubscription()` that
