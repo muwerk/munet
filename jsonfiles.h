@@ -14,137 +14,151 @@ namespace ustd {
 
 bool muFsIsInit = false;
 
-muSplit(String source, char separator, array<String> result) {
+void muSplit(String src, char separator, array<String> *result) {
+    int ind;
+    String source = src;
+    String sb;
     while (true) {
         ind = source.indexOf(separator);
         if (ind == -1) {
-            result.add(source);
+            result->add(source);
             return;
         } else {
-            result.add(source.substring(0, ind));
+            sb = source.substring(0, ind);
+            result->add(sb);
             source = source.substring(ind + 1);
         }
     }
 }
 
-bool muInitFs() {
+bool muInitFS() {
     bool ret;
 #ifdef __USE_SPIFFS_FS__
-    ret = SPIFFS.begin();
+    ret = SPIFFS.begin(false);
 #else
     ret = LittleFS.begin();
 #endif
-    if (ret)
-        muFsIsInit = True;
+    if (ret) {
+        muFsIsInit = true;
+    } else {
+        muFsIsInit = false;
+#ifdef USE_SERIAL_DBG
+#ifdef __USE_SPIFFS_FS__
+        Serial.println("Failed to initialize SPIFFS filesystem");
+#else
+        Serial.println("Failed to initialize LittleFS filesystem");
+#endif
+#endif
+    }
     return ret;
 }
 
-fs : File muOpen(String filename, String mode) {
+fs::File muOpen(String filename, String mode) {
+    fs::File f;
     if (!muFsIsInit)
-        return False;
+        if (!muInitFS())
+            return (fs::File)0;
 #ifdef __USE_SPIFFS_FS__
-    return SPIFFS.open(filename, mode);
+    f = SPIFFS.open(filename.c_str(), mode.c_str());
 #else
-    return LittleFS.open(filename, mode);
+    f = LittleFS.open(filename.c_str(), mode.c_str());
+#endif
+    if (!f) {
+#ifdef USE_SERIAL_DBG
+#ifdef __USE_SPIFFS_FS__
+        Serial.println("Failed to open " + filename + " on SPIFFS filesystem");
+#else
+        Serial.println("Failed to open " + filename + " on LittleFS filesystem");
+#endif
+#endif
+    }
+    return f;
 }
 
-String muReadVal(String key, String val) {
+bool muKeyExists(String key) {
+    ustd::array<String> keyparts;
+    if (key.c_str()[0] == '/') {
+        key = key.substring(1);
+    }
+    muSplit(key, '/', &keyparts);
+
+    // XXX
+    return false;
 }
-class ConfigFile {
-  public:
-    bool init = false;
-    String fileName;
-    ustd::map<String, String> globalConfig;
-    ustd::map<String, ustd::map<String, String>> servicesConfig;
 
-    ConfigFile(String fileName = "/config.json") : fileName(fileName) {
+String muReadVal(String key, String defaultVal = "") {
+    ustd::array<String> keyparts;
+    if (key.c_str()[0] == '/') {
+        key = key.substring(1);
+    }
+    muSplit(key, '/', &keyparts);
+
+    if (keyparts.length() < 1) {
+#ifdef USE_SERIAL_DBG
+        Serial.println("muReadVal key-path too short, minimum needed is filename/topic, got: " +
+                       key);
+#endif
+        return defaultVal;
+    }
+    String filename = "/" + keyparts[0] + ".json";
+    fs::File f = muOpen(filename, "r");
+    if (!f) {
+#ifdef USE_SERIAL_DBG
+        Serial.println("muReadVal file " + filename + " can't be opened.");
+#endif
+        return defaultVal;
+    }
+    String jsonstr = "";
+    if (!f.available()) {
+#ifdef USE_SERIAL_DBG
+        Serial.println("Opened " + filename + ", but no data in file!");
+#endif
+        return defaultVal;
+    }
+    while (f.available()) {
+        // Lets read line by line from the file
+        String lin = f.readStringUntil('\n');
+        jsonstr = jsonstr + lin;
+    }
+    f.close();
+    JSONVar configObj = JSON.parse(jsonstr);
+    if (JSON.typeof(configObj) == "undefined") {
+#ifdef USE_SERIAL_DBG
+        Serial.println("Parsing input file " + filename + "failed, invalid JSON!");
+        Serial.println(jsonstr);
+#endif
+        return defaultVal;
     }
 
-    ~ConfigFile() {
-    }
-
-    bool begin(ustd::map<String, String> &userdefaults) {
-        if __USE_
-            SPIFFS.begin();
-        checkMigration();
-    }
-
-    genUuid(String &uuid) {
-    }
-
-    bool fsMigrateConfig() {
-    }
-
-    bool checkMigration() {
-        bool ret = true;
-        fs::File f = SPIFFS.open("\net.json", "r");
-        if (f) {
-            close(f);
-            ret = fsMigrateConfig();
+    JSONVar subobj = configObj;
+    for (unsigned int i = 1; i < keyparts.length() - 1; i++) {
+        subobj = subobj[keyparts[i]];
+        if (JSON.typeof(subobj) == "undefined") {
+#ifdef USE_SERIAL_DBG
+            Serial.println("From " + key + ", " + keyparts[i] + " not found.");
+#endif
+            return defaultVal;
         }
-        return ret;
+        Serial.println("From " + key + ", " + keyparts[i] + " found.");
+    }
+    String lastKey = keyparts[keyparts.length() - 1];
+    String result = "undefined";
+    Serial.println("From: " + key + ", last: " + lastKey);
+    // JSONVar subobjlst = subobj[lastKey];
+    if (!subobj.hasOwnProperty(lastKey)) {
+#ifdef USE_SERIAL_DBG
+        Serial.println("From " + key + ", last element: " + lastKey + " not found.");
+#endif
+        return defaultVal;
+    } else {
+        result = (const char *)subobj[lastKey];
+#ifdef USE_SERIAL_DBG
+        Serial.println("From " + key + ", last element: " + lastKey + " found: " + result);
+#endif
     }
 
-    bool writeJsonObj(String filename, JSONVar jsonobj) {
-        if (!init)
-            return false;
-
-        fs::File f = SPIFFS.open(filename, "w");
-        if (!f) {
-            return false;
-        }
-        String jsonstr = JSON.stringify(jsonobj);
-        f.println(jsonstr);
-        f.close();
-        return true;
-    }
-
-    bool readJson(String filename, String &content) {
-        if (!fsInitCheck())
-            return false;
-        content = "";
-        fs::File f = SPIFFS.open(filename, "r");
-        if (!f) {
-            return false;
-        } else {
-            while (f.available()) {
-                String lin = f.readStringUntil('\n');
-                content = content + lin;
-            }
-            f.close();
-        }
-        return true;
-    }
-
-    bool readJsonString(String filename, String key, String &value) {
-        String jsonstr;
-        if (readJson(filename, jsonstr)) {
-            JSONVar configObj = JSON.parse(jsonstr);
-            if (JSON.typeof(configObj) == "undefined") {
-                return false;
-            }
-            if (configObj.hasOwnProperty(key.c_str())) {
-                value = (const char *)configObj[key.c_str()];
-            } else {
-                return false;
-            }
-            return true;
-        } else {
-            return false;
-        }
-
-        bool readNetJsonString(String key, String & value) {
-            return readJsonString("/net.json", key, value);
-        }
-
-        bool readFriendlyName(String & friendlyName) {
-            if (readNetJsonString("friendlyname", friendlyName))
-                return true;
-            if (readNetJsonString("hostname", friendlyName))
-                return true;
-            return false;
-        }
-    };  // ConfigFile class
+    return result;
+}
 
 }  // namespace ustd
 
