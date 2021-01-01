@@ -13,10 +13,10 @@ matrix:
 
       install:
         - pip3 install -U platformio
-        - platformio lib -g install 5710  # ustd
-        - platformio lib -g install 5818  # muwerk
-        - platformio lib -g install 6249  # Arduino_JSON
-        - platformio lib -g install 89  # PubSubClient
+        - platformio lib -g install 5710 # ustd
+        - platformio lib -g install 5818 # muwerk
+        - platformio lib -g install 6249 # Arduino_JSON
+        - platformio lib -g install 89 # PubSubClient
 
       script:
-        - pio ci --lib="." --project-option="build_flags=-D __ESP__ -D __USE_OLD_FS__" --board=esp12e Examples/all_min/munet_test.cpp
+        - pio ci --lib="." --project-option="build_flags=-D __ESP__" --board=esp12e Examples/all_min/munet_test.cpp
