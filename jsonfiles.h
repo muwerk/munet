@@ -82,8 +82,69 @@ bool muKeyExists(String key) {
     }
     muSplit(key, '/', &keyparts);
 
-    // XXX
-    return false;
+    if (keyparts.length() < 1) {
+#ifdef USE_SERIAL_DBG
+        Serial.println("muReadVal key-path too short, minimum needed is filename/topic, got: " +
+                       key);
+#endif
+        return false;
+    }
+    String filename = "/" + keyparts[0] + ".json";
+    fs::File f = muOpen(filename, "r");
+    if (!f) {
+#ifdef USE_SERIAL_DBG
+        Serial.println("muReadVal file " + filename + " can't be opened.");
+#endif
+        return false;
+    }
+    String jsonstr = "";
+    if (!f.available()) {
+#ifdef USE_SERIAL_DBG
+        Serial.println("Opened " + filename + ", but no data in file!");
+#endif
+        return false;
+    }
+    while (f.available()) {
+        // Lets read line by line from the file
+        String lin = f.readStringUntil('\n');
+        jsonstr = jsonstr + lin;
+    }
+    f.close();
+    JSONVar configObj = JSON.parse(jsonstr);
+    if (JSON.typeof(configObj) == "undefined") {
+#ifdef USE_SERIAL_DBG
+        Serial.println("Parsing input file " + filename + "failed, invalid JSON!");
+        Serial.println(jsonstr);
+#endif
+        return false;
+    }
+    JSONVar subobj = configObj;
+    for (unsigned int i = 1; i < keyparts.length() - 1; i++) {
+        subobj = subobj[keyparts[i]];
+        if (JSON.typeof(subobj) == "undefined") {
+#ifdef USE_SERIAL_DBG
+            Serial.println("From " + key + ", " + keyparts[i] + " not found.");
+#endif
+            return false;
+        }
+        Serial.println("From " + key + ", " + keyparts[i] + " found.");
+    }
+    String lastKey = keyparts[keyparts.length() - 1];
+    String result = "undefined";
+    Serial.println("From: " + key + ", last: " + lastKey);
+    // JSONVar subobjlst = subobj[lastKey];
+    if (!subobj.hasOwnProperty(lastKey)) {
+#ifdef USE_SERIAL_DBG
+        Serial.println("From " + key + ", last element: " + lastKey + " not found.");
+#endif
+        return false;
+    } else {
+        result = (const char *)subobj[lastKey];
+#ifdef USE_SERIAL_DBG
+        Serial.println("From " + key + ", last element: " + lastKey + " found: " + result);
+#endif
+    }
+    return true;
 }
 
 String muReadVal(String key, String defaultVal = "") {
@@ -113,6 +174,7 @@ String muReadVal(String key, String defaultVal = "") {
 #ifdef USE_SERIAL_DBG
         Serial.println("Opened " + filename + ", but no data in file!");
 #endif
+        f.close();
         return defaultVal;
     }
     while (f.available()) {
@@ -160,6 +222,119 @@ String muReadVal(String key, String defaultVal = "") {
     return result;
 }
 
+bool muWriteVal(String key, String val) {
+    ustd::array<String> keyparts;
+    if (key.c_str()[0] == '/') {
+        key = key.substring(1);
+    }
+    muSplit(key, '/', &keyparts);
+
+    if (keyparts.length() < 1) {
+#ifdef USE_SERIAL_DBG
+        Serial.println("muWriteVal key-path too short, minimum needed is filename/topic, got: " +
+                       key);
+#endif
+        return false;
+    }
+    if (keyparts.length() > 5) {
+#ifdef USE_SERIAL_DBG
+        Serial.println("muWriteVal key-path too long, maxdepth is 9, got: " + key);
+#endif
+        return false;
+    }
+    JSONVar obj;
+    String filename = "/" + keyparts[0] + ".json";
+    fs::File f = muOpen(filename, "r");
+    if (!f) {
+#ifdef USE_SERIAL_DBG
+        Serial.println("muWriteVal file " + filename + " can't be opened, creating new.");
+#endif
+    } else {
+        String jsonstr = "";
+        if (!f.available()) {
+#ifdef USE_SERIAL_DBG
+            Serial.println("Opened " + filename + ", but no data in file, creating new.");
+#endif
+        } else {
+            while (f.available()) {
+                // Lets read line by line from the file
+                String lin = f.readStringUntil('\n');
+                jsonstr = jsonstr + lin;
+            }
+            f.close();
+            JSONVar configObj = JSON.parse(jsonstr);
+            if (JSON.typeof(configObj) == "undefined") {
+#ifdef USE_SERIAL_DBG
+                Serial.println("Parsing input file " + filename + "failed, invalid JSON!");
+                Serial.println(jsonstr);
+#endif
+            } else {
+                obj = configObj;
+            }
+        }
+    }
+
+    // JSONVar subobj = obj;
+    // for (unsigned int i = 1; i < keyparts.length() - 1; i++) {
+    //    subobj = subobj[keyparts[i]];
+    // }
+    // String lastKey = keyparts[keyparts.length() - 1];
+    // subobj[lastKey] = (const char *)val.c_str();
+
+    // Frickel:
+    char char *v = (const char *)val.c_str();
+    switch (keyparts.length()) {
+    case 2:
+        obj[keyparts[1]] = v;
+        break;
+    case 3:
+        obj[keyparts[1]][keyparts[2]] = v;
+        break;
+    case 4:
+        obj[keyparts[1]][keyparts[2]][keyparts[3]] = v;
+        break;
+    case 5:
+        obj[keyparts[1]][keyparts[2]][keyparts[3]][keyparts[4]] = v;
+        break;
+    case 6:
+        obj[keyparts[1]][keyparts[2]][keyparts[3]][keyparts[4]][keyparts[5]] = v;
+        break;
+    case 7:
+        obj[keyparts[1]][keyparts[2]][keyparts[3]][keyparts[4]][keyparts[5]][keyparts[6]] = v;
+        break;
+    case 8:
+        obj[keyparts[1]][keyparts[2]][keyparts[3]][keyparts[4]][keyparts[5]][keyparts[6]]
+           [keyparts[7]] = v;
+        break;
+    case 9:
+        obj[keyparts[1]][keyparts[2]][keyparts[3]][keyparts[4]][keyparts[5]][keyparts[6]]
+           [keyparts[7]][keyparts[8]] = v;
+        break;
+    default:
+#ifdef USE_SERIAL_DBG
+        Serial.println("Internal error in write.");
+#endif
+        return false;
+        break;
+    }
+    String jsonString = JSON.stringify(obj);
+
+#ifdef USE_SERIAL_DBG
+    Serial.println("File: " + filename + ", content: " + jsonString);
+#endif
+
+    f = muOpen(filename, "w");
+    if (!f) {
+#ifdef USE_SERIAL_DBG
+        Serial.println("muWriteVal file " + filename + " can't be opened for write, failure.");
+        return false;
+#endif
+    } else {
+        f.print(jsonString.c_str());
+        f.close();
+        return true;
+    }
+}
 }  // namespace ustd
 
 // #endif  // defined(__ESP__)
