@@ -148,6 +148,13 @@ bool muKeyExists(String key) {
 }
 
 String muReadVal(String key, String defaultVal = "") {
+    /*! Read a string value from a JSON-file. key is an MQTT-topic-like path, structured like this:
+    filename/a/b/c/d. This will read the jsonfile /filename.json with example content
+    {"a": {"b": {"c": {"d": "some-val"}}}}. This will return "some-val", if found, otherwise
+    devaultVal.
+    @param key combined filename and json-object-path, maxdepth 9.
+    @param defaultValue value returned, if key is not found.
+    */
     ustd::array<String> keyparts;
     if (key.c_str()[0] == '/') {
         key = key.substring(1);
@@ -223,6 +230,13 @@ String muReadVal(String key, String defaultVal = "") {
 }
 
 bool muWriteVal(String key, String val) {
+    /*! Write a value to a JSON-file. key is an MQTT-topic-like path, structured like this:
+    filename/a/b/c/d. This will write the jsonfile /filename.json with content
+    {"a": {"b": {"c": {"d": "content-of-val"}}}}. Use muReadVal("filename/a/b/c/d") to retrieve
+    content-of-val.
+    @param key combined filename and json-object-path, maxdepth 9.
+    @param val value to be written.
+    */
     ustd::array<String> keyparts;
     if (key.c_str()[0] == '/') {
         key = key.substring(1);
@@ -273,13 +287,6 @@ bool muWriteVal(String key, String val) {
             }
         }
     }
-
-    // JSONVar subobj = obj;
-    // for (unsigned int i = 1; i < keyparts.length() - 1; i++) {
-    //    subobj = subobj[keyparts[i]];
-    // }
-    // String lastKey = keyparts[keyparts.length() - 1];
-    // subobj[lastKey] = (const char *)val.c_str();
 
     // Frickel:
     char char *v = (const char *)val.c_str();
