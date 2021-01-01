@@ -340,9 +340,6 @@ class Net {
                 // Lets read line by line from the file
                 String lin = f.readStringUntil('\n');
                 jsonstr = jsonstr + lin;
-#ifdef USE_SERIAL_DBG
-                Serial.println(">" + lin + "<");
-#endif
             }
             f.close();
             JSONVar configObj = JSON.parse(jsonstr);
