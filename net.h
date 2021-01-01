@@ -301,13 +301,23 @@ class Net {
         Serial.println("Reading net.json");
 #endif
 #ifdef __USE_SPIFFS_FS__
-        SPIFFS.begin();
+        if (!SPIFFS.begin(false)) {
+#ifdef USE_SERIAL_DBG
+            Serial.println("SPIFFS.begin() failed!");
+#endif
+            return false;
+        }
         fs::File f = SPIFFS.open("/net.json", "r");
 #ifdef USE_SERIAL_DBG
         Serial.println("Reading net.json via SPIFFS");
 #endif
 #else
-        LittleFS.begin();
+        if (!LittleFS.begin()) {
+#ifdef USE_SERIAL_DBG
+            Serial.println("SPIFFS.begin() failed!");
+#endif
+            return false;
+        }
         fs::File f = LittleFS.open("/net.json", "r");
 #ifdef USE_SERIAL_DBG
         Serial.println("Reading net.json via LittleFS");
@@ -320,10 +330,19 @@ class Net {
             return false;
         } else {
             String jsonstr = "";
+            if (!f.available()) {
+#ifdef USE_SERIAL_DBG
+                Serial.println("Opened /net.json, but no data in file!");
+#endif
+                return false;
+            }
             while (f.available()) {
                 // Lets read line by line from the file
                 String lin = f.readStringUntil('\n');
                 jsonstr = jsonstr + lin;
+#ifdef USE_SERIAL_DBG
+                Serial.println(">" + lin + "<");
+#endif
             }
             f.close();
             JSONVar configObj = JSON.parse(jsonstr);
@@ -449,9 +468,8 @@ class Net {
         for (int thisNet = 0; thisNet < numSsid; thisNet++) {
             if (thisNet > 0)
                 netlist += ",";
-            netlist += "\"" + WiFi.SSID(thisNet) +
-                        "\":{\"rssi\":" + String(WiFi.RSSI(thisNet)) + ",\"enc\":\"" +
-                        strEncryptionType(WiFi.encryptionType(thisNet)) + "\"}";
+            netlist += "\"" + WiFi.SSID(thisNet) + "\":{\"rssi\":" + String(WiFi.RSSI(thisNet)) +
+                       ",\"enc\":\"" + strEncryptionType(WiFi.encryptionType(thisNet)) + "\"}";
         }
         netlist += "}";
         pSched->publish("net/networks", netlist);
@@ -498,8 +516,8 @@ class Net {
 #endif
                 state = CONNECTED;
                 IPAddress ip = WiFi.localIP();
-                ipAddress = String(ip[0]) + '.' + String(ip[1]) + '.' + String(ip[2]) +
-                            '.' + String(ip[3]);
+                ipAddress =
+                    String(ip[0]) + '.' + String(ip[1]) + '.' + String(ip[2]) + '.' + String(ip[3]);
                 configureNTP();
             } else {
                 if (ustd::timeDiff(conTime, millis()) > conTimeout) {
@@ -535,7 +553,7 @@ class Net {
                         } else {
 #ifdef USE_SERIAL_DBG
                             Serial.println("Final connect failure, "
-                                            "configuration invalid?");
+                                           "configuration invalid?");
 #endif
                             state = NOTCONFIGURED;
                             if (bRebootOnContinuedWifiFailure)
@@ -590,6 +608,6 @@ class Net {
         }
     }
 };  // namespace ustd
-}       // namespace ustd
+}  // namespace ustd
 
 // #endif  // defined(__ESP__)
