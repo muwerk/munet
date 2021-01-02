@@ -178,6 +178,7 @@ class Mqtt {
             willTopic = _willTopic;
             willMessage = _willMessage;
         }
+        configMessage = outDomainPrefix + "+" + willTopic + "+" willMessage;
         mqttUsername = _mqttUsername;
         mqttPassword = _mqttPassword;
 
@@ -295,8 +296,6 @@ class Mqtt {
                             //    pSched->publish("mqtt/state",
                             //                    "connected," + outDomainPrefix);
                             //} else {
-                            // configMessage = outDomainPrefix + "+" + willTopic + "+" +
-                            // willMessage;
                             pSched->publish("mqtt/config", configMessage);
                             pSched->publish("mqtt/state", "connected");
                             // pSched->publish("mqtt/config", outDomainPrefix +
