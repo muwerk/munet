@@ -41,6 +41,7 @@ class Mqtt {
     String mqttPassword = "";
     String willTopic = "";
     String willMessage = "";
+    String configMessage = "";
     ustd::array<String> subsList;
 
   public:
@@ -294,9 +295,9 @@ class Mqtt {
                             //    pSched->publish("mqtt/state",
                             //                    "connected," + outDomainPrefix);
                             //} else {
-                            self.config_message =
-                                outDomainPrefix + "+" + willTopic + "+" + willMessage;
-                            pSched->publish("mqtt/config", self.config_message);
+                            // configMessage = outDomainPrefix + "+" + willTopic + "+" +
+                            // willMessage;
+                            pSched->publish("mqtt/config", configMessage);
                             pSched->publish("mqtt/state", "connected");
                             // pSched->publish("mqtt/config", outDomainPrefix +
                             // "+" + willTopic + "+" + willMessage);
@@ -414,9 +415,9 @@ class Mqtt {
         }
         if (topic == "mqtt/config/get") {
             if (mqttConnected) {
-                pSched->publish("mqtt/config", self.config_message);
+                pSched->publish("mqtt/config", configMessage);
             } else {
-                pSched->publish("mqtt/config", self.config_message);
+                pSched->publish("mqtt/config", configMessage);
             }
         }
         if (topic == "net/services/mqttserver") {

@@ -289,7 +289,7 @@ bool muWriteVal(String key, String val) {
     }
 
     // Frickel:
-    char char *v = (const char *)val.c_str();
+    const char *v = (const char *)val.c_str();
     switch (keyparts.length()) {
     case 2:
         obj[keyparts[1]] = v;
