@@ -24,6 +24,8 @@ class Mqtt {
     Scheduler *pSched;
     String domainToken = "mu";
     String outDomainToken = "omu";
+    String outDomainPrefix;  // outDomainToken + '/' + clientName, or just clientName, if
+                             // outDomainToken==""
     int tID;
 
     bool isOn = false;
@@ -39,6 +41,7 @@ class Mqtt {
     String mqttPassword = "";
     String willTopic = "";
     String willMessage = "";
+    String configMessage = "";
     ustd::array<String> subsList;
 
   public:
@@ -139,8 +142,10 @@ class Mqtt {
          * empty "" for no username.
          * @param _mqttPassword Password for mqtt server authentication, leave
          * empty "" for no password.
-         * @param _willTopic Topic of mqtt last will.
-         * @param _willMessage Message content for last will message.
+         * @param _willTopic Topic of mqtt last will. Default is "omu/<clientName>/mqtt/state".
+         * Note: it is not recommended to change will-configuration, when using the home-assistant
+         * configuration.
+         * @param _willMessage Message content for last will message. Default is "disconnected"
          */
 
         pSched = _pSched;
@@ -162,8 +167,18 @@ class Mqtt {
 #endif
         }
 
-        willTopic = _willTopic;
-        willMessage = _willMessage;
+        if (outDomainToken == "")
+            outDomainPrefix = clientName;
+        else
+            outDomainPrefix = outDomainToken + "/" + clientName;
+        if (_willTopic == "") {
+            willTopic = outDomainPrefix + "/mqtt/state";
+            willMessage = "disconnected";
+        } else {
+            willTopic = _willTopic;
+            willMessage = _willMessage;
+        }
+        configMessage = outDomainPrefix + "+" + willTopic + "+" + willMessage;
         mqttUsername = _mqttUsername;
         mqttPassword = _mqttPassword;
 
@@ -260,13 +275,12 @@ class Mqtt {
                         if (mqttPassword != "")
                             pwd = mqttPassword.c_str();
                         bool conRes = false;
-                        if (willTopic == "") {
-                            conRes = mqttClient.connect(clientName.c_str(), usr, pwd);
-                        } else {
-                            conRes =
-                                mqttClient.connect(clientName.c_str(), usr, pwd, willTopic.c_str(),
-                                                   0, true, willMessage.c_str());
-                        }
+                        // if (willTopic == "") {  // xxx can't happen any more
+                        //    conRes = mqttClient.connect(clientName.c_str(), usr, pwd);
+                        //} else {
+                        conRes = mqttClient.connect(clientName.c_str(), usr, pwd, willTopic.c_str(),
+                                                    0, true, willMessage.c_str());
+                        //}
                         if (conRes) {
 #ifdef USE_SERIAL_DBG
                             Serial.println("Connected to mqtt server");
@@ -278,14 +292,21 @@ class Mqtt {
                                 mqttClient.subscribe(subsList[i].c_str());
                             }
                             bWarned = false;
-                            pSched->publish("mqtt/state",
-                                            "connected," + outDomainToken + "/" + clientName);
+                            // if (willTopic == "") {
+                            //    pSched->publish("mqtt/state",
+                            //                    "connected," + outDomainPrefix);
+                            //} else {
+                            pSched->publish("mqtt/config", configMessage);
+                            pSched->publish("mqtt/state", "connected");
+                            // pSched->publish("mqtt/config", outDomainPrefix +
+                            // "+" + willTopic + "+" + willMessage);
+                            //}
                         } else {
                             mqttConnected = false;
                             if (!bWarned) {
                                 bWarned = true;
-                                pSched->publish("mqtt/state", "disconnected," + outDomainToken +
-                                                                  "/" + clientName);
+                                pSched->publish("mqtt/state", "disconnected");
+                                //+ outDomainPrefix);
 #ifdef USE_SERIAL_DBG
                                 Serial.println("MQTT disconnected.");
 #endif
@@ -304,8 +325,12 @@ class Mqtt {
         ustd::array<String> toks;
 
         msg = "";
-        for (unsigned int i = 0; i < length; i++) {
-            msg += (char)payload[i];
+        char *szBuffer = (char *)malloc(length + 1);
+        if (szBuffer) {
+            memcpy(szBuffer, payload, length);
+            szBuffer[length] = 0;
+            msg = szBuffer;
+            free(szBuffer);
         }
         topic = String(ctopic);
         for (unsigned int i = 0; i < subsList.length(); i++) {
@@ -337,7 +362,7 @@ class Mqtt {
             if (topic.c_str()[0] == '!') {
                 tpc = &(topic.c_str()[1]);
             } else {
-                tpc = outDomainToken + "/" + clientName + "/" + topic;
+                tpc = outDomainPrefix + "/" + topic;
             }
             bool bRetain = true;
 #ifdef USE_SERIAL_DBG
@@ -386,9 +411,16 @@ class Mqtt {
 
         if (topic == "mqtt/state/get") {
             if (mqttConnected) {
-                pSched->publish("mqtt/state", "connected," + outDomainToken + "/" + clientName);
+                pSched->publish("mqtt/state", "connected");
             } else {
-                pSched->publish("mqtt/state", "disconnected," + outDomainToken + "/" + clientName);
+                pSched->publish("mqtt/state", "disconnected");
+            }
+        }
+        if (topic == "mqtt/config/get") {
+            if (mqttConnected) {
+                pSched->publish("mqtt/config", configMessage);
+            } else {
+                pSched->publish("mqtt/config", configMessage);
             }
         }
         if (topic == "net/services/mqttserver") {

@@ -301,13 +301,23 @@ class Net {
         Serial.println("Reading net.json");
 #endif
 #ifdef __USE_SPIFFS_FS__
-        SPIFFS.begin();
+        if (!SPIFFS.begin(false)) {
+#ifdef USE_SERIAL_DBG
+            Serial.println("SPIFFS.begin() failed!");
+#endif
+            return false;
+        }
         fs::File f = SPIFFS.open("/net.json", "r");
 #ifdef USE_SERIAL_DBG
         Serial.println("Reading net.json via SPIFFS");
 #endif
 #else
-        LittleFS.begin();
+        if (!LittleFS.begin()) {
+#ifdef USE_SERIAL_DBG
+            Serial.println("SPIFFS.begin() failed!");
+#endif
+            return false;
+        }
         fs::File f = LittleFS.open("/net.json", "r");
 #ifdef USE_SERIAL_DBG
         Serial.println("Reading net.json via LittleFS");
@@ -320,6 +330,12 @@ class Net {
             return false;
         } else {
             String jsonstr = "";
+            if (!f.available()) {
+#ifdef USE_SERIAL_DBG
+                Serial.println("Opened /net.json, but no data in file!");
+#endif
+                return false;
+            }
             while (f.available()) {
                 // Lets read line by line from the file
                 String lin = f.readStringUntil('\n');
@@ -361,234 +377,234 @@ class Net {
             return true;
         }
     }
-                void connectAP() {
-#ifdef USE_SERIAL_DBG
-                    Serial.println("Connect-AP");
-                    Serial.println(SSID.c_str());
-#endif
-                    WiFi.mode(WIFI_STA);
-                    WiFi.begin(SSID.c_str(), password.c_str());
-                    macAddress = WiFi.macAddress();
 
-                    if (localHostname != "") {
-#if defined(__ESP32__)
-                        WiFi.setHostname(localHostname.c_str());
-#else
-                        WiFi.hostname(localHostname.c_str());
+    void connectAP() {
+#ifdef USE_SERIAL_DBG
+        Serial.println("Connect-AP");
+        Serial.println(SSID.c_str());
 #endif
+        WiFi.mode(WIFI_STA);
+        WiFi.begin(SSID.c_str(), password.c_str());
+        macAddress = WiFi.macAddress();
+
+        if (localHostname != "") {
+#if defined(__ESP32__)
+            WiFi.setHostname(localHostname.c_str());
+#else
+            WiFi.hostname(localHostname.c_str());
+#endif
+        } else {
+#if defined(__ESP32__)
+            localHostname = WiFi.getHostname();
+#else
+            localHostname = WiFi.hostname();
+#endif
+        }
+        state = CONNECTINGAP;
+        conTime = millis();
+    }
+
+    String strEncryptionType(int thisType) {
+        // read the encryption type and print out the name:
+#if !defined(__ESP32__)
+        switch (thisType) {
+        case ENC_TYPE_WEP:
+            return "WEP";
+            break;
+        case ENC_TYPE_TKIP:
+            return "WPA";
+            break;
+        case ENC_TYPE_CCMP:
+            return "WPA2";
+            break;
+        case ENC_TYPE_NONE:
+            return "None";
+            break;
+        case ENC_TYPE_AUTO:
+            return "Auto";
+            break;
+        default:
+            return "unknown";
+            break;
+        }
+#else
+        switch (thisType) {
+        case WIFI_AUTH_OPEN:
+            return "None";
+            break;
+        case WIFI_AUTH_WEP:
+            return "WEP";
+            break;
+        case WIFI_AUTH_WPA_PSK:
+            return "WPA_PSK";
+            break;
+        case WIFI_AUTH_WPA2_PSK:
+            return "WPA2_PSK";
+            break;
+        case WIFI_AUTH_WPA_WPA2_PSK:
+            return "WPA_WPA2_PSK";
+            break;
+        case WIFI_AUTH_WPA2_ENTERPRISE:
+            return "WPA2_ENTERPRISE";
+            break;
+        default:
+            return "unknown";
+            break;
+        }
+#endif
+    }
+
+    void publishNetworks() {
+        int numSsid = WiFi.scanNetworks();
+        if (numSsid == -1) {
+            pSched->publish("net/networks",
+                            "{}");  // "{\"state\":\"error\"}");
+            return;
+        }
+        String netlist = "{";
+        for (int thisNet = 0; thisNet < numSsid; thisNet++) {
+            if (thisNet > 0)
+                netlist += ",";
+            netlist += "\"" + WiFi.SSID(thisNet) + "\":{\"rssi\":" + String(WiFi.RSSI(thisNet)) +
+                       ",\"enc\":\"" + strEncryptionType(WiFi.encryptionType(thisNet)) + "\"}";
+        }
+        netlist += "}";
+        pSched->publish("net/networks", netlist);
+    }
+
+    void publishServices() {
+        for (unsigned int i = 0; i < netServices.length(); i++) {
+            pSched->publish("net/services/" + netServices.keys[i],
+                            "{\"server\":\"" + netServices.values[i] + "\"}");
+        }
+    }
+
+    void subsNetGet(String topic, String msg, String originator) {
+        publishNetwork();
+    }
+    void subsNetsGet(String topic, String msg, String originator) {
+        publishNetworks();
+    }
+    void subsNetSet(String topic, String msg, String originator) {
+        // XXX: not yet implemented.
+    }
+
+    void subsNetServicesGet(String topic, String msg, String originator) {
+        for (unsigned int i = 0; i < netServices.length(); i++) {
+            if (topic == "net/services/" + netServices.keys[i] + "/get") {
+                pSched->publish("net/services/" + netServices.keys[i],
+                                "{\"server\":\"" + netServices.values[i] + "\"}");
+            }
+        }
+    }
+
+    void loop() {
+        switch (state) {
+        case NOTCONFIGURED:
+            if (timeDiff(tick10sec, millis()) > 10000) {
+                tick10sec = millis();
+                publishNetworks();
+            }
+            break;
+        case CONNECTINGAP:
+            if (WiFi.status() == WL_CONNECTED) {
+#ifdef USE_SERIAL_DBG
+                Serial.println("Connected!");
+#endif
+                state = CONNECTED;
+                IPAddress ip = WiFi.localIP();
+                ipAddress =
+                    String(ip[0]) + '.' + String(ip[1]) + '.' + String(ip[2]) + '.' + String(ip[3]);
+                configureNTP();
+            } else {
+                if (ustd::timeDiff(conTime, millis()) > conTimeout) {
+#ifdef USE_SERIAL_DBG
+                    Serial.println("Timeout connecting!");
+#endif
+                    if (bOnceConnected) {
+                        if (bRebootOnContinuedWifiFailure)
+                            --deathCounter;
+                        if (deathCounter == 0) {
+#ifdef USE_SERIAL_DBG
+                            Serial.println("Final failure, restarting...");
+#endif
+                            if (bRebootOnContinuedWifiFailure)
+                                ESP.restart();
+                        }
+#ifdef USE_SERIAL_DBG
+                        Serial.println("reconnecting...");
+#endif
+                        WiFi.reconnect();
+                        conTime = millis();
                     } else {
-#if defined(__ESP32__)
-                        localHostname = WiFi.getHostname();
-#else
-                        localHostname = WiFi.hostname();
+#ifdef USE_SERIAL_DBG
+                        Serial.println("retrying to connect...");
 #endif
+                        if (initialCounter > 0) {
+                            if (bRebootOnContinuedWifiFailure)
+                                --initialCounter;
+                            WiFi.reconnect();
+                            conTime = millis();
+                            state = CONNECTINGAP;
+
+                        } else {
+#ifdef USE_SERIAL_DBG
+                            Serial.println("Final connect failure, "
+                                           "configuration invalid?");
+#endif
+                            state = NOTCONFIGURED;
+                            if (bRebootOnContinuedWifiFailure)
+                                ESP.restart();
+                        }
                     }
+                }
+            }
+            break;
+        case CONNECTED:
+            bOnceConnected = true;
+            deathCounter = reconnectMaxRetries;
+
+            if (timeDiff(tick1sec, millis()) > 1000) {
+                tick1sec = millis();
+                if (WiFi.status() == WL_CONNECTED) {
+                    long rssi = WiFi.RSSI();
+                    if (rssival.filter(&rssi)) {
+                        pSched->publish("net/rssi", "{\"rssi\":" + String(rssi) + "}");
+                    }
+                } else {
+                    WiFi.reconnect();
                     state = CONNECTINGAP;
                     conTime = millis();
                 }
-
-                String strEncryptionType(int thisType) {
-                    // read the encryption type and print out the name:
-#if !defined(__ESP32__)
-                    switch (thisType) {
-                    case ENC_TYPE_WEP:
-                        return "WEP";
-                        break;
-                    case ENC_TYPE_TKIP:
-                        return "WPA";
-                        break;
-                    case ENC_TYPE_CCMP:
-                        return "WPA2";
-                        break;
-                    case ENC_TYPE_NONE:
-                        return "None";
-                        break;
-                    case ENC_TYPE_AUTO:
-                        return "Auto";
-                        break;
-                    default:
-                        return "unknown";
-                        break;
-                    }
-#else
-                    switch (thisType) {
-                    case WIFI_AUTH_OPEN:
-                        return "None";
-                        break;
-                    case WIFI_AUTH_WEP:
-                        return "WEP";
-                        break;
-                    case WIFI_AUTH_WPA_PSK:
-                        return "WPA_PSK";
-                        break;
-                    case WIFI_AUTH_WPA2_PSK:
-                        return "WPA2_PSK";
-                        break;
-                    case WIFI_AUTH_WPA_WPA2_PSK:
-                        return "WPA_WPA2_PSK";
-                        break;
-                    case WIFI_AUTH_WPA2_ENTERPRISE:
-                        return "WPA2_ENTERPRISE";
-                        break;
-                    default:
-                        return "unknown";
-                        break;
-                    }
-#endif
-                }
-
-                void publishNetworks() {
-                    int numSsid = WiFi.scanNetworks();
-                    if (numSsid == -1) {
-                        pSched->publish("net/networks",
-                                        "{}");  // "{\"state\":\"error\"}");
-                        return;
-                    }
-                    String netlist = "{";
-                    for (int thisNet = 0; thisNet < numSsid; thisNet++) {
-                        if (thisNet > 0)
-                            netlist += ",";
-                        netlist += "\"" + WiFi.SSID(thisNet) +
-                                   "\":{\"rssi\":" + String(WiFi.RSSI(thisNet)) + ",\"enc\":\"" +
-                                   strEncryptionType(WiFi.encryptionType(thisNet)) + "\"}";
-                    }
-                    netlist += "}";
-                    pSched->publish("net/networks", netlist);
-                }
-
-                void publishServices() {
-                    for (unsigned int i = 0; i < netServices.length(); i++) {
-                        pSched->publish("net/services/" + netServices.keys[i],
-                                        "{\"server\":\"" + netServices.values[i] + "\"}");
-                    }
-                }
-
-                void subsNetGet(String topic, String msg, String originator) {
-                    publishNetwork();
-                }
-                void subsNetsGet(String topic, String msg, String originator) {
-                    publishNetworks();
-                }
-                void subsNetSet(String topic, String msg, String originator) {
-                    // XXX: not yet implemented.
-                }
-
-                void subsNetServicesGet(String topic, String msg, String originator) {
-                    for (unsigned int i = 0; i < netServices.length(); i++) {
-                        if (topic == "net/services/" + netServices.keys[i] + "/get") {
-                            pSched->publish("net/services/" + netServices.keys[i],
-                                            "{\"server\":\"" + netServices.values[i] + "\"}");
-                        }
-                    }
-                }
-
-                void loop() {
-                    switch (state) {
-                    case NOTCONFIGURED:
-                        if (timeDiff(tick10sec, millis()) > 10000) {
-                            tick10sec = millis();
-                            publishNetworks();
-                        }
-                        break;
-                    case CONNECTINGAP:
-                        if (WiFi.status() == WL_CONNECTED) {
+            }
+            break;
+        default:
+            break;
+        }
+        if (state != oldState) {
 #ifdef USE_SERIAL_DBG
-                            Serial.println("Connected!");
+            char msg[128];
+            sprintf(msg, "Netstate: %d->%d", oldState, state);
+            Serial.println(msg);
+            if (state == 3) {  // connected!
+                Serial.print("RSSI: ");
+                Serial.println(WiFi.RSSI());
+            }
 #endif
-                            state = CONNECTED;
-                            IPAddress ip = WiFi.localIP();
-                            ipAddress = String(ip[0]) + '.' + String(ip[1]) + '.' + String(ip[2]) +
-                                        '.' + String(ip[3]);
-                            configureNTP();
-                        } else {
-                            if (ustd::timeDiff(conTime, millis()) > conTimeout) {
-#ifdef USE_SERIAL_DBG
-                                Serial.println("Timeout connecting!");
-#endif
-                                if (bOnceConnected) {
-                                    if (bRebootOnContinuedWifiFailure)
-                                        --deathCounter;
-                                    if (deathCounter == 0) {
-#ifdef USE_SERIAL_DBG
-                                        Serial.println("Final failure, restarting...");
-#endif
-                                        if (bRebootOnContinuedWifiFailure)
-                                            ESP.restart();
-                                    }
-#ifdef USE_SERIAL_DBG
-                                    Serial.println("reconnecting...");
-#endif
-                                    WiFi.reconnect();
-                                    conTime = millis();
-                                } else {
-#ifdef USE_SERIAL_DBG
-                                    Serial.println("retrying to connect...");
-#endif
-                                    if (initialCounter > 0) {
-                                        if (bRebootOnContinuedWifiFailure)
-                                            --initialCounter;
-                                        WiFi.reconnect();
-                                        conTime = millis();
-                                        state = CONNECTINGAP;
-
-                                    } else {
-#ifdef USE_SERIAL_DBG
-                                        Serial.println("Final connect failure, "
-                                                       "configuration invalid?");
-#endif
-                                        state = NOTCONFIGURED;
-                                        if (bRebootOnContinuedWifiFailure)
-                                            ESP.restart();
-                                    }
-                                }
-                            }
-                        }
-                        break;
-                    case CONNECTED:
-                        bOnceConnected = true;
-                        deathCounter = reconnectMaxRetries;
-
-                        if (timeDiff(tick1sec, millis()) > 1000) {
-                            tick1sec = millis();
-                            if (WiFi.status() == WL_CONNECTED) {
-                                long rssi = WiFi.RSSI();
-                                if (rssival.filter(&rssi)) {
-                                    pSched->publish("net/rssi", "{\"rssi\":" + String(rssi) + "}");
-                                }
-                            } else {
-                                WiFi.reconnect();
-                                state = CONNECTINGAP;
-                                conTime = millis();
-                            }
-                        }
-                        break;
-                    default:
-                        break;
-                    }
-                    if (state != oldState) {
-#ifdef USE_SERIAL_DBG
-                        char msg[128];
-                        sprintf(msg, "Netstate: %d->%d", oldState, state);
-                        Serial.println(msg);
-                        if (state == 3) {  // connected!
-                            Serial.print("RSSI: ");
-                            Serial.println(WiFi.RSSI());
-                        }
-#endif
-                        if (state == NOTCONFIGURED || state == CONNECTED) {
-                            if (signalLed != 0xff) {
-                                digitalWrite(signalLed, HIGH);  // Turn the LED off
-                            }
-                        } else {
-                            if (signalLed != 0xff) {
-                                digitalWrite(signalLed, LOW);  // Turn the LED on
-                            }
-                        }
-                        oldState = state;
-                        publishNetwork();
-                    }
+            if (state == NOTCONFIGURED || state == CONNECTED) {
+                if (signalLed != 0xff) {
+                    digitalWrite(signalLed, HIGH);  // Turn the LED off
                 }
-            };  // namespace ustd
-        }       // namespace ustd
+            } else {
+                if (signalLed != 0xff) {
+                    digitalWrite(signalLed, LOW);  // Turn the LED on
+                }
+            }
+            oldState = state;
+            publishNetwork();
+        }
+    }
+};  // namespace ustd
+}  // namespace ustd
 
-        // #endif  // defined(__ESP__)
+// #endif  // defined(__ESP__)
