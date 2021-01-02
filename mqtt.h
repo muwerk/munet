@@ -178,7 +178,7 @@ class Mqtt {
             willTopic = _willTopic;
             willMessage = _willMessage;
         }
-        configMessage = outDomainPrefix + "+" + willTopic + "+" willMessage;
+        configMessage = outDomainPrefix + "+" + willTopic + "+" + willMessage;
         mqttUsername = _mqttUsername;
         mqttPassword = _mqttPassword;
 
