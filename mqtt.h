@@ -325,12 +325,12 @@ class Mqtt {
         ustd::array<String> toks;
 
         msg = "";
-        char *szBuffer = malloc(length + 1);
+        char *szBuffer = (char *)malloc(length + 1);
         if (szBuffer) {
-            memcpy(buf, payload, length);
-            buf[length] = 0;
-            msg = buf;
-            free(buf);
+            memcpy(szBuffer, payload, length);
+            szBuffer[length] = 0;
+            msg = szBuffer;
+            free(szBuffer);
         }
         topic = String(ctopic);
         for (unsigned int i = 0; i < subsList.length(); i++) {
