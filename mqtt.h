@@ -24,6 +24,8 @@ class Mqtt {
     Scheduler *pSched;
     String domainToken = "mu";
     String outDomainToken = "omu";
+    String outDomainPrefix;  // outDomainToken + '/' + clientName, or just clientName, if
+                             // outDomainToken==""
     int tID;
 
     bool isOn = false;
@@ -164,8 +166,12 @@ class Mqtt {
 #endif
         }
 
+        if (outDomainToken == "")
+            outDomainPrefix = clientName;
+        else
+            outDomainPrefix = outDomainToken + "/" + clientName;
         if (_willTopic == "") {
-            willTopic = outDomainToken + "/" + clientName + "/mqtt/state";
+            willTopic = outDomainPrefix + "/mqtt/state";
             willMessage = "disconnected";
         } else {
             willTopic = _willTopic;
@@ -286,12 +292,13 @@ class Mqtt {
                             bWarned = false;
                             // if (willTopic == "") {
                             //    pSched->publish("mqtt/state",
-                            //                    "connected," + outDomainToken + "/" + clientName);
+                            //                    "connected," + outDomainPrefix);
                             //} else {
-                            pSched->publish("mqtt/config", outDomainToken + "/" + clientName + "+" +
-                                                               willTopic + "+" + willMessage);
+                            self.config_message =
+                                outDomainPrefix + "+" + willTopic + "+" + willMessage;
+                            pSched->publish("mqtt/config", self.config_message);
                             pSched->publish("mqtt/state", "connected");
-                            // pSched->publish("mqtt/config", outDomainToken + "/" + clientName +
+                            // pSched->publish("mqtt/config", outDomainPrefix +
                             // "+" + willTopic + "+" + willMessage);
                             //}
                         } else {
@@ -299,7 +306,7 @@ class Mqtt {
                             if (!bWarned) {
                                 bWarned = true;
                                 pSched->publish("mqtt/state", "disconnected");
-                                //+ outDomainToken + "/" + clientName);
+                                //+ outDomainPrefix);
 #ifdef USE_SERIAL_DBG
                                 Serial.println("MQTT disconnected.");
 #endif
@@ -351,7 +358,7 @@ class Mqtt {
             if (topic.c_str()[0] == '!') {
                 tpc = &(topic.c_str()[1]);
             } else {
-                tpc = outDomainToken + "/" + clientName + "/" + topic;
+                tpc = outDomainPrefix + "/" + topic;
             }
             bool bRetain = true;
 #ifdef USE_SERIAL_DBG
@@ -400,9 +407,16 @@ class Mqtt {
 
         if (topic == "mqtt/state/get") {
             if (mqttConnected) {
-                pSched->publish("mqtt/state", "connected," + outDomainToken + "/" + clientName);
+                pSched->publish("mqtt/state", "connected");
             } else {
-                pSched->publish("mqtt/state", "disconnected," + outDomainToken + "/" + clientName);
+                pSched->publish("mqtt/state", "disconnected");
+            }
+        }
+        if (topic == "mqtt/config/get") {
+            if (mqttConnected) {
+                pSched->publish("mqtt/config", self.config_message);
+            } else {
+                pSched->publish("mqtt/config", self.config_message);
             }
         }
         if (topic == "net/services/mqttserver") {
