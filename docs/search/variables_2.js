@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['wificonnecttimeout_53',['wifiConnectTimeout',['../classustd_1_1Net.html#aed6d584897cd413ebe906a6298a0437e',1,'ustd::Net']]]
+  ['reconnectmaxretries_66',['reconnectMaxRetries',['../classustd_1_1Net.html#a501143aa73e73e6a136eca562e665e5d',1,'ustd::Net']]]
 ];

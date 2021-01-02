@@ -164,10 +164,13 @@ $(function() {
 <tr class="markdownTableHead">
 <th class="markdownTableHeadNone">topic  </th><th class="markdownTableHeadNone">message body  </th><th class="markdownTableHeadNone">comment   </th></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>mqtt/state</code>  </td><td class="markdownTableBodyNone"><code>connected,prefix</code> or <code>disconnected,prefix</code>  </td><td class="markdownTableBodyNone">muwerk processes that subscribe to <code>mqtt/state</code> are that way informed, if mqtt external connection is available. <code>prefix</code> is the mqtt prefix automatically prefixed to outgoing messages, composed of <code>omu</code> (set with mqtt) and <code>hostname</code>, e.g. <code>connected,omu/myhost</code>. <code>prefix</code> can be useful for mupplets to know the actual topic names that get published externally.   </td></tr>
+<td class="markdownTableBodyNone"><code>mqtt/config</code>  </td><td class="markdownTableBodyNone"><code>&lt;prefix&gt;+&lt;will_topic&gt;+&lt;will_message&gt;</code>  </td><td class="markdownTableBodyNone">The message contains three parts separated bei <code>+</code>: prefix, the last-will-topic and last-will message. <code>prefix</code> is the mqtt topic-prefix automatically prefixed to outgoing messages, composed of <code>omu</code> (set with mqtt) and <code>hostname</code>, e.g. <code>omu/myhost</code>. <code>prefix</code> can be useful for mupplets to know the actual topic names that get published externally.   </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone"><code>mqtt/state</code>  </td><td class="markdownTableBodyNone"><code>connected</code> or <code>disconnected</code>  </td><td class="markdownTableBodyNone">muwerk processes that subscribe to <code>mqtt/state</code> are that way informed, if mqtt external connection is available. The <code>mqtt/state</code> topic with message <code>disconnected</code> is also the default configuration for mqtt's last will topic and message.   </td></tr>
 </table>
 <h1>History</h1>
 <ul>
+<li>0.2.1 (2021-01-02) : Small breaking change: the format of the <code>mqtt/state</code> has been simplified: the message contains either <code>connected</code> or <code>disconnected</code>. Configuration information has been moved into a separate message <code>mqtt/config</code>. Support for no outgoing domain prefix (no 'omu') fixed.</li>
 <li>0.2.0 (2020-12-25): Initial support for LittleFS on ESP8266.</li>
 <li>0.1.99 2020-09 (not yet released): Ongoing preparations for switch to LittleFS, since SPIFFS is deprecated.</li>
 <li>0.1.11 (2019-12-27): New <a class="el" href="mqtt_8h.html">mqtt.h</a> api functions <code>addSubscription()</code>, <code>removeSubscription()</code> that allow to import additional topics from external MQTT server. See <a href="https://muwerk.github.io/munet/docs/classustd_1_1Mqtt.html">API doc</a> for details.</li>

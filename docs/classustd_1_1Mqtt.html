@@ -306,8 +306,8 @@ Public Member Functions</h2></td></tr>
     <tr><td class="paramname">_outDomainToken</td><td>(optional, default is "omu") All publications from this client to outside MQTT-servers have their topic prefixed by &lt;outDomainName&gt;/&lt;clientName&gt;/topic. This is to prevent recursions. </td></tr>
     <tr><td class="paramname">_mqttUsername</td><td>Username for mqtt server authentication, leave empty "" for no username. </td></tr>
     <tr><td class="paramname">_mqttPassword</td><td>Password for mqtt server authentication, leave empty "" for no password. </td></tr>
-    <tr><td class="paramname">_willTopic</td><td>Topic of mqtt last will. </td></tr>
-    <tr><td class="paramname">_willMessage</td><td>Message content for last will message.</td></tr>
+    <tr><td class="paramname">_willTopic</td><td>Topic of mqtt last will. Default is "omu/&lt;clientName&gt;/mqtt/state". Note: it is not recommended to change will-configuration, when using the home-assistant configuration. </td></tr>
+    <tr><td class="paramname">_willMessage</td><td>Message content for last will message. Default is "disconnected"</td></tr>
   </table>
   </dd>
 </dl>
@@ -365,7 +365,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <div class="ttc" id="aclassustd_1_1Mqtt_html"><div class="ttname"><a href="classustd_1_1Mqtt.html">ustd::Mqtt</a></div><div class="ttdef"><b>Definition:</b> mqtt.h:19</div></div>
 <div class="ttc" id="aclassustd_1_1Net_html"><div class="ttname"><a href="classustd_1_1Net.html">ustd::Net</a></div><div class="ttdoc">Munet, the muwerk network class for WLAN and NTP.</div><div class="ttdef"><b>Definition:</b> net.h:101</div></div>
-<div class="ttc" id="aclassustd_1_1Mqtt_html_aa4966f1e20c574e6260ad006943551c4"><div class="ttname"><a href="classustd_1_1Mqtt.html#aa4966f1e20c574e6260ad006943551c4">ustd::Mqtt::begin</a></div><div class="ttdeci">void begin(Scheduler *_pSched, String _clientName=&quot;&quot;, String _domainToken=&quot;&quot;, String _outDomainToken=&quot;omu&quot;, String _mqttUsername=&quot;&quot;, String _mqttPassword=&quot;&quot;, String _willTopic=&quot;&quot;, String _willMessage=&quot;&quot;)</div><div class="ttdef"><b>Definition:</b> mqtt.h:120</div></div>
+<div class="ttc" id="aclassustd_1_1Mqtt_html_aa4966f1e20c574e6260ad006943551c4"><div class="ttname"><a href="classustd_1_1Mqtt.html#aa4966f1e20c574e6260ad006943551c4">ustd::Mqtt::begin</a></div><div class="ttdeci">void begin(Scheduler *_pSched, String _clientName=&quot;&quot;, String _domainToken=&quot;&quot;, String _outDomainToken=&quot;omu&quot;, String _mqttUsername=&quot;&quot;, String _mqttPassword=&quot;&quot;, String _willTopic=&quot;&quot;, String _willMessage=&quot;&quot;)</div><div class="ttdef"><b>Definition:</b> mqtt.h:123</div></div>
 <div class="ttc" id="anet_8h_html"><div class="ttname"><a href="net_8h.html">net.h</a></div></div>
 <div class="ttc" id="amqtt_8h_html"><div class="ttname"><a href="mqtt_8h.html">mqtt.h</a></div></div>
 <!-- start footer part -->
