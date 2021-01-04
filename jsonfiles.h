@@ -334,8 +334,8 @@ bool muWriteVal(String key, String val) {
     if (!f) {
 #ifdef USE_SERIAL_DBG
         Serial.println("muWriteVal file " + filename + " can't be opened for write, failure.");
-        return false;
 #endif
+        return false;
     } else {
         f.print(jsonString.c_str());
         f.close();
