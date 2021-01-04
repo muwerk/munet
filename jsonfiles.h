@@ -82,7 +82,7 @@ bool muKeyExists(String key) {
     }
     muSplit(key, '/', &keyparts);
 
-    if (keyparts.length() < 1) {
+    if (keyparts.length() < 2) {
 #ifdef USE_SERIAL_DBG
         Serial.println("muReadVal key-path too short, minimum needed is filename/topic, got: " +
                        key);
@@ -161,7 +161,7 @@ String muReadVal(String key, String defaultVal = "") {
     }
     muSplit(key, '/', &keyparts);
 
-    if (keyparts.length() < 1) {
+    if (keyparts.length() < 2) {
 #ifdef USE_SERIAL_DBG
         Serial.println("muReadVal key-path too short, minimum needed is filename/topic, got: " +
                        key);
