@@ -275,7 +275,7 @@ long muReadLong(String key, long defaultVal) {
     @param key combined filename and json-object-path, maxdepth 9.
     @param defaultValue value returned, if key is not found.
     */
-    return (long)muReadVal(key, (double)defaultVal);
+    return (long)muReadDouble(key, (double)defaultVal);
 }
 
 long muReadVal(String key, long defaultVal) {
@@ -287,7 +287,7 @@ long muReadVal(String key, long defaultVal) {
     @param key combined filename and json-object-path, maxdepth 9.
     @param defaultValue value returned, if key is not found.
     */
-    return (long)muReadVal(key, (double)defaultVal);
+    return (long)muReadDouble(key, (double)defaultVal);
 }
 
 bool _muFsPrepareWrite(String key, String &filename, JSONVar &obj, JSONVar &target, String name,
