@@ -199,9 +199,10 @@ String muReadVal(String key, String defaultVal = "") {
         return defaultVal;
     }
 
-    JSONVar subobj = configObj;
+    JSONVar subobj(configObj)j;
     for (unsigned int i = 1; i < keyparts.length() - 1; i++) {
-        subobj = subobj[keyparts[i]];
+        JSONVar grutzel(subobj[keyparts[i]]);
+        subobj=grutzel;
         if (JSON.typeof(subobj) == "undefined") {
 #ifdef USE_SERIAL_DBG
             Serial.println("From " + key + ", " + keyparts[i] + " not found.");
