@@ -38,7 +38,11 @@ class MuSerial {
     bool linkConnected = false;
     unsigned long readTimeout = 5;          // sec
     unsigned long pingReceiveTimeout = 10;  // sec
-    String remoteName;
+    String remoteName = "";
+    String inDomainToken;
+    String outDomainToken;
+    ustd::array<String> outgoingBlockList;
+    ustd::array<String> incomingBlockList;
 
     const uint8_t SOH = 0x01, STX = 0x02, ETX = 0x03, EOT = 0x04;
     const uint8_t VER = 0x01;
@@ -80,8 +84,10 @@ class MuSerial {
 
   public:
     MuSerial(String name, HardwareSerial *pSerial, unsigned long baudRate = 115200,
-             uint8_t connectionLed = -1)
-        : name(name), pSerial(pSerial), baudRate(baudRate), connectionLed(connectionLed) {
+             uint8_t connectionLed = -1, String inDomainToken = "$remoteName",
+             String outDomainToken = "$name")
+        : name(name), pSerial(pSerial), baudRate(baudRate), connectionLed(connectionLed),
+          inDomainToken(inDomainToken), outDomainToken(outDomainToken) {
         /*! Instantiate a serial link between two muwerk instances.
          */
     }
@@ -109,6 +115,79 @@ class MuSerial {
         ping();
     }
 
+    bool outgoingBlockSet(String topic) {
+        /*! Block a topic-wildcard from being published to external mqtt server
+         *
+         * @param topic An mqtt topic wildcard for topics that should not be
+         * forwarded to external mqtt. E.g. 'mymupplet/#' Would block all messages
+         * a mupplet with name 'mymupplet' publishes from being forwarded to the
+         * extern mqtt server
+         * @return true on success, false if entry already exists, or couldn't be added.
+         */
+        for (unsigned int i = 0; i < outgoingBlockList.length(); i++) {
+            if (outgoingBlockList[i] == topic)
+                return false;
+        }
+        if (outgoingBlockList.add(topic) == -1)
+            return false;
+        return true;
+    }
+
+    bool outgoingBlockRemove(String topic) {
+        /*! Unblock a topic-wildcard from being published to external mqtt server
+         *
+         * @param topic An mqtt topic wildcard for topics that should again be
+         * forwarded to external mqtt. Unblock only removes a a block identical to
+         * the given topic. So topic must be identical to a topic (wildcard) that
+         * has been used with 'outgoingBlockSet()'.
+         * @return true on success, false if no corresponding block could be found.
+         */
+        for (unsigned int i = 0; i < outgoingBlockList.length(); i++) {
+            if (outgoingBlockList[i] == topic) {
+                if (!outgoingBlockList.erase(i))
+                    return false;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool incomingBlockSet(String topic) {
+        /*! Block a topic-wildcard from being published to the internal scheduler
+         *
+         * @param topic An mqtt topic wildcard for topics that should not be
+         * forwarded from external mqtt server to the muwerk scheduler. This can be
+         * used to block any incoming messages according to their topic.
+         * @return true on success, false if entry already exists, or couldn't be added.
+         */
+        for (unsigned int i = 0; i < incomingBlockList.length(); i++) {
+            if (incomingBlockList[i] == topic)
+                return false;
+        }
+        if (incomingBlockList.add(topic) == -1)
+            return false;
+        return true;
+    }
+
+    bool incomingBlockRemove(String topic) {
+        /*! Unblock a topic-wildcard from being received from external mqtt server
+         *
+         * @param topic An mqtt topic wildcard for topics that should again be
+         * forwarded internally to muwerk. Unblock only removes a a block identical to
+         * the given topic. So topic must be identical to a topic (wildcard) that
+         * has been used with 'incomingBlockSet()'.
+         * @return true on success, false if no corresponding block could be found.
+         */
+        for (unsigned int i = 0; i < incomingBlockList.length(); i++) {
+            if (incomingBlockList[i] == topic) {
+                if (!incomingBlockList.erase(i))
+                    return false;
+                return true;
+            }
+        }
+        return false;
+    }
+
     unsigned char crc(const unsigned char *buf, unsigned int len, unsigned char init = 0) {
         unsigned char c = init;
         for (unsigned int i = 0; i < len; i++)
@@ -134,6 +213,44 @@ class MuSerial {
         pSerial->write((unsigned char *)&p, sizeof(p));
     }
 
+    void sendOut(String topic, String msg) {
+        T_HEADER th;
+        T_FOOTER tf;
+        unsigned char ccrc;
+        unsigned char startbyte = SOH;
+        unsigned char nul = 0x0;
+        memset(&th, 0, sizeof(th));
+        memset(&tf, 0, sizeof(tf));
+
+        th.ver = VER;
+        th.num = blockNum++;
+        th.cmd = LinkCmd::MQTT;
+        unsigned int len = topic.length() + msg.length() + 2;
+        th.hLen = len / 256;
+        th.lLen = len % 256;
+        th.stx = STX;
+
+        tf.etx = ETX;
+        tf.etx = EOT;
+
+        ccrc = crc((const unsigned char *)&th, 6);
+        ccrc = crc((const unsigned char *)topic.c_str(), topic.length(), ccrc);
+        ccrc = crc(&nul, 1, ccrc);
+        ccrc = crc((const unsigned char *)msg.c_str(), msg.length(), ccrc);
+        ccrc = crc(&nul, 1, ccrc);
+        ccrc = crc((const unsigned char *)&fo, 1, ccrc);
+
+        fo.crc = ccrc;
+
+        pSerial->write(&startbyte, 1);
+        pSerial->write((unsigned char *)&th, 6);
+        pSerial->write((unsigned char *)topic.c_str(), topic.length());
+        pSerial->write(&nul, 1);
+        pSerial->write((unsigned char *)msg.c_str(), msg.length());
+        pSerial->write(&nul, 1);
+        pSerial->write((unsigned char *)&tf, 3);
+    }
+
   private:
     T_HEADER hd;
     unsigned char *pHd;
@@ -145,6 +262,24 @@ class MuSerial {
     unsigned char *pFo;
     uint16_t cLen;
     LinkState state;
+
+    bool internalPub(String topic, String msg) {
+        for (unsigned int i = 0; i < incomingBlockList.length(); i++) {
+            if (Scheduler::mqttmatch(topic, incomingBlockList[i]))
+                return false;
+        }
+        String inT;
+        if (inDomainToken == "$remoteName") {
+            inT = remoteName;
+        } else {
+            inT = inDomainToken;
+        }
+        if (inT != "") {
+            topic = inT + "/" + topic;
+        }
+        pSched->publish(topic, msg, remoteName);
+        return true;
+    }
 
     void loop() {
         unsigned char ccrc;
@@ -237,7 +372,7 @@ class MuSerial {
                                 const char *pM =
                                     (const char *)&msgBuf[strlen((const char *)msgBuf) + 1];
                                 if (strlen(pM) + strlen((const char *)msgBuf) + 2 < msgLen) {
-                                    pSched->publish((const char *)msgBuf, pM, remoteName);
+                                    internalPub((const char *)msgBuf, pM);
                                     lastMsg = time(nullptr);
                                 }
                             }
@@ -276,7 +411,19 @@ class MuSerial {
         }
     }
 
-    void subsMsg(String topic, String msg, String originator){};
+    void subsMsg(String topic, String msg, String originator) {
+        if (originator == name) {
+            // prevent loops;
+            return;
+        }
+        for (unsigned int i = 0; i < outgoingBlockList.length(); i++) {
+            if (Scheduler::mqttmatch(topic, outgoingBlockList[i])) {
+                // blocked.
+                return;
+            }
+        }
+        sendOut(topic, msg);
+    };
 };
 
 }  // namespace ustd
