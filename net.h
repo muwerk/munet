@@ -39,8 +39,10 @@ used by:
 
 #include "scheduler.h"
 #include "sensors.h"
+#include "muwerk.h"
 #include "jsonfile.h"
 #include "metronome.h"
+#include "timeout.h"
 
 namespace ustd {
 
@@ -110,11 +112,10 @@ class Net {
     bool signalLogic;
 
     // active configuration
-    JsonFile config;
+    ustd::jsonfile config;
 
     // cached configuration values
     unsigned int reconnectMaxRetries = 40;
-    unsigned long connectTimeout = 15000;
     bool bRebootOnContinuedWifiFailure = true;
 
     // hardware info
@@ -130,7 +131,7 @@ class Net {
     ustd::metronome statePublisher = 30000;
     // runtime control - station connection management
     ustd::metronome connectionMonitor = 1000;
-    long conTime;
+    ustd::timeout connectTimeout = 15000;
     bool bOnceConnected;
     int initialCounter;
     int deathCounter;
@@ -288,11 +289,11 @@ class Net {
         case CONNECTINGAP:
             if (WiFi.status() == WL_CONNECTED) {
                 curState = CONNECTED;
-                DBG("Connected with ip address " + WiFi.localIP().toString());
+                DBG("Connected to AP with ip address " + WiFi.localIP().toString());
                 configureTime();
                 return;
             }
-            if (timeDiff(conTime, millis()) > connectTimeout) {
+            if (connectTimeout.test()) {
                 DBG("Timout connecting to AP " + config.readString("net/station/SSID"));
                 if (bOnceConnected) {
                     if (bRebootOnContinuedWifiFailure) {
@@ -306,7 +307,7 @@ class Net {
                     }
                     DBG("Reconnecting...");
                     WiFi.reconnect();
-                    conTime = millis();
+                    connectTimeout.reset();
                 } else {
                     DBG("Retrying to connect...");
                     if (initialCounter > 0) {
@@ -314,7 +315,7 @@ class Net {
                             --initialCounter;
                         }
                         WiFi.reconnect();
-                        conTime = millis();
+                        connectTimeout.reset();
                         curState = CONNECTINGAP;
                     } else {
                         DBG("Final connect failure, configuration invalid?");
@@ -338,7 +339,7 @@ class Net {
                 } else {
                     WiFi.reconnect();
                     curState = CONNECTINGAP;
-                    conTime = millis();
+                    connectTimeout.reset();
                 }
             }
             break;
@@ -416,10 +417,10 @@ class Net {
         bRebootOnContinuedWifiFailure = config.readBool("net/station/rebootOnFailure", true);
     }
 
-    void migrateNetConfigFrom(JsonFile &sf, long version) {
+    void migrateNetConfigFrom(ustd::jsonfile &sf, long version) {
         if (version == 0) {
             // full migration
-            JsonFile nf(false, true);  // no autocommit, force new
+            ustd::jsonfile nf(false, true);  // no autocommit, force new
             nf.writeLong("net/version", NET_CONFIG_VERSION);
             nf.writeString("net/mode", "station");
             nf.writeString("net/station/SSID", sf.readString("net/SSID"));
@@ -443,7 +444,7 @@ class Net {
                         } else if (JSON.typeof(services[i]["mqttserver"]) == "string") {
                             String mqttserver = (const char *)(services[i]["mqttserver"]);
                             DBG("Found mqtt host entry: " + mqttserver);
-                            JsonFile mqtt;
+                            ustd::jsonfile mqtt;
                             mqtt.writeString("mqtt/host", mqttserver);
                         }
                     } else {
@@ -554,7 +555,7 @@ class Net {
             initialCounter = reconnectMaxRetries;
             bOnceConnected = false;
             curState = CONNECTINGAP;
-            conTime = millis();
+            connectTimeout.reset();
             if (!wifiConfig(address, gateway, netmask, dns)) {
                 DBG("Failed to set station mode configuration");
             }
@@ -629,30 +630,6 @@ class Net {
         }
         String json = JSON.stringify(net);
         pSched->publish("net/network", json);
-    }
-
-    static String shift(String &args, char separator = ' ', String defValue = "") {
-        /*! Extract the first arg from the supplied args
-         * @param args The string object from which to shift out an argument
-         * @param separator The separator character used for the shift operation
-         * @param defValue (optional, default empty string) Default value to return if no more
-         * args
-         * @return The extracted arg
-         */
-        if (args == "") {
-            return defValue;
-        }
-        int ind = args.indexOf(separator);
-        String ret = defValue;
-        if (ind == -1) {
-            ret = args;
-            args = "";
-        } else {
-            ret = args.substring(0, ind);
-            args = args.substring(ind + 1);
-            args.trim();
-        }
-        return ret;
     }
 
     void requestScan(String scantype = "async") {
