@@ -35,9 +35,11 @@ class MuSerial {
     LinkState linkState;
     time_t lastRead = 0;
     time_t lastMsg = 0;
+    time_t lastPingSent = 0;
     bool linkConnected = false;
     unsigned long readTimeout = 5;          // sec
     unsigned long pingReceiveTimeout = 10;  // sec
+    unsigned long pingPeriod = 5;           // sec
     String remoteName = "";
     String inDomainToken;
     String outDomainToken;
@@ -103,10 +105,9 @@ class MuSerial {
         pSched = _pSched;
         pSerial->begin(baudRate);
 
-        /*std::function<void()>*/ auto ft = [=]() { this->loop(); };
+        auto ft = [=]() { this->loop(); };
         tID = pSched->add(ft, "serlink", 50000L);  // check every 50ms
-        /*std::function<void(String, String, String)>*/ auto fnall = [=](String topic, String msg,
-                                                                         String originator) {
+        auto fnall = [=](String topic, String msg, String originator) {
             this->subsMsg(topic, msg, originator);
         };
         pSched->subscribe(tID, "#", fnall);
@@ -211,6 +212,8 @@ class MuSerial {
         p.crc = crc((unsigned char *)&(p.ver), sizeof(T_PING) - 3);
         p.eot = EOT;
         pSerial->write((unsigned char *)&p, sizeof(p));
+        lastPingSent = time(nullptr);
+        pSched->publish("muserial/link", "Ping sent");
     }
 
     void sendOut(String topic, String msg) {
@@ -285,6 +288,9 @@ class MuSerial {
         unsigned char ccrc;
         unsigned char c;
         if (bCheckLink) {
+            if (time(nullptr) - lastPingSent > pingPeriod) {
+                ping();
+            }
             while (pSerial->available() > 0) {
                 c = pSerial->read();
                 lastRead = time(nullptr);
@@ -297,6 +303,7 @@ class MuSerial {
                     }
                     break;
                 case HEADER:
+                    pSched->publish("muserial/link", "SOH");
                     pHd[hLen] = c;
                     hLen++;
                     if (hLen == 6) {
@@ -317,6 +324,7 @@ class MuSerial {
                     }
                     break;
                 case MSG:
+                    pSched->publish("muserial/link", "MSG");
                     msgBuf[curMsg] = c;
                     ++curMsg;
                     if (curMsg == msgLen) {
@@ -325,6 +333,7 @@ class MuSerial {
                     }
                     break;
                 case CRC:
+                    pSched->publish("muserial/link", "CRC");
                     pFo[cLen] = c;
                     ++cLen;
                     if (cLen == 3) {
