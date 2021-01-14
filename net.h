@@ -39,8 +39,8 @@ used by:
 
 #include "scheduler.h"
 #include "sensors.h"
-
-#include <Arduino_JSON.h>  // Platformio lib no. 6249
+#include "jsonfile.h"
+#include "metronome.h"
 
 namespace ustd {
 
@@ -100,37 +100,55 @@ void loop() {
 
 class Net {
   public:
-    enum Netstate { NOTDEFINED, NOTCONFIGURED, CONNECTINGAP, CONNECTED };
-    enum Netmode { AP, STATION };
-
-    unsigned int reconnectMaxRetries = 40;
-    unsigned int wifiConnectTimeout = 15;
-    bool bRebootOnContinuedWifiFailure = true;
+    const long NET_CONFIG_VERSION = 1;
+    enum Netstate { NOTDEFINED, NOTCONFIGURED, SERVING, CONNECTINGAP, CONNECTED };
+    enum Netmode { OFF, AP, STATION, BOTH };
 
   private:
-    Netstate state;
-    Netstate oldState;
-    Netmode mode;
-    long conTime;
+    // hardware configuration
     uint8_t signalLed;
-    unsigned long conTimeout = 15000;
-    String SSID;
-    String password;
-    String localHostname;
-    String ipAddress;
+    bool signalLogic;
+
+    // active configuration
+    JsonFile config;
+
+    // cached configuration values
+    unsigned int reconnectMaxRetries = 40;
+    unsigned long connectTimeout = 15000;
+    bool bRebootOnContinuedWifiFailure = true;
+
+    // hardware info
+    String apmAddress;
+    String macAddress;
+    String hexAddress;
+    String deviceID;
+
+    // runtime control - state management
+    Netmode mode;
+    Netstate curState;
+    Netstate oldState;
+    ustd::metronome statePublisher = 30000;
+    // runtime control - station connection management
+    ustd::metronome connectionMonitor = 1000;
+    long conTime;
+    bool bOnceConnected;
+    int initialCounter;
+    int deathCounter;
+    // runtime control - wifi scanning
+    bool scanning = false;
+
+    // operating values - station
+    ustd::sensorprocessor rssival = ustd::sensorprocessor(20, 1800, 2.0);
+    // operating values - ap
+    unsigned int connections;
+
+    // muwerk task management
     Scheduler *pSched;
     int tID;
-    unsigned long tick1sec;
-    unsigned long tick10sec;
-    ustd::sensorprocessor rssival = ustd::sensorprocessor(20, 1800, 2.0);
-    ustd::map<String, String> netServices;
-    String macAddress;
-    bool bOnceConnected = false;
-    int deathCounter;
-    int initialCounter;
 
   public:
-    Net(uint8_t signalLed = 0xff) : signalLed(signalLed) {
+    Net(uint8_t signalLed = 0xff, bool signalLogic = false)
+        : signalLed(signalLed), signalLogic(signalLogic) {
         /*! Instantiate a network object for WLAN and NTP connectivity.
          *
          * The Net object publishes messages using muwerk's pub/sub intertask
@@ -153,408 +171,156 @@ class Net {
          * is trying to connect to a network.
          */
         oldState = NOTDEFINED;
-        state = NOTCONFIGURED;
+        curState = NOTCONFIGURED;
         if (signalLed != 0xff) {
             pinMode(signalLed, OUTPUT);
-            digitalWrite(signalLed, HIGH);  // Turn the LED off
+            setLed(signalLogic);  // Turn the LED off
         }
     }
 
-    void configureNTP() {
-        if (netServices.find("timeserver") != -1) {
-#define RTC_TEST 0  // = put a time_t from RTC in here...
-
-            timeval tv = {RTC_TEST, 0};
-            timezone tz = {0, 0};
-            settimeofday(&tv, &tz);
-            configTime(0, 0, netServices["timeserver"].c_str());
-            if (netServices.find("dstrules") != -1) {
-                String dstrules = netServices["dstrules"];
-                setenv("TZ", dstrules.c_str(), 3);
-                tzset();
-            }
-        }
-    }
-
-    void begin(Scheduler *_pSched, bool _restartEspOnRepeatedFailure = true, String _ssid = "",
-               String _password = "", Netmode _mode = AP) {
-        /*! Connect to WLAN network and request NTP time
-         *
-         * This function starts the connection to a WLAN network, by default
-         * using the network credentials configured in net.json. Once a
-         * connection is established, a NTP time server is contacted and time is
-         * set according to local timezone rules as configured in net.json.
-         *
-         * Note: NTP configuration is only available via net.json, ssid and
-         * password can also be set using this function.
-         *
-         * Other muwerk task can subscribe to topic 'net/network' to receive
-         * information about network connection states.
-         *
-         * @param _pSched Pointer to the muwerk scheduler.
-         * @param _restartEspOnRepeatedFailure (optional, default true) restarts
-         * ESP on continued failure.
-         * @param _ssid (optional, default unused) Alternative way to specify
-         * WLAN SSID not using net.json.
-         * @param _password (optional, default unused) Alternative way to
-         * specify WLAN password.
-         * @param _mode (optional, default AP) Currently unused network mode.
-         */
-        pSched = _pSched;
-
-        deathCounter = reconnectMaxRetries;
-        initialCounter = reconnectMaxRetries;
-
-        bRebootOnContinuedWifiFailure = _restartEspOnRepeatedFailure;
-
-        SSID = _ssid;
-        password = _password;
-        mode = _mode;
-        tick1sec = millis();
-        tick10sec = millis();
-        bool directInit = false;
-
-        if (_ssid != "")
-            directInit = true;
-
+    void begin(Scheduler *_pSched) {
+        updateMacAddr();
         readNetConfig();
 
-        if (directInit) {
-            SSID = _ssid;
-            password = _password;
-#if defined(__ESP32__)
-            localHostname = WiFi.getHostname();
-#else
-            localHostname = WiFi.hostname();
-#endif
-        }
-        connectAP();
+        pSched = _pSched;
+        tID = pSched->add([this]() { this->loop(); }, "net");
 
-        // give a c++11 lambda as callback scheduler task registration of
-        // this.loop():
-        std::function<void()> ft = [=]() { this->loop(); };
-        tID = pSched->add(ft, "net");
+        pSched->subscribe(
+            tID, "net/network/get",
+            [this](String topic, String msg, String originator) { this->publishState(); });
 
-        // give a c++11 lambda as callback for incoming mqttmessages:
-        std::function<void(String, String, String)> fng = [=](String topic, String msg,
-                                                              String originator) {
-            this->subsNetGet(topic, msg, originator);
-        };
-        pSched->subscribe(tID, "net/network/get", fng);
-        std::function<void(String, String, String)> fns = [=](String topic, String msg,
-                                                              String originator) {
-            this->subsNetSet(topic, msg, originator);
-        };
-        pSched->subscribe(tID, "net/network/set", fns);
-        std::function<void(String, String, String)> fnsg = [=](String topic, String msg,
-                                                               String originator) {
-            this->subsNetsGet(topic, msg, originator);
-        };
-        pSched->subscribe(tID, "net/networks/get", fnsg);
-        std::function<void(String, String, String)> fsg = [=](String topic, String msg,
-                                                              String originator) {
-            this->subsNetServicesGet(topic, msg, originator);
-        };
-        pSched->subscribe(tID, "net/services/+/get", fsg);
+        pSched->subscribe(
+            tID, "net/networks/get",
+            [this](String topic, String msg, String originator) { this->requestScan(msg); });
+
+        startServices();
     }
+
+    // void xxxbegin(Scheduler *_pSched, bool _restartEspOnRepeatedFailure = true, String _ssid =
+    // "",
+    //               String _password = "", Netmode _mode = AP) {
+    //     /*! Connect to WLAN network and request NTP time
+    //      *
+    //      * This function starts the connection to a WLAN network, by default
+    //      * using the network credentials configured in net.json. Once a
+    //      * connection is established, a NTP time server is contacted and time is
+    //      * set according to local timezone rules as configured in net.json.
+    //      *
+    //      * Note: NTP configuration is only available via net.json, ssid and
+    //      * password can also be set using this function.
+    //      *
+    //      * Other muwerk task can subscribe to topic 'net/network' to receive
+    //      * information about network connection states.
+    //      *
+    //      * @param _pSched Pointer to the muwerk scheduler.
+    //      * @param _restartEspOnRepeatedFailure (optional, default true) restarts
+    //      * ESP on continued failure.
+    //      * @param _ssid (optional, default unused) Alternative way to specify
+    //      * WLAN SSID not using net.json.
+    //      * @param _password (optional, default unused) Alternative way to
+    //      * specify WLAN password.
+    //      * @param _mode (optional, default AP) Currently unused network mode.
+    //      */
+    //     updateMacAddr();
+    //     pSched = _pSched;
+    //     bRebootOnContinuedWifiFailure = _restartEspOnRepeatedFailure;
+
+    //     SSID = _ssid;
+    //     password = _password;
+    //     mode = _mode;
+    //     tick1sec = millis();
+    //     tick10sec = millis();
+    //     bool directInit = false;
+
+    //     if (_ssid != "")
+    //         directInit = true;
+
+    //     readNetConfig();
+
+    //     if (directInit) {
+    //         SSID = _ssid;
+    //         password = _password;
+    //     }
+
+    //     if (mode == AP) {
+    //         startAP();
+    //     } else {
+    //         startSTATION();
+    //     }
+
+    //     tID = pSched->add([this]() { this->loop(); }, "net");
+
+    //     pSched->subscribe(
+    //         tID, "net/network/get",
+    //         [this](String topic, String msg, String originator) { this->publishState(); });
+
+    //     pSched->subscribe(
+    //         tID, "net/networks/get",
+    //         [this](String topic, String msg, String originator) { this->requestScan(msg); });
+
+    //     // std::function<void( String, String, String )> fns = [=]( String topic, String msg,
+    //     //     String originator ) {
+    //     //         this->subsNetSet( topic, msg, originator );
+    //     // };
+    //     // pSched->subscribe( tID, "net/network/set", fns );
+    //     // std::function<void( String, String, String )> fnsg = [=]( String topic, String msg,
+    //     //     String originator ) {
+    //     //         this->subsNetsGet( topic, msg, originator );
+    //     // };
+    //     // pSched->subscribe( tID, "net/networks/get", fnsg );
+    //     // std::function<void( String, String, String )> fsg = [=]( String topic, String msg,
+    //     //     String originator ) {
+    //     //         this->subsNetServicesGet( topic, msg, originator );
+    //     // };
+    //     // pSched->subscribe( tID, "net/services/+/get", fsg );
+    // }
 
   private:
-    void publishNetwork() {
-        String json;
-        if (mode == AP) {
-            json = "{\"mode\":\"ap\",";
-        } else if (mode == STATION) {
-            json = "{\"mode\":\"station\",";
-        } else {
-            json = "{\"mode\":\"undefined\",";
-        }
-        json += "\"mac\":\"" + macAddress + "\",";
-        switch (state) {
-        case NOTCONFIGURED:
-            json += "\"state\":\"notconfigured\"}";
-            break;
-        case CONNECTINGAP:
-            json += "\"state\":\"connectingap\",\"SSID\":\"" + SSID + "\"}";
-            break;
-        case CONNECTED:
-            json += "\"state\":\"connected\",\"SSID\":\"" + SSID + "\",\"hostname\":\"" +
-                    localHostname + "\",\"ip\":\"" + ipAddress + "\"}";
-            break;
-        default:
-            json += "\"state\":\"undefined\"}";
-            break;
-        }
-        pSched->publish("net/network", json);
-#ifdef USE_SERIAL_DBG
-        Serial.println("Net: published net/network");
-#endif
-        if (state == CONNECTED) {
-            publishServices();
-#ifdef USE_SERIAL_DBG
-            Serial.println("Net: published services");
-#endif
-        }
-    }
-
-    bool readNetConfig() {
-#ifdef USE_SERIAL_DBG
-        Serial.println("Reading net.json");
-#endif
-#ifdef __USE_SPIFFS_FS__
-        if (!SPIFFS.begin(false)) {
-#ifdef USE_SERIAL_DBG
-            Serial.println("SPIFFS.begin() failed!");
-#endif
-            return false;
-        }
-        fs::File f = SPIFFS.open("/net.json", "r");
-#ifdef USE_SERIAL_DBG
-        Serial.println("Reading net.json via SPIFFS");
-#endif
-#else
-        if (!LittleFS.begin()) {
-#ifdef USE_SERIAL_DBG
-            Serial.println("SPIFFS.begin() failed!");
-#endif
-            return false;
-        }
-        fs::File f = LittleFS.open("/net.json", "r");
-#ifdef USE_SERIAL_DBG
-        Serial.println("Reading net.json via LittleFS");
-#endif
-#endif
-        if (!f) {
-#ifdef USE_SERIAL_DBG
-            Serial.println("Failed to open /net.json");
-#endif
-            return false;
-        } else {
-            String jsonstr = "";
-            if (!f.available()) {
-#ifdef USE_SERIAL_DBG
-                Serial.println("Opened /net.json, but no data in file!");
-#endif
-                return false;
-            }
-            while (f.available()) {
-                // Lets read line by line from the file
-                String lin = f.readStringUntil('\n');
-                jsonstr = jsonstr + lin;
-            }
-            f.close();
-            JSONVar configObj = JSON.parse(jsonstr);
-            if (JSON.typeof(configObj) == "undefined") {
-#ifdef USE_SERIAL_DBG
-                Serial.println("publishNetworks, config data: Parsing input failed!");
-                Serial.println(jsonstr);
-#endif
-                return false;
-            }
-            SSID = (const char *)configObj["SSID"];
-            password = (const char *)configObj["password"];
-            localHostname = (const char *)configObj["hostname"];
-
-            if (configObj.hasOwnProperty("services")) {
-#ifdef USE_SERIAL_DBG
-                Serial.println("Net: Found services config");
-#endif
-                JSONVar arr = configObj["services"];
-                for (int i = 0; i < arr.length(); i++) {
-                    JSONVar dc = arr[i];
-                    JSONVar keys = dc.keys();
-                    for (int j = 0; j < keys.length(); j++) {
-                        netServices[(const char *)keys[j]] = (const char *)dc[keys[j]];
-#ifdef USE_SERIAL_DBG
-                        Serial.println((const char *)keys[j]);
-#endif
-                    }
-                }
-            } else {
-#ifdef USE_SERIAL_DBG
-                Serial.println("Net: no services configured, that is probably unexpected!");
-#endif
-            }
-            return true;
-        }
-    }
-
-    void connectAP() {
-#ifdef USE_SERIAL_DBG
-        Serial.println("Connect-AP");
-        Serial.println(SSID.c_str());
-#endif
-        WiFi.mode(WIFI_STA);
-        WiFi.begin(SSID.c_str(), password.c_str());
-        macAddress = WiFi.macAddress();
-
-        if (localHostname != "") {
-#if defined(__ESP32__)
-            WiFi.setHostname(localHostname.c_str());
-#else
-            WiFi.hostname(localHostname.c_str());
-#endif
-        } else {
-#if defined(__ESP32__)
-            localHostname = WiFi.getHostname();
-#else
-            localHostname = WiFi.hostname();
-#endif
-        }
-        state = CONNECTINGAP;
-        conTime = millis();
-    }
-
-    String strEncryptionType(int thisType) {
-        // read the encryption type and print out the name:
-#if !defined(__ESP32__)
-        switch (thisType) {
-        case ENC_TYPE_WEP:
-            return "WEP";
-            break;
-        case ENC_TYPE_TKIP:
-            return "WPA";
-            break;
-        case ENC_TYPE_CCMP:
-            return "WPA2";
-            break;
-        case ENC_TYPE_NONE:
-            return "None";
-            break;
-        case ENC_TYPE_AUTO:
-            return "Auto";
-            break;
-        default:
-            return "unknown";
-            break;
-        }
-#else
-        switch (thisType) {
-        case WIFI_AUTH_OPEN:
-            return "None";
-            break;
-        case WIFI_AUTH_WEP:
-            return "WEP";
-            break;
-        case WIFI_AUTH_WPA_PSK:
-            return "WPA_PSK";
-            break;
-        case WIFI_AUTH_WPA2_PSK:
-            return "WPA2_PSK";
-            break;
-        case WIFI_AUTH_WPA_WPA2_PSK:
-            return "WPA_WPA2_PSK";
-            break;
-        case WIFI_AUTH_WPA2_ENTERPRISE:
-            return "WPA2_ENTERPRISE";
-            break;
-        default:
-            return "unknown";
-            break;
-        }
-#endif
-    }
-
-    void publishNetworks() {
-        int numSsid = WiFi.scanNetworks();
-        if (numSsid == -1) {
-            pSched->publish("net/networks",
-                            "{}");  // "{\"state\":\"error\"}");
-            return;
-        }
-        String netlist = "{";
-        for (int thisNet = 0; thisNet < numSsid; thisNet++) {
-            if (thisNet > 0)
-                netlist += ",";
-            netlist += "\"" + WiFi.SSID(thisNet) + "\":{\"rssi\":" + String(WiFi.RSSI(thisNet)) +
-                       ",\"enc\":\"" + strEncryptionType(WiFi.encryptionType(thisNet)) + "\"}";
-        }
-        netlist += "}";
-        pSched->publish("net/networks", netlist);
-    }
-
-    void publishServices() {
-        for (unsigned int i = 0; i < netServices.length(); i++) {
-            pSched->publish("net/services/" + netServices.keys[i],
-                            "{\"server\":\"" + netServices.values[i] + "\"}");
-        }
-    }
-
-    void subsNetGet(String topic, String msg, String originator) {
-        publishNetwork();
-    }
-    void subsNetsGet(String topic, String msg, String originator) {
-        publishNetworks();
-    }
-    void subsNetSet(String topic, String msg, String originator) {
-        // XXX: not yet implemented.
-    }
-
-    void subsNetServicesGet(String topic, String msg, String originator) {
-        for (unsigned int i = 0; i < netServices.length(); i++) {
-            if (topic == "net/services/" + netServices.keys[i] + "/get") {
-                pSched->publish("net/services/" + netServices.keys[i],
-                                "{\"server\":\"" + netServices.values[i] + "\"}");
-            }
-        }
-    }
-
     void loop() {
-        switch (state) {
+        switch (curState) {
+        case NOTDEFINED:
+            break;
         case NOTCONFIGURED:
-            if (timeDiff(tick10sec, millis()) > 10000) {
-                tick10sec = millis();
-                publishNetworks();
+            if (connectionMonitor.beat()) {
+                publishState();
             }
             break;
         case CONNECTINGAP:
             if (WiFi.status() == WL_CONNECTED) {
-#ifdef USE_SERIAL_DBG
-                Serial.println("Connected!");
-#endif
-                state = CONNECTED;
-                IPAddress ip = WiFi.localIP();
-                ipAddress =
-                    String(ip[0]) + '.' + String(ip[1]) + '.' + String(ip[2]) + '.' + String(ip[3]);
-                configureNTP();
-            } else {
-                if (ustd::timeDiff(conTime, millis()) > conTimeout) {
-#ifdef USE_SERIAL_DBG
-                    Serial.println("Timeout connecting!");
-#endif
-                    if (bOnceConnected) {
-                        if (bRebootOnContinuedWifiFailure)
-                            --deathCounter;
-                        if (deathCounter == 0) {
-#ifdef USE_SERIAL_DBG
-                            Serial.println("Final failure, restarting...");
-#endif
-                            if (bRebootOnContinuedWifiFailure)
-                                ESP.restart();
+                curState = CONNECTED;
+                DBG("Connected with ip address " + WiFi.localIP().toString());
+                configureTime();
+                return;
+            }
+            if (timeDiff(conTime, millis()) > connectTimeout) {
+                DBG("Timout connecting to AP " + config.readString("net/station/SSID"));
+                if (bOnceConnected) {
+                    if (bRebootOnContinuedWifiFailure) {
+                        --deathCounter;
+                    }
+                    if (deathCounter == 0) {
+                        DBG("Final connection failure, restarting...");
+                        if (bRebootOnContinuedWifiFailure) {
+                            ESP.restart();
                         }
-#ifdef USE_SERIAL_DBG
-                        Serial.println("reconnecting...");
-#endif
+                    }
+                    DBG("Reconnecting...");
+                    WiFi.reconnect();
+                    conTime = millis();
+                } else {
+                    DBG("Retrying to connect...");
+                    if (initialCounter > 0) {
+                        if (bRebootOnContinuedWifiFailure) {
+                            --initialCounter;
+                        }
                         WiFi.reconnect();
                         conTime = millis();
+                        curState = CONNECTINGAP;
                     } else {
-#ifdef USE_SERIAL_DBG
-                        Serial.println("retrying to connect...");
-#endif
-                        if (initialCounter > 0) {
-                            if (bRebootOnContinuedWifiFailure)
-                                --initialCounter;
-                            WiFi.reconnect();
-                            conTime = millis();
-                            state = CONNECTINGAP;
-
-                        } else {
-#ifdef USE_SERIAL_DBG
-                            Serial.println("Final connect failure, "
-                                           "configuration invalid?");
-#endif
-                            state = NOTCONFIGURED;
-                            if (bRebootOnContinuedWifiFailure)
-                                ESP.restart();
+                        DBG("Final connect failure, configuration invalid?");
+                        curState = NOTCONFIGURED;
+                        if (bRebootOnContinuedWifiFailure) {
+                            ESP.restart();
                         }
                     }
                 }
@@ -563,48 +329,591 @@ class Net {
         case CONNECTED:
             bOnceConnected = true;
             deathCounter = reconnectMaxRetries;
-
-            if (timeDiff(tick1sec, millis()) > 1000) {
-                tick1sec = millis();
+            if (connectionMonitor.beat()) {
                 if (WiFi.status() == WL_CONNECTED) {
                     long rssi = WiFi.RSSI();
                     if (rssival.filter(&rssi)) {
-                        pSched->publish("net/rssi", "{\"rssi\":" + String(rssi) + "}");
+                        pSched->publish("net/rssi", String(rssi));
                     }
                 } else {
                     WiFi.reconnect();
-                    state = CONNECTINGAP;
+                    curState = CONNECTINGAP;
                     conTime = millis();
                 }
             }
             break;
-        default:
+        case SERVING:
+            unsigned int conns = WiFi.softAPgetStationNum();
+            if (conns != connections) {
+                connections = conns;
+                pSched->publish("net/connections", String(connections));
+            }
+            if (statePublisher.beat()) {
+                publishState();
+            }
             break;
         }
-        if (state != oldState) {
-#ifdef USE_SERIAL_DBG
-            char msg[128];
-            sprintf(msg, "Netstate: %d->%d", oldState, state);
-            Serial.println(msg);
-            if (state == 3) {  // connected!
-                Serial.print("RSSI: ");
-                Serial.println(WiFi.RSSI());
-            }
-#endif
-            if (state == NOTCONFIGURED || state == CONNECTED) {
-                if (signalLed != 0xff) {
-                    digitalWrite(signalLed, HIGH);  // Turn the LED off
-                }
+        // react to state transition
+        if (curState != oldState) {
+            DBGP("Net State ");
+            DBGP(getStringFromState(oldState));
+            DBGP(" -> ");
+            DBGP(getStringFromState(curState));
+            if (curState == CONNECTED) {
+                DBGP(", RSSI: ");
+                DBG(WiFi.RSSI());
             } else {
-                if (signalLed != 0xff) {
-                    digitalWrite(signalLed, LOW);  // Turn the LED on
-                }
+                DBG();
             }
-            oldState = state;
-            publishNetwork();
+            switch (curState) {
+            case SERVING:
+            case CONNECTED:
+                if (signalLed != 0xff) {
+                    setLed(true);  // Turn the LED on
+                }
+                break;
+            default:
+                if (signalLed != 0xff) {
+                    setLed(false);  // Turn the LED off
+                }
+                break;
+            }
+            oldState = curState;
+            publishState();
+        }
+        // handle scanning
+        if (scanning) {
+            processScan(WiFi.scanComplete());
         }
     }
-};  // namespace ustd
+
+    void readNetConfig() {
+        long version = config.readLong("net/version", 0);
+        if (version == 0) {
+            if (config.exists("net/SSID")) {
+                // pre version configuration file found
+                migrateNetConfigFrom(config, version);
+                config.clear();
+            }
+        } else if (version < NET_CONFIG_VERSION) {
+            // regular migration
+            migrateNetConfigFrom(config, version);
+            config.clear();
+        }
+
+        // mode and device id
+        mode = getModeFromString(config.readString("net/mode"), AP);
+        deviceID = config.readString("net/deviceid");
+        if (deviceID == "") {
+            // initialize device id to mac address
+            deviceID = hexAddress;
+            config.writeString("net/deviceid", deviceID);
+        }
+
+        // read some cached values
+        reconnectMaxRetries = config.readLong("net/station/maxRetries", 1, 1000000000, 40);
+        connectTimeout = config.readLong("net/station/connectTimeout", 3, 3600, 15) * 1000;
+        bRebootOnContinuedWifiFailure = config.readBool("net/station/rebootOnFailure", true);
+    }
+
+    void migrateNetConfigFrom(JsonFile &sf, long version) {
+        if (version == 0) {
+            // full migration
+            JsonFile nf(false, true);  // no autocommit, force new
+            nf.writeLong("net/version", NET_CONFIG_VERSION);
+            nf.writeString("net/mode", "station");
+            nf.writeString("net/station/SSID", sf.readString("net/SSID"));
+            nf.writeString("net/station/password", sf.readString("net/password"));
+            nf.writeString("net/station/hostname", sf.readString("net/hostname"));
+            ustd::array<JSONVar> services;
+            if (sf.readJsonVarArray("net/services", services)) {
+                for (unsigned int i = 0; i < services.length(); i++) {
+                    DBG("Processing service " + String(i));
+                    if (JSON.typeof(services[i]) == "object") {
+                        if (JSON.typeof(services[i]["timeserver"]) == "string") {
+                            String ntphost = (const char *)(services[i]["timeserver"]);
+                            DBG("Found timeserver host entry: " + ntphost);
+                            JSONVar host;
+                            host[0] = (const char *)ntphost.c_str();
+                            nf.writeJsonVar("net/services/ntp/host", host);
+                        } else if (JSON.typeof(services[i]["dstrules"]) == "string") {
+                            String dstrules = (const char *)(services[i]["dstrules"]);
+                            DBG("Found timeserver dstrules entry: " + dstrules);
+                            nf.writeString("net/services/ntp/dstrules", dstrules);
+                        } else if (JSON.typeof(services[i]["mqttserver"]) == "string") {
+                            String mqttserver = (const char *)(services[i]["mqttserver"]);
+                            DBG("Found mqtt host entry: " + mqttserver);
+                            JsonFile mqtt;
+                            mqtt.writeString("mqtt/host", mqttserver);
+                        }
+                    } else {
+                        DBG("Wrong service entry");
+                    }
+                }
+            }
+            nf.commit();
+        }
+        // else if ( version == 1 ) {
+
+        // }
+        // else if ( version == 2 ) {
+
+        // }
+    }
+
+    void startServices() {
+        wifiSetMode(mode);
+        switch (mode) {
+        case Netmode::OFF:
+            DBG("Network is disabled");
+            break;
+        case Netmode::AP:
+            if (startAP()) {
+                curState = Netstate::SERVING;
+            }
+            break;
+        case Netmode::STATION:
+            if (startSTATION()) {
+                curState = Netstate::CONNECTINGAP;
+            }
+            break;
+        case Netmode::BOTH:
+            if (startSTATION()) {
+                curState = Netstate::CONNECTINGAP;
+                startAP(false);
+            }
+            break;
+        }
+    }
+
+    bool startAP(bool setHostname = true) {
+        // configure hostname
+        String hostname = replaceVars(config.readString("net/ap/hostname", "muwerk-${macls}"));
+        if (!hostname.length()) {
+            hostname = replaceVars("muwerk-${macls}");
+        }
+        if (setHostname) {
+            DBG("Hostname := " + hostname);
+            wifiSetHostname(hostname);
+        }
+
+        // configure network
+        String address = config.readString("net/ap/address");
+        String netmask = config.readString("net/ap/netmask");
+        String gateway = config.readString("net/ap/gateway");
+        if (address.length() & netmask.length()) {
+            wifiSoftAPConfig(address, gateway, netmask);
+        }
+
+        // configure AP
+        String SSID = replaceVars(config.readString("net/ap/SSID", "muwerk-${macls}"));
+        if (!SSID.length()) {
+            SSID = replaceVars("muwerk-${macls}");
+        }
+        String password = config.readString("net/ap/password");
+        unsigned int channel = config.readLong("net/ap/channel", 1, 13, 1);
+        bool hidden = config.readBool("net/ap/hidden", false);
+        unsigned int maxConnections = config.readLong("net/ap/maxConnections", 1, 8, 4);
+        connections = 0;
+
+        DBG("Starting AP for SSID " + SSID + "...");
+        if (wifiSoftAP(SSID, password, channel, hidden, maxConnections)) {
+            if (setHostname) {
+                wifiSetHostname(hostname);
+            }
+            DBG("AP Serving");
+            return true;
+        } else {
+            DBG("AP Failed");
+            return false;
+        }
+    }
+
+    bool startSTATION() {
+        // configure hostname
+        String hostname = replaceVars(config.readString("net/station/hostname"));
+        if (hostname) {
+            wifiSetHostname(hostname);
+        }
+
+        // get connection parameters
+        String SSID = config.readString("net/station/SSID");
+        String password = config.readString("net/station/password");
+
+        // get network parameter
+        ustd::array<String> dns;
+        String address = config.readString("net/station/address");
+        String netmask = config.readString("net/station/netmask");
+        String gateway = config.readString("net/station/gateway");
+        config.readStringArray("net/services/dns/host", dns);
+
+        DBG("Connecting AP with SSID " + config.readString("net/station/SSID"));
+
+        if (wifiBegin(SSID, password)) {
+            deathCounter = reconnectMaxRetries;
+            initialCounter = reconnectMaxRetries;
+            bOnceConnected = false;
+            curState = CONNECTINGAP;
+            conTime = millis();
+            if (!wifiConfig(address, gateway, netmask, dns)) {
+                DBG("Failed to set station mode configuration");
+            }
+            if (hostname) {
+                wifiSetHostname(hostname);
+            }
+            configureTime();
+            return true;
+        }
+        return false;
+    }
+
+    void configureStation() {
+    }
+
+    void configureTime() {
+        ustd::array<String> ntpHosts;
+        String ntpDstRules = config.readString("net/services/ntp/dstrules");
+        config.readStringArray("net/services/ntp/host", ntpHosts);
+
+        if (ntpDstRules.length() && ntpHosts.length()) {
+            // configure ntp servers AND TZ variable
+            configTzTime(ntpDstRules.c_str(), ntpHosts[0].c_str(),
+                         ntpHosts.length() > 1 ? ntpHosts[1].c_str() : nullptr,
+                         ntpHosts.length() > 2 ? ntpHosts[2].c_str() : nullptr);
+        } else if (ntpHosts.length()) {
+            // configure ntp servers without TZ variable
+            configTime(0, 0, ntpHosts[0].c_str(),
+                       ntpHosts.length() > 1 ? ntpHosts[1].c_str() : nullptr,
+                       ntpHosts.length() > 2 ? ntpHosts[2].c_str() : nullptr);
+        } else if (ntpDstRules.length()) {
+            // configure only TZ variable
+            setenv("TZ", ntpDstRules.c_str(), 3);
+        } else {
+            // take from RTC?
+        }
+    }
+
+    void publishState() {
+        JSONVar net;
+
+        net["mode"] = getStringFromMode(mode);
+        net["mac"] = macAddress;
+
+        switch (curState) {
+        case NOTCONFIGURED:
+            net["state"] = "notconfigured";
+            break;
+        case CONNECTINGAP:
+            net["state"] = "connectingap";
+            net["SSID"] = config.readString("net/station/SSID");
+            break;
+        case CONNECTED:
+            net["state"] = "connected";
+            net["SSID"] = config.readString("net/station/SSID");
+            net["hostname"] = wifiGetHostname();
+            net["ip"] = WiFi.localIP().toString();
+            break;
+        case SERVING:
+            net["state"] = "serving";
+            net["hostname"] = wifiGetHostname();
+            break;
+        default:
+            net["state"] = "undefined";
+            break;
+        }
+        if (mode == Netmode::AP || mode == Netmode::BOTH) {
+            net["ap"]["SSID"] = replaceVars(config.readString("net/ap/SSID", "muwerk-${macls}"));
+            net["ap"]["ip"] = WiFi.softAPIP().toString();
+            net["ap"]["mac"] = WiFi.softAPmacAddress();
+            net["ap"]["connections"] = (int)connections;
+        }
+        String json = JSON.stringify(net);
+        pSched->publish("net/network", json);
+    }
+
+    static String shift(String &args, char separator = ' ', String defValue = "") {
+        /*! Extract the first arg from the supplied args
+         * @param args The string object from which to shift out an argument
+         * @param separator The separator character used for the shift operation
+         * @param defValue (optional, default empty string) Default value to return if no more
+         * args
+         * @return The extracted arg
+         */
+        if (args == "") {
+            return defValue;
+        }
+        int ind = args.indexOf(separator);
+        String ret = defValue;
+        if (ind == -1) {
+            ret = args;
+            args = "";
+        } else {
+            ret = args.substring(0, ind);
+            args = args.substring(ind + 1);
+            args.trim();
+        }
+        return ret;
+    }
+
+    void requestScan(String scantype = "async") {
+        bool async = true;
+        bool hidden = false;
+        for (String arg = shift(scantype, ','); arg.length(); arg = shift(scantype, ',')) {
+            arg.toLowerCase();
+            if (arg == "sync") {
+                async = false;
+            } else if (arg == "async") {
+                async = true;
+            } else if (arg == "hidden") {
+                hidden = true;
+            }
+        }
+
+        processScan(WiFi.scanNetworks(async, hidden));
+    }
+
+    void processScan(int result) {
+        switch (result) {
+        case WIFI_SCAN_RUNNING:
+            if (!scanning) {
+                DBG("WiFi scan running...");
+                scanning = true;
+            }
+            break;
+        case WIFI_SCAN_FAILED:
+            DBG("WiFi scan FAILED.");
+            publishScan(result);
+            scanning = false;
+        case 0:
+            DBG("WiFi scan succeeded: No network found.");
+            scanning = false;
+            publishScan(result);
+            break;
+        default:
+            DBGF("WiFi scan succeeded: %u networks found.\r\n", result);
+            scanning = false;
+            publishScan(result);
+        }
+    }
+
+    void publishScan(int result) {
+        JSONVar res;
+
+        res["result"] = result < 0 ? "error" : "ok";
+        res["networks"] = JSON.parse("[]");
+
+        for (int i = 0; i < result; i++) {
+            JSONVar network;
+
+            network["ssid"] = WiFi.SSID(i);
+            network["rssi"] = WiFi.RSSI(i);
+            network["channel"] = WiFi.channel(i);
+            network["encryption"] = getStringFromEncryption(WiFi.encryptionType(i));
+            network["bssid"] = WiFi.BSSIDstr(i);
+#ifndef __ESP32__
+            network["hidden"] = WiFi.isHidden(i);
+#endif
+            res["networks"][i] = network;
+        }
+        pSched->publish("net/networks", JSON.stringify(res));
+    }
+
+    void setLed(bool on) {
+        if (signalLed != 0xff) {
+            if (signalLogic) {
+                digitalWrite(signalLed, on ? HIGH : LOW);
+            } else {
+                digitalWrite(signalLed, on ? LOW : HIGH);
+            }
+        }
+    }
+
+    String replaceVars(String val) {
+        val.replace("${mac}", hexAddress);
+        val.replace("${macls}", hexAddress.substring(6));
+        val.replace("${macfs}", hexAddress.substring(0, 5));
+        return val;
+    }
+
+    void updateMacAddr() {
+        WiFiMode_t original = WiFi.getMode();
+        WiFi.mode(WIFI_AP_STA);
+        apmAddress = WiFi.softAPmacAddress();
+        macAddress = WiFi.macAddress();
+        hexAddress = macAddress;
+        hexAddress.replace(":", "");
+        WiFi.mode(original);
+    }
+
+    Netmode getModeFromString(String val, Netmode defVal = AP) {
+        val.toLowerCase();
+        if (val == "ap") {
+            return AP;
+        } else if (val == "station") {
+            return STATION;
+        } else if (val == "both") {
+            return BOTH;
+        } else {
+            return defVal;
+        }
+    }
+
+    const char *getStringFromEncryption(int encType) {
+        // read the encryption type and print out the name:
+#if !defined(__ESP32__)
+        switch (encType) {
+        case ENC_TYPE_WEP:
+            return "WEP";
+        case ENC_TYPE_TKIP:
+            return "WPA";
+        case ENC_TYPE_CCMP:
+            return "WPA2";
+        case ENC_TYPE_NONE:
+            return "None";
+        case ENC_TYPE_AUTO:
+            return "Auto";
+        default:
+            return "unknown";
+        }
+#else
+        switch (encType) {
+        case WIFI_AUTH_OPEN:
+            return "None";
+        case WIFI_AUTH_WEP:
+            return "WEP";
+        case WIFI_AUTH_WPA_PSK:
+            return "WPA_PSK";
+        case WIFI_AUTH_WPA2_PSK:
+            return "WPA2_PSK";
+        case WIFI_AUTH_WPA_WPA2_PSK:
+            return "WPA_WPA2_PSK";
+        case WIFI_AUTH_WPA2_ENTERPRISE:
+            return "WPA2_ENTERPRISE";
+        default:
+            return "unknown";
+        }
+#endif
+    }
+
+    String getStringFromMode(Netmode val) {
+        switch (val) {
+        case AP:
+            return "ap";
+        case STATION:
+            return "station";
+        case BOTH:
+            return "both";
+        default:
+            return "ap";
+        }
+    }
+
+    String getStringFromState(Netstate val) {
+        switch (val) {
+        case NOTDEFINED:
+            return "NOTDEFINED";
+        case NOTCONFIGURED:
+            return "NOTCONFIGURED";
+        case SERVING:
+            return "SERVING";
+        case CONNECTINGAP:
+            return "CONNECTINGAP";
+        case CONNECTED:
+            return "CONNECTED";
+        default:
+            return "UNKNOWN";
+        }
+    }
+    static String wifiGetHostname() {
+#if defined(__ESP32__)
+        return WiFi.getHostname();
+#else
+        return WiFi.hostname();
+#endif
+    }
+
+    static void wifiSetHostname(String hostname) {
+#if defined(__ESP32__)
+        WiFi.setHostname(hostname.c_str());
+#else
+        WiFi.hostname(hostname.c_str());
+#endif
+    }
+
+    static bool wifiSoftAP(String ssid, String passphrase, unsigned int channel, bool hidden,
+                           unsigned int max_connection) {
+#if defined(__ESP32__)
+        return WiFi.softAP(ssid.c_str(), passphrase.c_str(), channel, hidden, max_connection);
+#else
+        return WiFi.softAP(ssid, passphrase, channel, hidden, max_connection);
+#endif
+    }
+
+    static bool wifiSoftAPConfig(String address, String gateway, String netmask) {
+        IPAddress addr;
+        IPAddress gate;
+        IPAddress mask;
+        addr.fromString(address);
+        mask.fromString(netmask);
+        if (gateway.length()) {
+            gate.fromString(gateway);
+        }
+        return WiFi.softAPConfig(addr, gate, mask);
+    }
+
+    static bool wifiConfig(String address, String gateway, String netmask,
+                           ustd::array<String> &dns) {
+        IPAddress addr;
+        IPAddress gate;
+        IPAddress mask;
+        IPAddress dns1;
+        IPAddress dns2;
+        if (address.length() && netmask.length()) {
+            DBG("Setting static ip: " + address + " " + netmask);
+            addr.fromString(address);
+            mask.fromString(netmask);
+        }
+        if (gateway.length()) {
+            DBG("Setting static gateway: " + gateway);
+            gate.fromString(gateway);
+        }
+        if (dns.length() > 0) {
+            DBG("Setting dns server 1: " + String(dns[0]));
+            dns1.fromString(dns[0]);
+        }
+        if (dns.length() > 1) {
+            DBG("Setting dns server 2: " + String(dns[1]));
+            dns2.fromString(dns[1]);
+        }
+        return WiFi.config(addr, gate, mask, dns1, dns2);
+    }
+
+    static bool wifiBegin(String ssid, String passphrase) {
+#ifdef __ESP32__
+        return WiFi.begin(ssid.c_str(), passphrase.c_str());
+#else
+        return WiFi.begin(ssid, passphrase);
+#endif
+    }
+
+    static void wifiSetMode(Netmode nm) {
+        switch (nm) {
+        case OFF:
+            WiFi.mode(WIFI_OFF);
+            break;
+        default:
+        case AP:
+            WiFi.mode(WIFI_AP);
+            break;
+        case STATION:
+            WiFi.mode(WIFI_STA);
+            break;
+        case BOTH:
+            WiFi.mode(WIFI_AP_STA);
+            break;
+        }
+    }
+};  // class Net
 }  // namespace ustd
 
 // #endif  // defined(__ESP__)
