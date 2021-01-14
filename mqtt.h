@@ -293,6 +293,42 @@ class Mqtt {
         return false;
     }
 
+    bool incomingBlockSet(String topic) {
+        /*! Block a topic-wildcard from being published to the internal scheduler
+         *
+         * @param topic An mqtt topic wildcard for topics that should not be
+         * forwarded from external mqtt server to the muwerk scheduler. This can be
+         * used to block any incoming messages according to their topic.
+         * @return true on success, false if entry already exists, or couldn't be added.
+         */
+        for (unsigned int i = 0; i < incomingBlockList.length(); i++) {
+            if (incomingBlockList[i] == topic)
+                return false;
+        }
+        if (incomingBlockList.add(topic) == -1)
+            return false;
+        return true;
+    }
+
+    bool incomingBlockRemove(String topic) {
+        /*! Unblock a topic-wildcard from being received from external mqtt server
+         *
+         * @param topic An mqtt topic wildcard for topics that should again be
+         * forwarded internally to muwerk. Unblock only removes a a block identical to
+         * the given topic. So topic must be identical to a topic (wildcard) that
+         * has been used with 'incomingBlockSet()'.
+         * @return true on success, false if no corresponding block could be found.
+         */
+        for (unsigned int i = 0; i < incomingBlockList.length(); i++) {
+            if (incomingBlockList[i] == topic) {
+                if (!incomingBlockList.erase(i))
+                    return false;
+                return true;
+            }
+        }
+        return false;
+    }
+
   private:
     bool bWarned = false;
     void loop() {
@@ -372,8 +408,14 @@ class Mqtt {
             free(szBuffer);
         }
         topic = String(ctopic);
+        for (unsigned int i = 0; i < incomingBlockList.length(); i++) {
+            if (Scheduler::mqttmatch(topic, incomingBlockList[i])) {
+                // blocked incoming
+                return;
+            }
+        }
         for (unsigned int i = 0; i < subsList.length(); i++) {
-            if (pSched->mqttmatch(topic, subsList[i])) {
+            if (Scheduler::mqttmatch(topic, subsList[i])) {
                 pSched->publish(topic, msg, "mqtt");
                 return;
             }
@@ -501,6 +543,12 @@ class Mqtt {
         }
         if (topic == "mqtt/outgoingblock/remove") {
             outgoingBlockRemove(msg);
+        }
+        if (topic == "mqtt/incomingblock/set") {
+            incomingBlockSet(msg);
+        }
+        if (topic == "mqtt/incomingblock/remove") {
+            incomingBlockRemove(msg);
         }
     };
 };

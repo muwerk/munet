@@ -119,7 +119,9 @@ pio run -t updatefs
 | topic        | message body   | comment                                |
 | ------------ | -------------- | -------------------------------------- |
 | `mqtt/outgoingblock/set` | `topic[-wildcard` | A topic or a topic wildcard for topics that should not be forwarded to the external mqtt server (e.g. to prevent message spam or routing problems) |
-| `mqtt/outgoingblock/remove` | `topic[-wildcard` | Remove a block on a given topic wildcard. |
+| `mqtt/outgoingblock/remove` | `topic[-wildcard` | Remove a block on a given outgoing topic wildcard. |
+| `mqtt/incomingblock/set` | `topic[-wildcard` | A topic or a topic wildcard for topics that should not be forwarded from the external mqtt server to muwerk. |
+| `mqtt/incomingblock/remove` | `topic[-wildcard` | Remove a block on a given incoming topic wildcard. |
 
 ## History
 
