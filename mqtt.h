@@ -496,10 +496,10 @@ class Mqtt {
 #endif
             }
         }
-        if (topic == 'mqtt/outgoingblock/set') {
+        if (topic == "mqtt/outgoingblock/set") {
             outgoingBlockSet(msg);
         }
-        if (topic == 'mqtt/outgoingblock/remove') {
+        if (topic == "mqtt/outgoingblock/remove") {
             outgoingBlockRemove(msg);
         }
     };
