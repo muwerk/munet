@@ -205,11 +205,11 @@ Message Interface
 
 ### Incoming
 
-| topic                 | message body               | Description
-| --------------------- | -------------------------- | -------------------------
-| `net/network/get`     | <empty>                    | Returns a network information object in json format in a message with topic `net/network`
-| `net/network/control` | start | stop | restart     | Starts, stops or restarts the network
-| `net/networks/get`    | sync | hidden              | Requests a WiFi network scan. The options in the body are optional and can be combined with a `,`
+| topic                 | Description
+| --------------------- | -------------------------------------------------------------------------------------------------------
+| `net/network/get`     | Returns a network information object in json format in a message with topic `net/network`
+| `net/network/control` | Starts, stops or restarts the network (put `start`, `stop` or `restart` in the message body)
+| `net/networks/get`    | Requests a WiFi network scan. The list is returned in a message with topic `net/networks`. The additional options `sync` and/or `hidden` can be sent in the body.
 
 
 ### Outgoing
