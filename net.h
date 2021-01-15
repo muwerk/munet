@@ -41,7 +41,7 @@ used by:
 #include "sensors.h"
 #include "muwerk.h"
 #include "jsonfile.h"
-#include "metronome.h"
+#include "heartbeat.h"
 #include "timeout.h"
 
 namespace ustd {
@@ -125,9 +125,9 @@ class Net {
     Netmode mode;
     Netstate curState;
     Netstate oldState;
-    ustd::metronome statePublisher = 30000;
+    ustd::heartbeat statePublisher = 30000;
     // runtime control - station connection management
-    ustd::metronome connectionMonitor = 1000;
+    ustd::heartbeat connectionMonitor = 1000;
     ustd::timeout connectTimeout = 15000;
     unsigned int reconnectMaxRetries = 40;
     bool bRebootOnContinuedWifiFailure = true;
@@ -233,8 +233,11 @@ class Net {
          * the DHCP server sends information about a valid NTP server, the time is synchronized
          * using the information from that server.
          *
-         * Placeholders are in the form of `${PLACEHOLDER}`. The following placeholders
-         * are supported:
+         * Some of the configuration options support the use of placeholders in order to allow
+         * values that are specific to a certain devince without the need to create separate
+         * configuration files. Placeholders are written in the form of `${PLACEHOLDER}`.
+         *
+         * The following placeholders are currently available:
          * * `mac`: full mac address
          * * `macls`: last 4 digits of mac address
          * * `macfs`: first 4 digits of mac address
@@ -419,11 +422,11 @@ class Net {
         // generate hardcoded configuration
         config.clear(false, true);
         config.writeBool("net/hardcoded", true);
+        config.writeString("net/hostname", hostname);
         config.writeString("net/mode", getStringFromMode(opmode));
         config.writeString("net/deviceid", deviceID);
         config.writeString(prefix + "SSID", SSID);
         config.writeString(prefix + "password", password);
-        config.writeString(prefix + "hostname", hostname);
         config.writeBool("net/station/rebootOnFailure", restart);
     }
 
@@ -468,9 +471,9 @@ class Net {
             ustd::jsonfile nf(false, true);  // no autocommit, force new
             nf.writeLong("net/version", NET_CONFIG_VERSION);
             nf.writeString("net/mode", "station");
+            nf.writeString("net/hostname", sf.readString("net/hostname"));
             nf.writeString("net/station/SSID", sf.readString("net/SSID"));
             nf.writeString("net/station/password", sf.readString("net/password"));
-            nf.writeString("net/station/hostname", sf.readString("net/hostname"));
             ustd::array<JSONVar> services;
             if (sf.readJsonVarArray("net/services", services)) {
                 for (unsigned int i = 0; i < services.length(); i++) {
@@ -567,11 +570,8 @@ class Net {
 
     bool startAP() {
         // configure hostname
-        String hostname = replaceVars(config.readString("net/ap/hostname", "muwerk-${macls}"));
-        if (!hostname.length()) {
-            hostname = replaceVars("muwerk-${macls}");
-        }
-        wifiAPSetHostname(hostname.c_str());
+        String hostname = replaceVars(config.readString("net/hostname", "muwerk-${macls}"));
+        wifiAPSetHostname(hostname);
 
         // configure network
         String address = config.readString("net/ap/address");
@@ -594,7 +594,7 @@ class Net {
 
         DBG("Starting AP with SSID " + SSID + "...");
         if (wifiSoftAP(SSID, password, channel, hidden, maxConnections)) {
-            wifiAPSetHostname(hostname.c_str());
+            wifiAPSetHostname(hostname);
             DBG("AP Serving");
             return true;
         } else {
@@ -605,7 +605,7 @@ class Net {
 
     bool startSTATION() {
         // get connection parameters
-        String hostname = replaceVars(config.readString("net/station/hostname"));
+        String hostname = replaceVars(config.readString("net/hostname"));
         String SSID = config.readString("net/station/SSID");
         String password = config.readString("net/station/password");
 
@@ -693,7 +693,6 @@ class Net {
         if (curState != NOTCONFIGURED && (mode == Netmode::AP || mode == Netmode::BOTH)) {
             net["ap"]["mac"] = WiFi.softAPmacAddress();
             net["ap"]["SSID"] = replaceVars(config.readString("net/ap/SSID", "muwerk-${macls}"));
-            net["ap"]["hostname"] = wifiAPGetHostname();
             net["ap"]["ip"] = WiFi.softAPIP().toString();
             net["ap"]["connections"] = (int)connections;
         }
@@ -880,14 +879,15 @@ class Net {
 #endif
     }
 
-    static void wifiSetHostname(String hostname) {
-        if (hostname.length()) {
-#if defined(__ESP32__)
-            WiFi.setHostname(hostname.c_str());
-#else
-            WiFi.hostname(hostname.c_str());
-#endif
+    void wifiSetHostname(String &hostname) {
+        if (!hostname.length()) {
+            hostname = replaceVars("muwerk-${macls}");
         }
+#if defined(__ESP32__)
+        WiFi.setHostname(hostname.c_str());
+#else
+        WiFi.hostname(hostname.c_str());
+#endif
     }
 
 #if !defined(__ESP32__)
@@ -904,7 +904,10 @@ class Net {
 #endif
     }
 
-    static void wifiAPSetHostname(String hostname) {
+    void wifiAPSetHostname(String &hostname) {
+        if (!hostname.length()) {
+            hostname = replaceVars("muwerk-${macls}");
+        }
 #if defined(__ESP32__)
         WiFi.softAPsetHostname(hostname.c_str());
 #else
@@ -921,7 +924,7 @@ class Net {
 #endif
     }
 
-    static bool wifiSoftAPConfig(String address, String gateway, String netmask) {
+    static bool wifiSoftAPConfig(String &address, String &gateway, String &netmask) {
         IPAddress addr;
         IPAddress gate;
         IPAddress mask;
@@ -933,7 +936,7 @@ class Net {
         return WiFi.softAPConfig(addr, gate, mask);
     }
 
-    static bool wifiConfig(String address, String gateway, String netmask,
+    static bool wifiConfig(String &address, String &gateway, String &netmask,
                            ustd::array<String> &dns) {
         IPAddress addr;
         IPAddress gate;
@@ -960,7 +963,7 @@ class Net {
         return WiFi.config(addr, gate, mask, dns1, dns2);
     }
 
-    static bool wifiBegin(String ssid, String passphrase) {
+    static bool wifiBegin(String &ssid, String &passphrase) {
 #if defined(__ESP32__)
         return WiFi.begin(ssid.c_str(), passphrase.c_str());
 #else
