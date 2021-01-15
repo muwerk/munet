@@ -2,18 +2,18 @@
 
 #pragma once
 
-/*! \mainpage Munet a collection of network libraries for ESP8266 and ESP32
+/*! \mainpage munet is a collection of network libraries for ESP8266 and ESP32
 based on the cooperative scheduler muwerk.
 
 \section Introduction
 
 munet implements the classes:
 
-* * \ref ustd::Net WLAN client connectivity and NTP time synchronization
+* * \ref ustd::Net WiFi client connectivity and NTP time synchronization
 * * \ref ustd::Ota Over-the-air (OTA) software update
 * * \ref ustd::Mqtt connection to MQTT server
 
-libraries are header-only and should work with any c++11 compiler
+Libraries are header-only and should work with any c++11 compiler and
 and support platforms esp8266 and esp32.
 
 This library requires the libraries ustd, muwerk and requires a
@@ -113,11 +113,8 @@ class Net {
     bool signalLogic;
 
     // active configuration
+    Netmode defaultMode;
     ustd::jsonfile config;
-
-    // cached configuration values
-    unsigned int reconnectMaxRetries = 40;
-    bool bRebootOnContinuedWifiFailure = true;
 
     // hardware info
     String apmAddress;
@@ -132,6 +129,8 @@ class Net {
     // runtime control - station connection management
     ustd::metronome connectionMonitor = 1000;
     ustd::timeout connectTimeout = 15000;
+    unsigned int reconnectMaxRetries = 40;
+    bool bRebootOnContinuedWifiFailure = true;
     bool bOnceConnected;
     int initialCounter;
     int deathCounter;
@@ -181,25 +180,25 @@ class Net {
         }
     }
 
-    void begin(Scheduler *pScheduler, Netmode mode = AP) {
+    void begin(Scheduler *pScheduler, Netmode opmode = AP) {
         /*! Starts the network based on the stored configuration.
          *
-         * This function starts the network using the information stored into the
-         * configuration file /net.json. Depending on how the network mode is configured,
-         * it may be idle (since disabled), running as an access point or as a station or
-         * both.
+         * This method starts the network using the information stored into the configuration
+         * file /net.json. Depending on how the network mode is configured, it may be idle (since
+         * disabled), running as an access point or as a station or both.
          *
-         * Other muwerk task can subscribe to topic 'net/network' to receive
+         * Other muwerk task can subscribe to topic '`net/network`' to receive
          * information about network connection states.
          *
          * @param _pSched Pointer to the muwerk scheduler.
-         * @param mode (optional, default AP) Default network mode if none is configured
+         * @param opmode (optional, default AP) Default operation mode if none is configured
          *
          * See <a href="https://github.com/muwerk/munet/blob/master/README.md">for a detailed
          * description of all network configuration options.</a>
          */
+        defaultMode = opmode;
         initHardwareAddresses();
-        readNetConfig(mode);
+        readNetConfig();
         initScheduler(pScheduler);
         startServices();
     }
@@ -209,11 +208,11 @@ class Net {
                bool restartOnMultipleFailures = true) {
         /*! Starts the network based on the supplied configuration.
          *
-         * This function starts the network using the supplied information. Depending on how the
-         * network mode is configured, it may be idle (since disabled), running as an access point
-         * or as a station or both.
+         * This function starts the network using the supplied information and is intended for
+         * projects with hardcoded network configuration. This method allows only to configure
+         * the network running as an access point or as a station.
          *
-         * Other muwerk task can subscribe to topic 'net/network' to receive
+         * Other muwerk task can subscribe to topic '`net/network`' to receive
          * information about network connection states.
          *
          * @param _pSched Pointer to the muwerk scheduler.
@@ -234,7 +233,7 @@ class Net {
          * the DHCP server sends information about a valid NTP server, the time is synchronized
          * using the information from that server.
          *
-         * Placeholders are in the form of ${PLACEHOLDER}. The following placeholders
+         * Placeholders are in the form of `${PLACEHOLDER}`. The following placeholders
          * are supported:
          * * `mac`: full mac address
          * * `macls`: last 4 digits of mac address
@@ -268,40 +267,45 @@ class Net {
             [this](String topic, String msg, String originator) { this->requestScan(msg); });
     }
 
-    void control(String msg) {
-        if (msg == "on") {
-            if (curState == Netstate::NOTDEFINED || curState == Netstate::NOTCONFIGURED) {
-                startServices();
-            }
-        } else if (msg == "off") {
-            stopServices();
-        } else if (msg == "restart") {
-            stopServices();
-            pSched->publish("net/network/control", "start");
-        }
-    }
-
     void loop() {
         if (mode == Netmode::OFF) {
             return;
         }
+        // radio specific state handling
+        switch (curState) {
+        case NOTDEFINED:
+        case NOTCONFIGURED:
+            // states with inactive radio
+            break;
+        case CONNECTINGAP:
+        case CONNECTED:
+        case SERVING:
+            // states with active radio
+            unsigned int conns = WiFi.softAPgetStationNum();
+            if (conns != connections) {
+                connections = conns;
+                pSched->publish("net/connections", String(connections));
+            }
+            break;
+        }
+        // individual per state handling
         switch (curState) {
         case NOTDEFINED:
             break;
         case NOTCONFIGURED:
-            if (connectionMonitor.beat()) {
+            if (statePublisher.beat()) {
                 publishState();
             }
             break;
         case CONNECTINGAP:
             if (WiFi.status() == WL_CONNECTED) {
                 curState = CONNECTED;
-                DBG("Connected to AP with ip address " + WiFi.localIP().toString());
+                DBG("Connected to WiFi with ip address " + WiFi.localIP().toString());
                 configureTime();
                 return;
             }
             if (connectTimeout.test()) {
-                DBG("Timout connecting to AP " + config.readString("net/station/SSID"));
+                DBG("Timout connecting to WiFi " + WiFi.SSID());
                 if (bOnceConnected) {
                     if (bRebootOnContinuedWifiFailure) {
                         --deathCounter;
@@ -351,16 +355,12 @@ class Net {
             }
             break;
         case SERVING:
-            unsigned int conns = WiFi.softAPgetStationNum();
-            if (conns != connections) {
-                connections = conns;
-                pSched->publish("net/connections", String(connections));
-            }
             if (statePublisher.beat()) {
                 publishState();
             }
             break;
         }
+
         // react to state transition
         if (curState != oldState) {
             DBGP("Net State ");
@@ -370,21 +370,17 @@ class Net {
             if (curState == CONNECTED) {
                 DBGP(", RSSI: ");
                 DBG(WiFi.RSSI());
-                config.clear();
             } else {
                 DBG();
             }
             switch (curState) {
             case SERVING:
             case CONNECTED:
-                if (signalLed != 0xff) {
-                    setLed(true);  // Turn the LED on
-                }
+                cleanupNetConfig();
+                setLed(true);  // Turn the LED on
                 break;
             default:
-                if (signalLed != 0xff) {
-                    setLed(false);  // Turn the LED off
-                }
+                setLed(false);  // Turn the LED off
                 break;
             }
             oldState = curState;
@@ -396,17 +392,33 @@ class Net {
         }
     }  // namespace ustd
 
+    void control(String msg) {
+        msg.toLowerCase();
+        if (msg == "on" || msg == "start") {
+            if (curState == Netstate::NOTDEFINED || curState == Netstate::NOTCONFIGURED) {
+                startServices();
+            }
+        } else if (msg == "off" || msg == "stop") {
+            stopServices();
+        } else if (msg == "restart") {
+            stopServices();
+            pSched->publish("net/network/control", "start");
+        }
+    }
+
     void initNetConfig(String SSID, String password, String hostname, Netmode opmode,
                        bool restart) {
+        // hardcoded network configuration provided by program code
         String prefix = "net/" + getStringFromMode(opmode) + "/";
 
-        // prepare data
+        // prepare mode and device id
         mode = opmode;
         deviceID = macAddress;
         deviceID.replace(":", "");
 
-        // never ever save this to anywhere
+        // generate hardcoded configuration
         config.clear(false, true);
+        config.writeBool("net/hardcoded", true);
         config.writeString("net/mode", getStringFromMode(opmode));
         config.writeString("net/deviceid", deviceID);
         config.writeString(prefix + "SSID", SSID);
@@ -415,8 +427,8 @@ class Net {
         config.writeBool("net/station/rebootOnFailure", restart);
     }
 
-    void readNetConfig(Netmode defaultMode) {
-        // handle config version
+    void readNetConfig() {
+        // handle config version migrations
         long version = config.readLong("net/version", 0);
         if (version == 0) {
             if (config.exists("net/SSID")) {
@@ -430,7 +442,7 @@ class Net {
             config.clear();
         }
 
-        // mode and device id
+        // prepare mode and device id
         mode = getModeFromString(config.readString("net/mode"), defaultMode);
         deviceID = config.readString("net/deviceid");
         if (deviceID == "") {
@@ -441,9 +453,18 @@ class Net {
         }
     }
 
+    void cleanupNetConfig() {
+        // free up memory - we reload the configuration on demand...
+        if (!config.readBool("net/hardcoded", false)) {
+            // but only if the configuration is NOT hardcoded...
+            DBG("Freeing configuration...");
+            config.clear();
+        }
+    }
+
     void migrateNetConfigFrom(ustd::jsonfile &sf, long version) {
         if (version == 0) {
-            // full migration
+            // convert the oldest version to the current version
             ustd::jsonfile nf(false, true);  // no autocommit, force new
             nf.writeLong("net/version", NET_CONFIG_VERSION);
             nf.writeString("net/mode", "station");
@@ -478,15 +499,15 @@ class Net {
             }
             nf.commit();
         }
+        // implement here future conversions
         // else if ( version == 1 ) {
-
         // }
         // else if ( version == 2 ) {
-
         // }
     }
 
     void startServices() {
+        mode = getModeFromString(config.readString("net/mode"), defaultMode);
         wifiSetMode(mode);
         switch (mode) {
         case Netmode::OFF:
@@ -507,9 +528,13 @@ class Net {
         case Netmode::BOTH:
             if (startSTATION()) {
                 curState = Netstate::CONNECTINGAP;
-                startAP(false);
+                startAP();
             }
             break;
+        }
+        if (curState == Netstate::NOTCONFIGURED) {
+            DBG("Failed to start network services");
+            cleanupNetConfig();
         }
     }
 
@@ -537,18 +562,16 @@ class Net {
         connections = 0;
         curState = Netstate::NOTCONFIGURED;
         wifiSetMode(Netmode::OFF);
+        cleanupNetConfig();
     }
 
-    bool startAP(bool setHostname = true) {
+    bool startAP() {
         // configure hostname
         String hostname = replaceVars(config.readString("net/ap/hostname", "muwerk-${macls}"));
         if (!hostname.length()) {
             hostname = replaceVars("muwerk-${macls}");
         }
-        if (setHostname) {
-            DBG("Hostname := " + hostname);
-            wifiSetHostname(hostname);
-        }
+        wifiAPSetHostname(hostname.c_str());
 
         // configure network
         String address = config.readString("net/ap/address");
@@ -571,9 +594,7 @@ class Net {
 
         DBG("Starting AP with SSID " + SSID + "...");
         if (wifiSoftAP(SSID, password, channel, hidden, maxConnections)) {
-            if (setHostname) {
-                wifiSetHostname(hostname);
-            }
+            wifiAPSetHostname(hostname.c_str());
             DBG("AP Serving");
             return true;
         } else {
@@ -600,7 +621,7 @@ class Net {
         reconnectMaxRetries = config.readLong("net/station/maxRetries", 1, 1000000000, 40);
         bRebootOnContinuedWifiFailure = config.readBool("net/station/rebootOnFailure", true);
 
-        DBG("Connecting WiFi with SSID " + SSID);
+        DBG("Connecting WiFi " + SSID);
         wifiSetHostname(hostname);
         if (wifiBegin(SSID, password)) {
             deathCounter = reconnectMaxRetries;
@@ -663,16 +684,17 @@ class Net {
             break;
         case SERVING:
             net["state"] = "serving";
-            net["hostname"] = wifiGetHostname();
+            net["hostname"] = wifiAPGetHostname();
             break;
         default:
             net["state"] = "undefined";
             break;
         }
         if (curState != NOTCONFIGURED && (mode == Netmode::AP || mode == Netmode::BOTH)) {
-            net["ap"]["SSID"] = replaceVars(config.readString("net/ap/SSID", "muwerk-${macls}"));
-            net["ap"]["ip"] = WiFi.softAPIP().toString();
             net["ap"]["mac"] = WiFi.softAPmacAddress();
+            net["ap"]["SSID"] = replaceVars(config.readString("net/ap/SSID", "muwerk-${macls}"));
+            net["ap"]["hostname"] = wifiAPGetHostname();
+            net["ap"]["ip"] = WiFi.softAPIP().toString();
             net["ap"]["connections"] = (int)connections;
         }
         String json = JSON.stringify(net);
@@ -761,11 +783,11 @@ class Net {
     }
 
     void initHardwareAddresses() {
-        WiFiMode_t original = WiFi.getMode();
+        WiFiMode_t currentMode = WiFi.getMode();
         WiFi.mode(WIFI_AP_STA);
         apmAddress = WiFi.softAPmacAddress();
         macAddress = WiFi.macAddress();
-        WiFi.mode(original);
+        WiFi.mode(currentMode);
     }
 
     Netmode getModeFromString(String val, Netmode defVal = AP) {
@@ -848,6 +870,8 @@ class Net {
         }
     }
 
+    // ESP WiFi Abstraction
+
     static String wifiGetHostname() {
 #if defined(__ESP32__)
         return WiFi.getHostname();
@@ -864,6 +888,28 @@ class Net {
             WiFi.hostname(hostname.c_str());
 #endif
         }
+    }
+
+#if !defined(__ESP32__)
+    // since the ESP8266 is not able to manage a hostname for the soft station network,
+    // we need to emulate it
+    static String esp8266APhostname;
+#endif
+
+    static String wifiAPGetHostname() {
+#if defined(__ESP32__)
+        return WiFi.softAPgetHostname();
+#else
+        return Net::esp8266APhostname;
+#endif
+    }
+
+    static void wifiAPSetHostname(String hostname) {
+#if defined(__ESP32__)
+        WiFi.softAPsetHostname(hostname.c_str());
+#else
+        Net::esp8266APhostname = hostname;
+#endif
     }
 
     static bool wifiSoftAP(String ssid, String passphrase, unsigned int channel, bool hidden,
@@ -915,7 +961,7 @@ class Net {
     }
 
     static bool wifiBegin(String ssid, String passphrase) {
-#ifdef __ESP32__
+#if defined(__ESP32__)
         return WiFi.begin(ssid.c_str(), passphrase.c_str());
 #else
         return WiFi.begin(ssid, passphrase);
@@ -940,6 +986,13 @@ class Net {
         }
     }
 };
+
+#if !defined(__ESP32__)
+// since the ESP8266 is not able to manage a hostname for the soft station network,
+// we need to emulate it
+String Net::esp8266APhostname = "";
+#endif
+
 }  // namespace ustd
 
 // #endif  // defined(__ESP__)

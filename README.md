@@ -1,9 +1,12 @@
-# munet
+munet
+=====
 
 [![ESP12e build](https://travis-ci.org/muwerk/munet.svg?branch=master)](https://travis-ci.org/muwerk/munet)
 [![Dev Docs](https://img.shields.io/badge/docs-dev-blue.svg)](https://muwerk.github.io/munet/docs/index.html)
 
-The munet libraries use the [muwerk scheduler](https://github.com/muwerk/muwerk) to provide a comprehensive set of network functionality: WLAN connection, NTP time sync, OTA software update and MQTT communication for ESP8266 and ESP32 chips with a minimum of code:
+The munet libraries use the [muwerk scheduler](https://github.com/muwerk/muwerk) to provide a
+comprehensive set of network functionality: WiFi connection, Access Point Mode, NTP time sync,
+OTA software update and MQTT communication for ESP8266 and ESP32 chips with a minimum of code:
 
 ```c++
 #define __ESP__   // Platform define, add #define __ESP32__ for ESP32 (see dependencies)
@@ -20,7 +23,7 @@ ustd::Ota ota;
 void appLoop();
 
 void setup() {
-    net.begin(&sched);  // connect to WLAN and sync NTP time, credentials read from ESP file system, (s.b.)
+    net.begin(&sched);  // connect to WiFi and sync NTP time, credentials read from ESP file system, (s.b.)
     mqtt.begin(&sched); // connect to MQTT server
     ota.begin(&sched);  // enable OTA updates
 
@@ -40,19 +43,28 @@ void loop() {
 
 The library provides:
 
-- Network WLAN access, using credentials read from LittleFS/SPIFFS file system (s.b.), automatic connection to a WLAN is established. The library handles re-connect and error recovery gracefully.
+- WiFi station, acces point or both using configuration data from LittleFS/SPIFFS file system (s.b.).
+  Connection to the WiFi network is established automatically. The library handles reconnect and error
+  recovery gracefully.
 - Over-the-air (OTA) update is supported with one line of code [optional]
 - Time synchronization with NTP servers, including daylight saving handling [optional]
-- Connection to an MQTT server (via PubSubClient) [optional] This transparently connects the pub/sub inter-task communication that is provided by the muwerk scheduler with extern MQTT publishers and subscribers. Messages between muwerk tasks are published to the external MQTT server, and muwerk tasks can transparently subscribe to both other tasks on the same ESP and external topics via the MQTT interface.
+- Connection to an MQTT server (via PubSubClient) [optional] This transparently connects the pub/sub
+  inter-task communication that is provided by the muwerk scheduler with extern MQTT publishers and
+  subscribers. Messages between muwerk tasks are published to the external MQTT server, and muwerk
+  tasks can transparently subscribe to both other tasks on the same ESP and external topics via the
+  MQTT interface.
 
-## Dependencies
+Dependencies
+------------
 
-Munet relies only on:
+munet relies only on:
 
-- [ustd](https://github.com/muwerk/ustd). Check documentation for required [platform defines](https://github.com/muwerk/ustd/blob/master/README.md).
+- [ustd](https://github.com/muwerk/ustd). Check documentation for required
+  [platform defines](https://github.com/muwerk/ustd/blob/master/README.md).
 - [muwerk](https://github.com/muwerk/ustd)
 - [PubSubClient](https://github.com/knolleary/pubsubclient)
-- [Arduino_JSON](https://github.com/arduino-libraries/Arduino_JSON). **Note**: Earlier versions used a different lib: ArduinoJson.
+- [Arduino_JSON](https://github.com/arduino-libraries/Arduino_JSON).
+  **Note**: Earlier versions used a different lib: ArduinoJson.
 
 | munet component | depends on ustd | muwerk | Arduino_JSON | PubSubClient |
 | --------------- | --------------- | ------ | ------------ | ------------ |
@@ -60,45 +72,70 @@ Munet relies only on:
 | Ota.h           | x               | x      | x            |              |
 | Mqtt.h          | x               | x      | x            | x            |
 
-## Configuration
+Configuration
+-------------
 
-The network configuration is stored in a `json` formatted file `net.json` in the LittleFS/SPIFFS file system of the ESP chip. Create a copy in your local file system of your project at `data/net.json`.
+The network configuration is stored in a `json` formatted file `net.json` in the LittleFS/SPIFFS
+file system of the ESP chip. Create a copy in your local file system of your project at
+`data/net.json`.
 
-'''Note:''' This project is currently preparing to move from SPIFFS (deprecated) to LittleFS. To continue
-to use SPIFFS, define `__USE_OLD_FS__`. In order to activate LittleFS, your `platformio.ini` currently
-needs to contain:
+'''Note:''' This project is currently preparing to move from SPIFFS (deprecated) to LittleFS. To
+continue to use SPIFFS, define `__USE_OLD_FS__`. In order to activate LittleFS, your `platformio.ini`
+currently needs to contain:
 
 ```
 board_build.filesystem = littlefs
 ```
 
-SPIFFS and LittleFS are not compatible, if the library is updated, a new file system needs to be created and upload with `pio run -t buildfs` and `pio run -t uploadfs`.
+SPIFFS and LittleFS are not compatible, if the library is updated, a new file system needs to be
+created and upload with `pio run -t buildfs` and `pio run -t uploadfs`.
 
-Since ESP32 currently does not (yet) support LittleFS, ESP32 projects require the define `__USE_OLD_FS__` to continue to use SPIFFS for the time being.
+Since ESP32 currently does not (yet) support LittleFS, ESP32 projects require the define
+`__USE_OLD_FS__` to continue to use SPIFFS for the time being.
 
 ### Sample `net.json`
 
 ```json
 {
-  "SSID": "my-network-SSID",
-  "password": "myS3cr3t",
-  "hostname": "myhost",
-  "services": [
-    { "timeserver": "time.nist.gov" },
-    { "dstrules": "CET-1CEST,M3.5.0,M10.5.0/3" },
-    { "mqttserver": "my.mqtt.server" }
-  ]
+    "version": 1,
+    "mode": "station",
+    "station": {
+        "SSID": "my-network-SSID",
+        "password": "myS3cr3t",
+        "hostname": "myhost",
+        "address": "",
+        "netmask": "",
+        "gateway": "",
+        "maxRetries": 40,
+        "connectTimeout": 15,
+        "rebootonFailure": true
+    },
+    "ap": {
+        "SSID": "muwerk-${macls}",
+        "password": "",
+        "hostname": "muwerk-${macls}",
+        "address": "",
+        "netmask": "",
+        "gateway": "",
+        "channel": 1,
+        "hidden": false
+    },
+    "services": {
+        "dns": {
+            "host": []
+        },
+        "ntp": {
+            "host": [
+                "time.nist.gov",
+                "ptbtime1.ptb.de",
+                "ptbtime2.ptb.de",
+                "ptbtime3.ptb.de"
+            ],
+            "dstrules": "CET-1CEST,M3.5.0,M10.5.0/3"
+        }
+    }
 }
 ```
-
-| Field      | Usage                                                                                                                  |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------- |
-| SSID       | Network name of the wireless network the ESP will join                                                                 |
-| password   | Wireless network password                                                                                              |
-| hostname   | Hostname the ESP will try to register at the DHCP server                                                               |
-| timeserver | optional address of an NTP time server, if given, ESP time will be synchronized                                        |
-| dstrules   | optional timezone and daylight saving rules in [unix format](https://mm.icann.org/pipermail/tz/2016-April/023570.html) |
-| mqttserver | optional address of MQTT server ESP connects to                                                                        |
 
 Using platformio, `data/net.json` is saved to the ESP chip using:
 
@@ -107,7 +144,75 @@ pio run -t buildfs
 pio run -t updatefs
 ```
 
-#### Internal Messages sent by munet to other muwerk processes:
+#### Top Level Configuration Options
+
+| Field        | Usage                                                                                                       |
+| ------------ | ----------------------------------------------------------------------------------------------------------- |
+| `version`    | The configuration format version number. Current version is `1`. This field is mandatory.                   |
+| `deviceID`   | Unique device ID - will be automatically generated and saved on first start. Useful when replacing a device |
+| `mode`       | Operating mode. Can be: `off`, `ap`, `station` or `both`. Default is `ap`                                   |
+| `ap`         | Configuration options for access point mode. See description below.                                         |
+| `station`    | Configuration options for network station mode. See description below.                                      |
+| `services`   | Configuration options for network services. See description below.                                          |
+
+#### Configuration Options for Access Point Mode
+
+| Field        | Usage                                                                                                       |
+| ------------ | ----------------------------------------------------------------------------------------------------------- |
+| `SSID`       | Network name of the wireless network the ESP will host                                                      |
+| `password`   | Wireless network password                                                                                   |
+| `hostname`   | Hostname the device will use and report to other services.                                                  |
+| `address`    | TBD...                                                                                                      |
+| `netmask`    | TBD...                                                                                                      |
+| `gateway`    | TBD...                                                                                                      |
+| `channel`    | TBD...                                                                                                      |
+| `hidden`     | TBD...                                                                                                      |
+
+
+#### Configuration Options for Network Station Mode
+
+| Field             | Usage                                                                                                       |
+| ----------------- | ----------------------------------------------------------------------------------------------------------- |
+| `SSID`            | Network name of the wireless network the ESP will join                                                      |
+| `password`        | Wireless network password                                                                                   |
+| `hostname`        | Hostname the device will use and report to other services. It will also to register it at the DHCP server   |
+| `address`         | TBD...                                                                                                      |
+| `netmask`         | TBD...                                                                                                      |
+| `gateway`         | TBD...                                                                                                      |
+| `maxRetries`      | TBD...                                                                                                      |
+| `connectTimeout`  | TBD...                                                                                                      |
+| `rebootonFailure` | TBD...                                                                                                      |
+
+
+#### Configuration Options for Network Service DNS Client
+
+The DNS client is configured with an object named `dns` in the `services` object. The DNS client is only
+used in network station or dual mode.
+
+| Field        | Usage                                                                                                       |
+| ------------ | ----------------------------------------------------------------------------------------------------------- |
+| `host`       | Array of hostnames/ip of DNS servers If empty the provided DHCP value is used                               |
+
+#### Configuration Options for Network Service NTP Client
+
+| Field        | Usage                                                                                                                   |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `host`       | Array of hostnames/ip of NTP time servers from which the device synchronizes it's time. If empty the DHCP value is used |
+| `dstrules`   | optional timezone and daylight saving rules in [unix format](https://mm.icann.org/pipermail/tz/2016-April/023570.html)  |
+
+Message Interface
+-----------------
+
+### Incoming
+
+| topic                 | message body               | Description
+| --------------------- | -------------------------- | -------------------------
+| `net/network/get`     | <empty>                    | Returns a network information object in json format in a message with topic `net/network`
+| `net/network/control` | start | stop | restart     | Starts, stops or restarts the network
+| `net/networks/get`    | sync | hidden              | Requests a WiFi network scan. The options in the body are optional and can be combined with a `,`
+
+
+### Outgoing
 
 | topic        | message body                                | comment                                                                                                                                                                                                                                                                                                                                                                    |
 | ------------ | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -116,7 +221,7 @@ pio run -t updatefs
 
 ## History
 
-- 0.2.1 (2021-01-02) : Small breaking change: the format of the `mqtt/state` has been simplified: the message contains either `connected` or `disconnected`. Configuration information has been moved into a separate message `mqtt/config`. Support for no outgoing domain prefix (no 'omu') fixed.
+- 0.2.1 (2021-01-02): Small breaking change: the format of the `mqtt/state` has been simplified: the message contains either `connected` or `disconnected`. Configuration information has been moved into a separate message `mqtt/config`. Support for no outgoing domain prefix (no 'omu') fixed.
 - 0.2.0 (2020-12-25): Initial support for LittleFS on ESP8266.
 - 0.1.99 2020-09 (not yet released): Ongoing preparations for switch to LittleFS, since SPIFFS is deprecated.
 - 0.1.11 (2019-12-27): New mqtt.h api functions `addSubscription()`, `removeSubscription()` that
