@@ -214,10 +214,19 @@ Message Interface
 
 ### Outgoing
 
-| topic        | message body                                | comment                                                                                                                                                                                                                                                                                                                                                                    |
-| ------------ | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| topic        | message body   | comment                                |
+| ------------ | -------------- | -------------------------------------- |
 | `mqtt/config` | `<prefix>+<will_topic>+<will_message>` | The message contains three parts separated bei `+`: prefix, the last-will-topic and last-will message. `prefix` is the mqtt topic-prefix automatically prefixed to outgoing messages, composed of `omu` (set with mqtt) and `hostname`, e.g. `omu/myhost`. `prefix` can be useful for mupplets to know the actual topic names that get published externally. |
 | `mqtt/state` | `connected` or `disconnected` | muwerk processes that subscribe to `mqtt/state` are that way informed, if mqtt external connection is available. The `mqtt/state` topic with message `disconnected` is also the default configuration for mqtt's last will topic and message. |
+
+#### Messages received by mqtt:
+
+| topic        | message body   | comment                                |
+| ------------ | -------------- | -------------------------------------- |
+| `mqtt/outgoingblock/set` | `topic[-wildcard]` | A topic or a topic wildcard for topics that should not be forwarded to the external mqtt server (e.g. to prevent message spam or routing problems) |
+| `mqtt/outgoingblock/remove` | `topic[-wildcard]` | Remove a block on a given outgoing topic wildcard. |
+| `mqtt/incomingblock/set` | `topic[-wildcard]` | A topic or a topic wildcard for topics that should not be forwarded from the external mqtt server to muwerk. |
+| `mqtt/incomingblock/remove` | `topic[-wildcard]` | Remove a block on a given incoming topic wildcard. |
 
 ## History
 

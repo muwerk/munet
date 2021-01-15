@@ -43,6 +43,8 @@ class Mqtt {
     String willMessage = "";
     String configMessage = "";
     ustd::array<String> subsList;
+    ustd::array<String> outgoingBlockList;
+    ustd::array<String> incomingBlockList;
 
   public:
     Mqtt() {
@@ -254,6 +256,79 @@ class Mqtt {
         return ret;
     }
 
+    bool outgoingBlockSet(String topic) {
+        /*! Block a topic-wildcard from being published to external mqtt server
+         *
+         * @param topic An mqtt topic wildcard for topics that should not be
+         * forwarded to external mqtt. E.g. 'mymupplet/#' Would block all messages
+         * a mupplet with name 'mymupplet' publishes from being forwarded to the
+         * extern mqtt server
+         * @return true on success, false if entry already exists, or couldn't be added.
+         */
+        for (unsigned int i = 0; i < outgoingBlockList.length(); i++) {
+            if (outgoingBlockList[i] == topic)
+                return false;
+        }
+        if (outgoingBlockList.add(topic) == -1)
+            return false;
+        return true;
+    }
+
+    bool outgoingBlockRemove(String topic) {
+        /*! Unblock a topic-wildcard from being published to external mqtt server
+         *
+         * @param topic An mqtt topic wildcard for topics that should again be
+         * forwarded to external mqtt. Unblock only removes a a block identical to
+         * the given topic. So topic must be identical to a topic (wildcard) that
+         * has been used with 'outgoingBlockSet()'.
+         * @return true on success, false if no corresponding block could be found.
+         */
+        for (unsigned int i = 0; i < outgoingBlockList.length(); i++) {
+            if (outgoingBlockList[i] == topic) {
+                if (!outgoingBlockList.erase(i))
+                    return false;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool incomingBlockSet(String topic) {
+        /*! Block a topic-wildcard from being published to the internal scheduler
+         *
+         * @param topic An mqtt topic wildcard for topics that should not be
+         * forwarded from external mqtt server to the muwerk scheduler. This can be
+         * used to block any incoming messages according to their topic.
+         * @return true on success, false if entry already exists, or couldn't be added.
+         */
+        for (unsigned int i = 0; i < incomingBlockList.length(); i++) {
+            if (incomingBlockList[i] == topic)
+                return false;
+        }
+        if (incomingBlockList.add(topic) == -1)
+            return false;
+        return true;
+    }
+
+    bool incomingBlockRemove(String topic) {
+        /*! Unblock a topic-wildcard from being received from external mqtt server
+         *
+         * @param topic An mqtt topic wildcard for topics that should again be
+         * forwarded internally to muwerk. Unblock only removes a a block identical to
+         * the given topic. So topic must be identical to a topic (wildcard) that
+         * has been used with 'incomingBlockSet()'.
+         * @return true on success, false if no corresponding block could be found.
+         */
+        for (unsigned int i = 0; i < incomingBlockList.length(); i++) {
+            if (incomingBlockList[i] == topic) {
+                if (!incomingBlockList.erase(i))
+                    return false;
+                return true;
+            }
+        }
+        return false;
+    }
+
   private:
     bool bWarned = false;
     void loop() {
@@ -333,8 +408,14 @@ class Mqtt {
             free(szBuffer);
         }
         topic = String(ctopic);
+        for (unsigned int i = 0; i < incomingBlockList.length(); i++) {
+            if (Scheduler::mqttmatch(topic, incomingBlockList[i])) {
+                // blocked incoming
+                return;
+            }
+        }
         for (unsigned int i = 0; i < subsList.length(); i++) {
-            if (pSched->mqttmatch(topic, subsList[i])) {
+            if (Scheduler::mqttmatch(topic, subsList[i])) {
                 pSched->publish(topic, msg, "mqtt");
                 return;
             }
@@ -358,6 +439,12 @@ class Mqtt {
             return;  // avoid loops
         if (mqttConnected) {
             unsigned int len = msg.length() + 1;
+            for (unsigned int i = 0; i < outgoingBlockList.length(); i++) {
+                if (Scheduler::mqttmatch(topic, outgoingBlockList[i])) {
+                    // Item is blocked.
+                    return;
+                }
+            }
             String tpc;
             if (topic.c_str()[0] == '!') {
                 tpc = &(topic.c_str()[1]);
@@ -391,24 +478,6 @@ class Mqtt {
             Serial.println(("MQTT can't publish, MQTT down: " + topic).c_str());
 #endif
         }
-        /*
-        DynamicJsonBuffer jsonBuffer(512);
-        JsonObject &root = jsonBuffer.parseObject(msg);
-
-        if (!root.success()) {
-#ifdef USE_SERIAL_DBG
-            Serial.println(
-                ("mqtt: Invalid JSON received: " + String(msg)).c_str());
-#endif
-            return;
-        }
-        */
-        JSONVar mqttJsonMsg = JSON.parse(msg);
-
-        if (JSON.typeof(mqttJsonMsg) == "undefined") {
-            return;
-        }
-
         if (topic == "mqtt/state/get") {
             if (mqttConnected) {
                 pSched->publish("mqtt/state", "connected");
@@ -425,6 +494,10 @@ class Mqtt {
         }
         if (topic == "net/services/mqttserver") {
             if (!bMqInit) {
+                JSONVar mqttJsonMsg = JSON.parse(msg);
+                if (JSON.typeof(mqttJsonMsg) == "undefined") {
+                    return;
+                }
                 mqttServer = (const char *)mqttJsonMsg["server"];  // root["server"].as<char *>();
                 bCheckConnection = true;
                 mqttClient.setServer(mqttServer.c_str(), 1883);
@@ -442,6 +515,10 @@ class Mqtt {
             }
         }
         if (topic == "net/network") {
+            JSONVar mqttJsonMsg = JSON.parse(msg);
+            if (JSON.typeof(mqttJsonMsg) == "undefined") {
+                return;
+            }
             String state = (const char *)mqttJsonMsg["state"];  // root["state"];
             if (state == "connected") {
 #ifdef USE_SERIAL_DBG
@@ -460,6 +537,18 @@ class Mqtt {
                 Serial.println("MQTT net state offline");
 #endif
             }
+        }
+        if (topic == "mqtt/outgoingblock/set") {
+            outgoingBlockSet(msg);
+        }
+        if (topic == "mqtt/outgoingblock/remove") {
+            outgoingBlockRemove(msg);
+        }
+        if (topic == "mqtt/incomingblock/set") {
+            incomingBlockSet(msg);
+        }
+        if (topic == "mqtt/incomingblock/remove") {
+            incomingBlockRemove(msg);
         }
     };
 };
