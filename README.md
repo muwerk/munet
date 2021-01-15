@@ -43,7 +43,7 @@ void loop() {
 
 The library provides:
 
-- WiFi station, acces point or both using configuration data from LittleFS/SPIFFS file system (s.b.).
+- WiFi station, access point or both using configuration data from LittleFS/SPIFFS file system (s.b.).
   Connection to the WiFi network is established automatically. The library handles reconnect and error
   recovery gracefully.
 - Over-the-air (OTA) update is supported with one line of code [optional]
@@ -99,10 +99,10 @@ Since ESP32 currently does not (yet) support LittleFS, ESP32 projects require th
 {
     "version": 1,
     "mode": "station",
+    "hostname": "muwerk-${macls}",
     "station": {
         "SSID": "my-network-SSID",
         "password": "myS3cr3t",
-        "hostname": "myhost",
         "address": "",
         "netmask": "",
         "gateway": "",
@@ -113,7 +113,6 @@ Since ESP32 currently does not (yet) support LittleFS, ESP32 projects require th
     "ap": {
         "SSID": "muwerk-${macls}",
         "password": "",
-        "hostname": "muwerk-${macls}",
         "address": "",
         "netmask": "",
         "gateway": "",
@@ -144,44 +143,64 @@ pio run -t buildfs
 pio run -t updatefs
 ```
 
-#### Top Level Configuration Options
+### Configuration Options Placeholder
 
-| Field        | Usage                                                                                                       |
-| ------------ | ----------------------------------------------------------------------------------------------------------- |
-| `version`    | The configuration format version number. Current version is `1`. This field is mandatory.                   |
-| `deviceID`   | Unique device ID - will be automatically generated and saved on first start. Useful when replacing a device |
-| `mode`       | Operating mode. Can be: `off`, `ap`, `station` or `both`. Default is `ap`                                   |
-| `ap`         | Configuration options for access point mode. See description below.                                         |
-| `station`    | Configuration options for network station mode. See description below.                                      |
-| `services`   | Configuration options for network services. See description below.                                          |
+Some of the configuration options support the use of placeholders in order to allow values that are specific to
+a certain devince without the need to create separate configuration files. Placeholders are written in the form
+of `${PLACEHOLDER}`.
+
+The following options allow the the of placeholders:
+* The `hostname` of the device. The default value of this hostname also uses a plceholder: `muwerk-${macls}`
+* The `SSID` for access point mode. Also here the default value uses a plceholder: `muwerk-${macls}`
+
+The following placeholders are currently available:
+* `mac`: full mac address
+* `macls`: last 4 digits of mac address
+* `macfs`: first 4 digits of mac address
+
+
+### Top Level Configuration Options
+
+| Field        | Usage                                                                                                        |
+| ------------ | ------------------------------------------------------------------------------------------------------------ |
+| `version`    | The configuration format version number. Current version is `1`. This field is mandatory.                    |
+| `deviceID`   | Unique device ID - will be automatically generated and saved on first start. Useful when replacing a device  |
+| `mode`       | Operating mode. Can be: `off`, `ap`, `station` or `both`. Default is `ap`                                    |
+| `hostname`   | Hostname the device will use and report to other services. May also be used to querythe DHCP server          |
+| `ap`         | Configuration options for access point mode. See description below.                                          |
+| `station`    | Configuration options for network station mode. See description below.                                       |
+| `services`   | Configuration options for network services. See description below.                                           |
+
 
 #### Configuration Options for Access Point Mode
 
-| Field        | Usage                                                                                                       |
-| ------------ | ----------------------------------------------------------------------------------------------------------- |
-| `SSID`       | Network name of the wireless network the ESP will host                                                      |
-| `password`   | Wireless network password                                                                                   |
-| `hostname`   | Hostname the device will use and report to other services.                                                  |
-| `address`    | TBD...                                                                                                      |
-| `netmask`    | TBD...                                                                                                      |
-| `gateway`    | TBD...                                                                                                      |
-| `channel`    | TBD...                                                                                                      |
-| `hidden`     | TBD...                                                                                                      |
+The following options are stored in the `ap` object and apply to access point mode and dual mdoe.
+
+| Field        | Usage                                                                                          |
+| ------------ | ---------------------------------------------------------------------------------------------- |
+| `SSID`       | Network name of the wireless network the ESP will host                                         |
+| `password`   | Wireless network password                                                                      |
+| `address`    | Static IP address. If not defined, the default of the library is taken - usually `192.168.4.1` |
+| `netmask`    | Netmask of static IP address. Must be defined if `address` is also defined.                    |
+| `gateway`    | Default gateway. Does not really make sense in AP mode, but must be specified.                 |
+| `channel`    | Channel used for AP mode. If not specified, channel 1 is used.                                 |
+| `hidden`     | If `true`, the network created by the AP is hidden. Default is `false`                         |
 
 
 #### Configuration Options for Network Station Mode
 
-| Field             | Usage                                                                                                       |
-| ----------------- | ----------------------------------------------------------------------------------------------------------- |
-| `SSID`            | Network name of the wireless network the ESP will join                                                      |
-| `password`        | Wireless network password                                                                                   |
-| `hostname`        | Hostname the device will use and report to other services. It will also to register it at the DHCP server   |
-| `address`         | TBD...                                                                                                      |
-| `netmask`         | TBD...                                                                                                      |
-| `gateway`         | TBD...                                                                                                      |
-| `maxRetries`      | TBD...                                                                                                      |
-| `connectTimeout`  | TBD...                                                                                                      |
-| `rebootonFailure` | TBD...                                                                                                      |
+The following options are stored in the `station` object and apply to network station mode and dual mdoe.
+
+| Field             | Usage                                                                                           |
+| ----------------- | ----------------------------------------------------------------------------------------------- |
+| `SSID`            | Network name of the wireless network the ESP will join                                          |
+| `password`        | Wireless network password                                                                       |
+| `address`         | Static IP address. If not defined, the address is obtained via DHCP.                            |
+| `netmask`         | Netmask of static IP address. Must be defined if `address` is also defined.                     |
+| `gateway`         | Default gateway. Does not really make sense in AP mode, but must be specified.                  |
+| `maxRetries`      | Maximum number of retries before giving up (and rebooting). Default is `40`                     |
+| `connectTimeout`  | Connection timeout in seconds. Default is 15 seconds.                                           |
+| `rebootonFailure` | If `true` the system reboots after reaching `maxRetries` connection failures. Default is `true` |
 
 
 #### Configuration Options for Network Service DNS Client
@@ -195,10 +214,14 @@ used in network station or dual mode.
 
 #### Configuration Options for Network Service NTP Client
 
+The NTP client is configured with an object named `ntp` in the `services` object. The NTP client is only
+used in network station or dual mode.
+
 | Field        | Usage                                                                                                                   |
 | ------------ | ----------------------------------------------------------------------------------------------------------------------- |
 | `host`       | Array of hostnames/ip of NTP time servers from which the device synchronizes it's time. If empty the DHCP value is used |
 | `dstrules`   | optional timezone and daylight saving rules in [unix format](https://mm.icann.org/pipermail/tz/2016-April/023570.html)  |
+
 
 Message Interface
 -----------------
@@ -230,6 +253,9 @@ Message Interface
 
 ## History
 
+- 0.3.0 (2021-01-XX): [Under Construction] Next Generation Network:
+  - xxx
+  - yyy
 - 0.2.1 (2021-01-02): Small breaking change: the format of the `mqtt/state` has been simplified: the message contains either `connected` or `disconnected`. Configuration information has been moved into a separate message `mqtt/config`. Support for no outgoing domain prefix (no 'omu') fixed.
 - 0.2.0 (2020-12-25): Initial support for LittleFS on ESP8266.
 - 0.1.99 2020-09 (not yet released): Ongoing preparations for switch to LittleFS, since SPIFFS is deprecated.
