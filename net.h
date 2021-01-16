@@ -2,35 +2,6 @@
 
 #pragma once
 
-/*! \mainpage munet is a collection of network libraries for ESP8266 and ESP32
-based on the cooperative scheduler muwerk.
-
-\section Introduction
-
-munet implements the classes:
-
-* * \ref ustd::Net WiFi client connectivity and NTP time synchronization
-* * \ref ustd::Ota Over-the-air (OTA) software update
-* * \ref ustd::Mqtt connection to MQTT server
-
-Libraries are header-only and should work with any c++11 compiler and
-and support platforms esp8266 and esp32.
-
-This library requires the libraries ustd, muwerk and requires a
-<a href="https://github.com/muwerk/ustd/blob/master/README.md">platform
-define</a>.
-
-\section Reference
-* * <a href="https://github.com/muwerk/munet">munet github repository</a>
-
-depends on:
-* * <a href="https://github.com/muwerk/ustd">ustd github repository</a>
-* * <a href="https://github.com/muwerk/muwerk">muwerk github repository</a>
-
-used by:
-* * <a href="https://github.com/muwerk/mupplets">mupplets github repository</a>
-*/
-
 // #if defined(__ESP__)
 
 #include "platform.h"
@@ -48,20 +19,17 @@ namespace ustd {
 
 /*! \brief munet, the muwerk network class for WiFi and NTP
 
-The library header-only and relies on the libraries ustd, muwerk, Arduino_JSON,
-and PubSubClient.
+The library header-only and relies on the libraries ustd, muwerk, Arduino_JSON and PubSubClient.
 
 Make sure to provide the <a
-href="https://github.com/muwerk/ustd/blob/master/README.md">required platform
-define</a> before including ustd headers.
+href="https://github.com/muwerk/ustd/blob/master/README.md">required platform define</a> before
+including ustd headers.
 
 See <a
-href="https://github.com/muwerk/munet/blob/master/README.md">for a detailed
-description of all network configuration options.</a>
+href="https://github.com/muwerk/munet/blob/master/README.md">README.md</a> for a detailed
+description of all network configuration options.
 
-Alternatively, operating mode and credentials can be given in source code
-during Net.begin().
-(s.b.)
+Alternatively, operating mode and credentials can be given in source code during Net.begin(). (s.b.)
 
 ## Sample network connection
 
@@ -151,19 +119,16 @@ class Net {
         : signalLed(signalLed), signalLogic(signalLogic) {
         /*! Instantiate a network object for WiFi and NTP connectivity.
          *
-         * The Net object publishes messages using muwerk's pub/sub intertask
-         * communication (which does not rely on MQTT servers), other muwerk
-         * tasks can subscribe to the following topics:
+         * The Net object publishes messages using muwerk's pub/sub intertask communication (which
+         * does not rely on MQTT servers), other muwerk tasks can subscribe to the following topics:
          *
-         * subscribe('net/network'); for information about wlan connection state
-         * changes. Status can be actively requested by
-         * publish('net/network/get');
-         *
-         * subscribe('net/rssi'); for information about WLAN reception strength
-         *
-         * subscribe('net/connections'); for a list of available network services.
-         *
-         * subscribe('net/networks'); for a list of WLANs nearby.
+         * * `net/network`: for information about WiFi connection state changes. Status can be
+         * actively requested by publishing `net/network/get`
+         * * `net/rssi`: for information about WiFi signal strength
+         * * `net/connections`: for changes in the number of connected clients when operating as
+         * access point
+         * * `net/networks`: for a list of WiFi networks nearby. The list can be requested by
+         * publishing `net/networks/get`
          *
          * @param signalLed (optional), Pin that will be set to LOW (led on)
          * during network connection attempts. Once connected, led is switched
@@ -190,11 +155,11 @@ class Net {
          * Other muwerk task can subscribe to topic '`net/network`' to receive
          * information about network connection states.
          *
-         * @param _pSched Pointer to the muwerk scheduler.
+         * @param pScheduler Pointer to the muwerk scheduler.
          * @param opmode (optional, default AP) Default operation mode if none is configured
          *
-         * See <a href="https://github.com/muwerk/munet/blob/master/README.md">for a detailed
-         * description of all network configuration options.</a>
+         * See <a href="https://github.com/muwerk/munet/blob/master/README.md">README.md</a> for a
+         * detailed description of all network configuration options.
          */
         defaultMode = opmode;
         initHardwareAddresses();
@@ -215,7 +180,7 @@ class Net {
          * Other muwerk task can subscribe to topic '`net/network`' to receive
          * information about network connection states.
          *
-         * @param _pSched Pointer to the muwerk scheduler.
+         * @param pScheduler Pointer to the muwerk scheduler.
          * @param SSID The SSID for the WiFi connection or access point. This can contin
          * placeholder (see below).
          * @param password (optional, default unused) The password for the WiFi connection or access
@@ -234,7 +199,7 @@ class Net {
          * using the information from that server.
          *
          * Some of the configuration options support the use of placeholders in order to allow
-         * values that are specific to a certain devince without the need to create separate
+         * values that are specific to a certain device without the need to create separate
          * configuration files. Placeholders are written in the form of `${PLACEHOLDER}`.
          *
          * The following placeholders are currently available:
