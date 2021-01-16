@@ -82,6 +82,7 @@ class Net {
 
     // active configuration
     Netmode defaultMode;
+    bool defaultReboot;
     ustd::jsonfile config;
 
     // hardware info
@@ -98,7 +99,7 @@ class Net {
     ustd::heartbeat connectionMonitor = 1000;
     ustd::timeout connectTimeout = 15000;
     unsigned int reconnectMaxRetries = 40;
-    bool bRebootOnContinuedWifiFailure = true;
+    bool bRebootOnContinuedFailure = true;
     bool bOnceConnected;
     int initialCounter;
     int deathCounter;
@@ -139,13 +140,9 @@ class Net {
          */
         oldState = NOTDEFINED;
         curState = NOTCONFIGURED;
-        if (signalLed != 0xff) {
-            pinMode(signalLed, OUTPUT);
-            setLed(signalLogic);  // Turn the LED off
-        }
     }
 
-    void begin(Scheduler *pScheduler, Netmode opmode = AP) {
+    void begin(Scheduler *pScheduler, Netmode opmode = AP, bool restartOnMultipleFailures = true) {
         /*! Starts the network based on the stored configuration.
          *
          * This method starts the network using the information stored into the configuration
@@ -157,13 +154,15 @@ class Net {
          *
          * @param pScheduler Pointer to the muwerk scheduler.
          * @param opmode (optional, default AP) Default operation mode if none is configured
+         * @param restartOnMultipleFailures (optional, default `true`) Default restart on continued
+         * failure if none is configured.
          *
          * See <a href="https://github.com/muwerk/munet/blob/master/README.md">README.md</a> for a
          * detailed description of all network configuration options.
          */
-        defaultMode = opmode;
+        initLed();
         initHardwareAddresses();
-        readNetConfig();
+        readNetConfig(opmode, restartOnMultipleFailures);
         initScheduler(pScheduler);
         startServices();
     }
@@ -211,6 +210,7 @@ class Net {
             DBG("ERROR: Wrong operation mode specified on Net::begin");
             return;
         }
+        initLed();
         initHardwareAddresses();
         initNetConfig(SSID, password, hostname, opmode, restartOnMultipleFailures);
         initScheduler(pScheduler);
@@ -275,12 +275,12 @@ class Net {
             if (connectTimeout.test()) {
                 DBG("Timout connecting to WiFi " + WiFi.SSID());
                 if (bOnceConnected) {
-                    if (bRebootOnContinuedWifiFailure) {
+                    if (bRebootOnContinuedFailure) {
                         --deathCounter;
                     }
                     if (deathCounter == 0) {
                         DBG("Final connection failure, restarting...");
-                        if (bRebootOnContinuedWifiFailure) {
+                        if (bRebootOnContinuedFailure) {
                             ESP.restart();
                         }
                     }
@@ -290,7 +290,7 @@ class Net {
                 } else {
                     DBG("Retrying to connect...");
                     if (initialCounter > 0) {
-                        if (bRebootOnContinuedWifiFailure) {
+                        if (bRebootOnContinuedFailure) {
                             --initialCounter;
                         }
                         WiFi.reconnect();
@@ -299,7 +299,7 @@ class Net {
                     } else {
                         DBG("Final connect failure, configuration invalid?");
                         curState = NOTCONFIGURED;
-                        if (bRebootOnContinuedWifiFailure) {
+                        if (bRebootOnContinuedFailure) {
                             ESP.restart();
                         }
                     }
@@ -341,16 +341,10 @@ class Net {
             } else {
                 DBG();
             }
-            switch (curState) {
-            case SERVING:
-            case CONNECTED:
-                cleanupNetConfig();
-                setLed(true);  // Turn the LED on
-                break;
-            default:
-                setLed(false);  // Turn the LED off
-                break;
-            }
+
+            // Turn the LED on when device is connecting to a WiFi
+            setLed(curState == CONNECTINGAP);
+
             oldState = curState;
             publishState();
         }
@@ -376,7 +370,10 @@ class Net {
 
     void initNetConfig(String SSID, String password, String hostname, Netmode opmode,
                        bool restart) {
-        // hardcoded network configuration provided by program code
+        // initialize default values
+        defaultMode = opmode;
+        defaultReboot = restart;
+
         String prefix = "net/" + getStringFromMode(opmode) + "/";
 
         // prepare mode and device id
@@ -395,7 +392,11 @@ class Net {
         config.writeBool("net/station/rebootOnFailure", restart);
     }
 
-    void readNetConfig() {
+    void readNetConfig(Netmode opmode, bool restart) {
+        // initialize default values
+        defaultMode = opmode;
+        defaultReboot = restart;
+
         // handle config version migrations
         long version = config.readLong("net/version", 0);
         if (version == 0) {
@@ -457,8 +458,10 @@ class Net {
                         } else if (JSON.typeof(services[i]["mqttserver"]) == "string") {
                             String mqttserver = (const char *)(services[i]["mqttserver"]);
                             DBG("Found mqtt host entry: " + mqttserver);
-                            ustd::jsonfile mqtt;
+                            ustd::jsonfile mqtt(false, true);  // no autocommit, force new
                             mqtt.writeString("mqtt/host", mqttserver);
+                            mqtt.writeBool("mqtt/alwaysRetained", true);
+                            mqtt.commit();
                         }
                     } else {
                         DBG("Wrong service entry");
@@ -584,7 +587,7 @@ class Net {
         // read some cached values
         connectTimeout = config.readLong("net/station/connectTimeout", 3, 3600, 15) * 1000;
         reconnectMaxRetries = config.readLong("net/station/maxRetries", 1, 1000000000, 40);
-        bRebootOnContinuedWifiFailure = config.readBool("net/station/rebootOnFailure", true);
+        bRebootOnContinuedFailure = config.readBool("net/station/rebootOnFailure", defaultReboot);
 
         DBG("Connecting WiFi " + SSID);
         wifiSetHostname(hostname);
@@ -725,6 +728,13 @@ class Net {
             res["networks"][i] = network;
         }
         pSched->publish("net/networks", JSON.stringify(res));
+    }
+
+    void initLed() {
+        if (signalLed != 0xff) {
+            pinMode(signalLed, OUTPUT);
+            setLed(signalLogic);  // Turn the LED off
+        }
     }
 
     void setLed(bool on) {

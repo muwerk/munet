@@ -72,6 +72,55 @@ munet relies only on:
 | Ota.h           | x               | x      | x            |              |
 | Mqtt.h          | x               | x      | x            | x            |
 
+Breaking Changes at Version 0.3.0
+---------------------------------
+
+All network classes in Version 3.0.0 have been deeply refactored in order to provide more
+functionality and better reliability. Nevertheless there are some breaking changes.
+
+### Changed Method Signatures
+
+`ustd::Net` has now two different `Net::begin` methods. The default one (selected when invoking
+`net.begin(&sched);`) starts the network based on configuration stored in a configuration file
+located at the filesystem of the device. If the device implements means for managing the
+configuration, this is the most versatile method.
+There is still a `Net::begin` method with a function signature similar to the older version
+that is intended for hardcoded devices. When starting the network with the other `Net::begin`
+method, the configuration is stored in memory and connot be changed any more at runtime.
+
+Since the other network classes have also own configuration files when needed, the support for
+querying information about network services by publishing `net/services/get` has been removed.
+
+The format of the `net/network/state` message has been extended to cover the new features, but
+is still compatible with older versions.
+
+Also the interface of `Mqtt::begin` has changed in order to resemble the fact that all passed
+options are the defaults for options **not set** in the configuration file `mqtt.json`.
+
+### Changed Configuration File Format
+
+When the device starts for the first time with the new `munet` library, it will detect an old
+configuration file and will migrate the content to the new format automatically. After the
+conversion, the filesystem will contain two configuration files:
+* `net.json` - the migrated version of the original net.json
+* `mqtt.json` - the new configuration file for MQTT if the mqtt service was defined in the old
+                configuration file.
+
+See the documentation below for details about the supported configuration options in each file.
+
+### Retained Messages
+
+All messages published by the older version of `ustd::Mqtt` were flagged with the `RETAINED` flag.
+This default behaviour has been changed: It is now possible to configure if the default behaviour
+should be to flag the messages or not. The default is `false` but if the configuration file was
+created by migrating an older `net.json`, the old behaviour will be preserved in order to maintain
+compatibility of the device (See configuration option `alwaysRetain` in `mqtt.json`).
+
+When this option is `false` (the default setting), there is a new way (for explicit MQTT topics)
+to specify that a message shall be published as `RETAINED`: instead of prefixing the topic with one
+exclamation point, the topic shall be prefixed with double exclamation points. E.g.:
+`!!homeassistant/config`.
+
 Configuration
 -------------
 
@@ -101,6 +150,40 @@ created and upload with `pio run -t buildfs` and `pio run -t uploadfs`.
 
 Since ESP32 currently does not (yet) support LittleFS, ESP32 projects require the define
 `__USE_OLD_FS__` to continue to use SPIFFS for the time being.
+
+Minimal Required Configuration Files
+------------------------------------
+
+The following minimum configuration files are needed in order to connect to a WiFi network and
+have mqtt up and running.
+
+### Minimum `net.json`
+
+```json
+{
+    "version": 1,
+    "mode": "station",
+    "hostname": "my-host-name",
+    "station": {
+        "SSID": "my-network-SSID",
+        "password": "myS3cr3t",
+    },
+    "services": {
+        "ntp": {
+            "host": ["time.nist.gov"],
+            "dstrules": "CET-1CEST,M3.5.0,M10.5.0/3"
+        }
+    }
+}
+```
+
+### Minimum `mqtt.json`
+
+```json
+{
+    "host":"my-mqtt-hostname"
+}
+```
 
 Network Configuration
 ---------------------
@@ -230,8 +313,8 @@ used in network station or dual mode.
 | `dstrules`   | optional timezone and daylight saving rules in [unix format](https://mm.icann.org/pipermail/tz/2016-April/023570.html)  |
 
 
-Message Interface
------------------
+Network Message Interface
+-------------------------
 
 ### Incoming
 
@@ -240,18 +323,16 @@ Message Interface
 | `net/network/get`           |                     | Returns a network information object in json format in a message with topic `net/network`
 | `net/network/control`       | `<commands>`        | Starts, stops or restarts the network (put `start`, `stop` or `restart` in the message body)
 | `net/networks/get`          | `<options>`         | Requests a WiFi network scan. The list is returned in a message with topic `net/networks`. The additional options `sync` and/or `hidden` can be sent in the body.
-| `mqtt/outgoingblock/set`    | `topic[-wildcard]` | A topic or a topic wildcard for topics that should not be forwarded to the external mqtt server (e.g. to prevent message spam or routing problems) |
-| `mqtt/outgoingblock/remove` | `topic[-wildcard]` | Remove a block on a given outgoing topic wildcard. |
-| `mqtt/incomingblock/set`    | `topic[-wildcard]` | A topic or a topic wildcard for topics that should not be forwarded from the external mqtt server to muwerk. |
-| `mqtt/incomingblock/remove` | `topic[-wildcard]` | Remove a block on a given incoming topic wildcard. |
 
 
 ### Outgoing
 
-| topic        | message body   | comment                                |
-| ------------ | -------------- | -------------------------------------- |
-| `mqtt/config` | `<prefix>+<will_topic>+<will_message>` | The message contains three parts separated bei `+`: prefix, the last-will-topic and last-will message. `prefix` is the mqtt topic-prefix automatically prefixed to outgoing messages, composed of `omu` (set with mqtt) and `hostname`, e.g. `omu/myhost`. `prefix` can be useful for mupplets to know the actual topic names that get published externally. |
-| `mqtt/state` | `connected` or `disconnected` | muwerk processes that subscribe to `mqtt/state` are that way informed, if mqtt external connection is available. The `mqtt/state` topic with message `disconnected` is also the default configuration for mqtt's last will topic and message. |
+| Topic             | Message Body          | Description
+| ----------------- | --------------------- | --------------------------------------------------------------------------------------------
+| `net/network`     | `{...}`               | The current network state as JSON object
+| `net/rssi`        | `<rssi value>`        | The current signal value when connected to a WiFi
+| `net/connections` | `<connection count>`  | The number of stations connected to the device in access point mode
+| `net/networks`    | `{..}`                | The result of a WiFi scan as JSON object
 
 
 MQTT Configuration
@@ -273,8 +354,8 @@ The MQTT configuration is stored in a file named `mqtt.json`.
     "outDomainToken": "omu",
     "lastWillTopic": "",
     "lastWillMessage": "",
+    "alwaysRetain": false,
     "subscriptions": [],
-    "retained": [],
     "outgoingBlackList": [],
     "incomingBlackList": []
 }
@@ -310,18 +391,41 @@ The following placeholders are currently available:
 | `outDomainToken`    | Domain token for outgoing messages. (default: `omu`)                                                         |
 | `lastWillTopic`     | Topic of MQTT last will message. (default: `<outDomainName>/<clientName>/mqtt/state`)                        |
 | `lastWillMessage`   | Message content for last will message. (default: `disconnected`)                                             |
+| `alwaysRetain`      | If `true` all messages published to MQQ will flagged as `RETAINED`. (default: `false`)                       |
 | `subscriptions`     | List of additional subscription to route into the scheduler's message queue. (default: empty)                |
-| `retained`          | List of topics and topic wildcards that will be flagged as retained when publishing to the external server   |
 | `outgoingBlackList` | List of topics and topic wildcards that will not be published to the external server                         |
 | `incomingBlackList` | List of topics and topic wildcards that will not be published to the muwerk scheduler's message queue        |
+
+
+MQTT Message Interface
+----------------------
+
+### Incoming
+
+| Topic                       | Message Body        | Description
+| --------------------------- | ------------------- | --------------------------------------------------------------------------------------------
+| `mqtt/outgoingblock/set`    | `topic[-wildcard]` | A topic or a topic wildcard for topics that should not be forwarded to the external mqtt server (e.g. to prevent message spam or routing problems) |
+| `mqtt/outgoingblock/remove` | `topic[-wildcard]` | Remove a block on a given outgoing topic wildcard. |
+| `mqtt/incomingblock/set`    | `topic[-wildcard]` | A topic or a topic wildcard for topics that should not be forwarded from the external mqtt server to muwerk. |
+| `mqtt/incomingblock/remove` | `topic[-wildcard]` | Remove a block on a given incoming topic wildcard. |
+
+### Outgoing
+
+| Topic         | Message Body                           | Description
+| ------------- | -------------------------------------- | --------------------------------------------------------------------------------------------
+| `mqtt/config` | `<prefix>+<will_topic>+<will_message>` | The message contains three parts separated bei `+`: prefix, the last-will-topic and last-will message. `prefix` is the mqtt topic-prefix automatically prefixed to outgoing messages, composed of `omu` (set with mqtt) and `hostname`, e.g. `omu/myhost`. `prefix` can be useful for mupplets to know the actual topic names that get published externally.
+| `mqtt/state`  | `connected` or `disconnected`          | muwerk processes that subscribe to `mqtt/state` are that way informed, if mqtt external connection is available. The `mqtt/state` topic with message `disconnected` is also the default configuration for mqtt's last will topic and message.
 
 
 History
 -------
 
-- 0.3.0 (2021-01-XX): [Under Construction] Next Generation Network:
-  - xxx
-  - yyy
+- 0.3.0 (2021-01-XX): [Under Construction] Next Generation Network: See section _"Breaking Changes at Version 0.3.0"_ for caveats.
+  - Support for Access Point mode and Dual Mode (both network station and access point mode)
+  - Support for enhanced network scans (async and display of hidden networks)
+  - Interface for controlling network operations (start, stop, restart)
+  - Detailed and extensible configuration for network and MQTT
+  - Support for controlling the `RETAINED` flag in published messages
 - 0.2.1 (2021-01-02): Small breaking change: the format of the `mqtt/state` has been simplified: the message contains either `connected` or `disconnected`. Configuration information has been moved into a separate message `mqtt/config`. Support for no outgoing domain prefix (no 'omu') fixed.
 - 0.2.0 (2020-12-25): Initial support for LittleFS on ESP8266.
 - 0.1.99 2020-09 (not yet released): Ongoing preparations for switch to LittleFS, since SPIFFS is deprecated.

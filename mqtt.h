@@ -87,23 +87,23 @@ class Mqtt {
     PubSubClient mqttClient;
 
     // active configuration
-    uint16_t mqttServerPort;
     String mqttServer;
+    uint16_t mqttServerPort;
     String mqttUsername;
     String mqttPassword;
+    bool mqttRetained;
     String clientName;
     String domainToken;
     String outDomainToken;
-    String willTopic;
-    String willMessage;
+    String lwTopic;
+    String lwMsg;
     // computed configuration
-    String configMessage = "";
+    ustd::array<String> ownedPrefixes;
     String outDomainPrefix;  // outDomainToken + '/' + clientName, or just clientName, if
                              // outDomainToken==""
 
     // persistently initialized tables
     ustd::array<String> subsList;
-    ustd::array<String> retainList;
     ustd::array<String> outgoingBlockList;
     ustd::array<String> incomingBlockList;
 
@@ -131,9 +131,10 @@ class Mqtt {
     }
 
     void begin(Scheduler *_pSched, String _mqttServer = "", uint16_t _mqttServerPort = 1883,
-               String _clientName = "${hostname}", String _domainToken = "mu",
-               String _outDomainToken = "omu", String _mqttUsername = "", String _mqttPassword = "",
-               String _willTopic = "", String _willMessage = "") {
+               bool _mqttRetained = false, String _clientName = "${hostname}",
+               String _domainToken = "mu", String _outDomainToken = "omu",
+               String _mqttUsername = "", String _mqttPassword = "", String _willTopic = "",
+               String _willMessage = "") {
         /*! Connect to external MQTT server as soon as network is available
          *
          * This method starts the MQTT gateway using the information stored into the configuration
@@ -146,6 +147,8 @@ class Mqtt {
          * server.
          * @param _mqttServerPort (optional, default is 1883) Port number under which the MQTT
          * server is reachable
+         * @param _mqttRetained (optional, default is `false`) If `true`, all messages published to
+         * the MQTT server will be flagged as RETAINED.
          * @param _clientName (optional, default is ${hostname}) the MQTT client name. **WARNING:**
          * this name must be unique! Otherwise the MQTT server will rapidly disconnect.
          * @param _domainToken (optional, default is "mu") The MQTT client submitts to message
@@ -181,15 +184,15 @@ class Mqtt {
         mqttServerPort = (uint16_t)conf.readLong("mqtt/port", 1, 65535, _mqttServerPort);
         mqttUsername = conf.readString("mqtt/username", _mqttUsername);
         mqttPassword = conf.readString("mqtt/password", _mqttPassword);
+        mqttRetained = conf.readBool("mqtt/alwaysRetained", _mqttRetained);
         clientName = isvalid(conf.readString("mqtt/clientName", _clientName), 1, "${hostname}");
         domainToken = isvalid(conf.readString("mqtt/domainToken", _domainToken), 1, "mu");
-        outDomainToken = conf.readString("mqtt/outDOmainToken", _outDomainToken);
-        willTopic = conf.readString("mqtt/lastWillTopic", _willTopic);
-        willMessage = conf.readString("mqtt/lastWillMessage", _willMessage);
+        outDomainToken = conf.readString("mqtt/outDomainToken", _outDomainToken);
+        lwTopic = conf.readString("mqtt/lastWillTopic", _willTopic);
+        lwMsg = conf.readString("mqtt/lastWillMessage", _willMessage);
 
         // persistently initialized tables
         conf.readStringArray("mqtt/subscriptions", subsList);
-        conf.readStringArray("mqtt/retained", retainList);
         conf.readStringArray("mqtt/outgoingBlackList", outgoingBlockList);
         conf.readStringArray("mqtt/incomingBlackList", incomingBlockList);
 
@@ -280,42 +283,6 @@ class Mqtt {
         return ret;
     }
 
-    bool retainSet(String topic) {
-        /*! Publish a topic-wildcard with a retained flag to external mqtt server
-         *
-         * @param topic An mqtt topic wildcard for topics that should be forwarded to external
-         * mqtt with a retain flag. E.g. `mymupplet/#` Would publish all messages a mupplet with
-         * name 'mymupplet' publishes with a retain flag when being forwarded to the extern mqtt
-         * server
-         * @return `true` on success or if entry already exists, `false` if entry couldn't be added.
-         */
-        for (unsigned int i = 0; i < retainList.length(); i++) {
-            if (retainList[i] == topic)
-                return true;
-        }
-        if (retainList.add(topic) == -1)
-            return false;
-        return true;
-    }
-
-    bool retainRemove(String topic) {
-        /*! Publish a topic-wildcard without a retained flag to external mqtt server
-         *
-         * @param topic An mqtt topic wildcard for topics that should be forwarded to external
-         * mqtt without a retain flag. This method only removes topic wildcard identical identical
-         * to a topic (wildcard) that has been used with `outgoingRetainSet()`.
-         * @return `true` on success, `false` if no corresponding entry could be found.
-         */
-        for (unsigned int i = 0; i < retainList.length(); i++) {
-            if (retainList[i] == topic) {
-                if (!retainList.erase(i))
-                    return false;
-                return true;
-            }
-        }
-        return false;
-    }
-
     bool outgoingBlockSet(String topic) {
         /*! Block a topic-wildcard from being published to external mqtt server
          *
@@ -388,41 +355,38 @@ class Mqtt {
 
   private:
     void loop() {
-        if (isOn) {
-            if (netUp && mqttServer != "") {
-                if (mqttConnected) {
-                    mqttClient.loop();
-                }
-
-                if (bCheckConnection || mqttTickerTimeout.test()) {
-                    mqttTickerTimeout.reset();
-                    bCheckConnection = false;
-                    if (!mqttClient.connected()) {
-                        // Attempt to connect
-                        const char *usr = mqttUsername.length() ? mqttUsername.c_str() : NULL;
-                        const char *pwd = mqttPassword.length() ? mqttPassword.c_str() : NULL;
-                        bool conRes =
-                            mqttClient.connect(clientName.c_str(), usr, pwd, willTopic.c_str(), 0,
-                                               true, willMessage.c_str());
-                        if (conRes) {
-                            DBG2("Connected to mqtt server");
-                            mqttConnected = true;
-                            mqttClient.subscribe((clientName + "/#").c_str());
-                            mqttClient.subscribe((domainToken + "/#").c_str());
-                            for (unsigned int i = 0; i < subsList.length(); i++) {
-                                mqttClient.subscribe(subsList[i].c_str());
-                            }
-                            bWarned = false;
-                            pSched->publish("mqtt/config", configMessage);
-                            pSched->publish("mqtt/state", "connected");
-                        } else {
-                            mqttConnected = false;
-                            if (!bWarned) {
-                                bWarned = true;
-                                pSched->publish("mqtt/state", "disconnected");
-                                DBG2("MQTT disconnected.");
-                            }
-                        }
+        if (!isOn || !netUp || mqttServer.length() == 0) {
+            return;
+        }
+        if (mqttConnected) {
+            mqttClient.loop();
+        }
+        if (bCheckConnection || mqttTickerTimeout.test()) {
+            mqttTickerTimeout.reset();
+            bCheckConnection = false;
+            if (!mqttClient.connected()) {
+                // Attempt to connect
+                const char *usr = mqttUsername.length() ? mqttUsername.c_str() : NULL;
+                const char *pwd = mqttPassword.length() ? mqttPassword.c_str() : NULL;
+                bool conRes = mqttClient.connect(clientName.c_str(), usr, pwd, lwTopic.c_str(), 0,
+                                                 true, lwMsg.c_str());
+                if (conRes) {
+                    DBG2("Connected to mqtt server");
+                    mqttConnected = true;
+                    mqttClient.subscribe((clientName + "/#").c_str());
+                    mqttClient.subscribe((domainToken + "/#").c_str());
+                    for (unsigned int i = 0; i < subsList.length(); i++) {
+                        mqttClient.subscribe(subsList[i].c_str());
+                    }
+                    bWarned = false;
+                    pSched->publish("mqtt/config", outDomainPrefix + "+" + lwTopic + "+" + lwMsg);
+                    pSched->publish("mqtt/state", "connected");
+                } else {
+                    mqttConnected = false;
+                    if (!bWarned) {
+                        bWarned = true;
+                        pSched->publish("mqtt/state", "disconnected");
+                        DBG2("MQTT disconnected.");
                     }
                 }
             }
@@ -432,38 +396,43 @@ class Mqtt {
     void mqttReceive(char *ctopic, unsigned char *payload, unsigned int length) {
         String msg;
         String topic;
-        String tokn;
-        ustd::array<String> toks;
 
-        msg = "";
-        char *szBuffer = (char *)malloc(length + 1);
-        if (szBuffer) {
-            memcpy(szBuffer, payload, length);
-            szBuffer[length] = 0;
-            msg = szBuffer;
-            free(szBuffer);
+        // prepare message and topic
+        topic = (const char *)ctopic;
+        if (length && payload) {
+            char *szBuffer = (char *)malloc(length + 1);
+            if (szBuffer) {
+                memcpy(szBuffer, payload, length);
+                szBuffer[length] = 0;
+                msg = szBuffer;
+                free(szBuffer);
+            } else {
+                DBG("mqtt: ERROR - message body lost due to memory outage");
+            }
         }
-        topic = String(ctopic);
+
         for (unsigned int i = 0; i < incomingBlockList.length(); i++) {
             if (Scheduler::mqttmatch(topic, incomingBlockList[i])) {
                 // blocked incoming
+                DBG2("mqtt: Blocked " + topic);
                 return;
             }
         }
         for (unsigned int i = 0; i < subsList.length(); i++) {
             if (Scheduler::mqttmatch(topic, subsList[i])) {
+                DBG2("mqtt: subscribed topic " + topic);
                 pSched->publish(topic, msg, "mqtt");
                 return;
             }
         }
-        toks.add(clientName);
-        String genTok = domainToken;
-        toks.add(genTok);
-        for (unsigned int i = 0; i < toks.length(); i++) {
-            if (strlen(ctopic) > toks[i].length()) {
-                tokn = toks[i] + '/';
-                if (!strncmp(ctopic, tokn.c_str(), tokn.length())) {
-                    topic = (const char *)(&ctopic[tokn.length()]);
+        // strip the client name token or the domain token in messages for us
+        for (unsigned int i = 0; i < ownedPrefixes.length(); i++) {
+            if (ownedPrefixes[i].length() <= topic.length()) {
+                // basically this comparison is not really needed since at this point we could ONLY
+                // have messages that match either the domainToken or the clientName since we have
+                // exactly subscribed to those. But who knows....
+                if (ownedPrefixes[i] == topic.substring(0, ownedPrefixes[i].length())) {
+                    topic = (const char *)(ctopic + ownedPrefixes[i].length());
                     pSched->publish(topic, msg, "mqtt");
                 }
             }
@@ -491,16 +460,11 @@ class Mqtt {
                 tpc = outDomainPrefix + "/" + topic;
             }
 
-            bool bRetain = tpc.c_str()[0] == '!';
-            if (bRetain) {
+            bool bRetain = mqttRetained;
+            if (tpc.c_str()[0] == '!') {
+                // remove second exclamation point
                 tpc = &(topic.c_str()[2]);
-            } else {
-                for (unsigned int i = 0; i < retainList.length(); i++) {
-                    if (Scheduler::mqttmatch(topic, retainList[i])) {
-                        bRetain = true;
-                        break;
-                    }
-                }
+                bRetain = true;
             }
 
             DBG3("mqtt: publishing...");
@@ -521,11 +485,7 @@ class Mqtt {
         if (topic == "mqtt/state/get") {
             pSched->publish("mqtt/state", mqttConnected ? "connected" : "disconnected");
         } else if (topic == "mqtt/config/get") {
-            pSched->publish("mqtt/config", configMessage);
-        } else if (topic == "mqtt/retain/set") {
-            retainSet(msg);
-        } else if (topic == "mqtt/retain/remove") {
-            retainRemove(msg);
+            pSched->publish("mqtt/config", outDomainPrefix + "+" + lwTopic + "+" + lwMsg);
         } else if (topic == "mqtt/outgoingblock/set") {
             outgoingBlockSet(msg);
         } else if (topic == "mqtt/outgoingblock/remove") {
@@ -536,17 +496,19 @@ class Mqtt {
             incomingBlockRemove(msg);
         } else if (topic == "net/network") {
             // network state received:
-            JSONVar mqttJsonMsg = JSON.parse(msg);
-            if (JSON.typeof(mqttJsonMsg) == "undefined") {
+            JSONVar jsonState = JSON.parse(msg);
+            if (JSON.typeof(jsonState) != "object") {
                 DBG("mqtt: Received broken network state " + msg);
                 return;
             }
-            String state = (const char *)mqttJsonMsg["state"];  // root["state"];
+            String state = (const char *)jsonState["state"];
+            String hostname = (const char *)jsonState["hostname"];
+            String mac = (const char *)jsonState["mac"];
             if (state == "connected") {
                 DBG3("mqtt: received network connect");
                 if (!netUp) {
                     DBG2("mqtt: net state online");
-                    finalizeConfiguration();
+                    finalizeConfiguration(hostname, mac);
                     netUp = true;
                     bCheckConnection = true;
                 }
@@ -574,30 +536,38 @@ class Mqtt {
         return true;
     }
 
-    void finalizeConfiguration() {
+    void finalizeConfiguration(String &hostname, String &mac) {
         // get network information
+        if (hostname.length() == 0) {
 #if defined(__ESP32__)
-        String hostname = WiFi.getHostname();
+            String hostname = WiFi.getHostname();
 #else
-        String hostname = WiFi.hostname();
+            String hostname = WiFi.hostname();
 #endif
-        String macAddress = WiFi.macAddress();
-        macAddress.replace(":", "");
+        }
+        if (mac.length() == 0) {
+            mac = WiFi.macAddress();
+        }
+        mac.replace(":", "");
 
         // transform and integrate missing configuration data
-        clientName = replaceVars(clientName, hostname, macAddress);
+        clientName = replaceVars(clientName, hostname, mac);
         if (outDomainToken.length()) {
             outDomainPrefix = outDomainToken + "/" + clientName;
         } else {
             outDomainPrefix = clientName;
         }
-        if (willTopic.length()) {
-            willMessage = replaceVars(willMessage, hostname, macAddress);
+        if (lwTopic.length()) {
+            lwMsg = replaceVars(lwMsg, hostname, mac);
         } else {
-            willTopic = outDomainPrefix + "/mqtt/state";
-            willMessage = "disconnected";
+            lwTopic = outDomainPrefix + "/mqtt/state";
+            lwMsg = "disconnected";
         }
-        configMessage = outDomainPrefix + "+" + willTopic + "+" + willMessage;
+        String clientPrefix = clientName + "/";
+        String domainPrefix = domainToken + "/";
+        ownedPrefixes.erase();
+        ownedPrefixes.add(clientPrefix);
+        ownedPrefixes.add(domainPrefix);
     }
 
     String replaceVars(String val, String &hostname, String &macAddress) {
