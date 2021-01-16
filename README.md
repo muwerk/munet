@@ -75,9 +75,18 @@ munet relies only on:
 Configuration
 -------------
 
-The network configuration is stored in a `json` formatted file `net.json` in the LittleFS/SPIFFS
-file system of the ESP chip. Create a copy in your local file system of your project at
-`data/net.json`.
+All muwerk network and mqtt configuration is stored in `json` formatted files in the LittleFS/SPIFFS
+file system of the ESP chip. In order to initialize a filesystem on a specific device, create a
+directory in your local file system of your project named `data` and place all initial configuration
+files like `net.json` or `mqtt.json` there.
+
+Using platformio, the initial file system containing all files in your `data` directory is saved to
+the ESP chip by executing the following commands:
+
+```bash
+pio run -t buildfs
+pio run -t updatefs
+```
 
 '''Note:''' This project is currently preparing to move from SPIFFS (deprecated) to LittleFS. To
 continue to use SPIFFS, define `__USE_OLD_FS__`. In order to activate LittleFS, your `platformio.ini`
@@ -92,6 +101,11 @@ created and upload with `pio run -t buildfs` and `pio run -t uploadfs`.
 
 Since ESP32 currently does not (yet) support LittleFS, ESP32 projects require the define
 `__USE_OLD_FS__` to continue to use SPIFFS for the time being.
+
+Network Configuration
+---------------------
+
+The network configuration is stored in a file named `net.json`.
 
 ### Sample `net.json`
 
@@ -134,13 +148,6 @@ Since ESP32 currently does not (yet) support LittleFS, ESP32 projects require th
         }
     }
 }
-```
-
-Using platformio, `data/net.json` is saved to the ESP chip using:
-
-```bash
-pio run -t buildfs
-pio run -t updatefs
 ```
 
 ### Configuration Options Placeholder
@@ -228,11 +235,15 @@ Message Interface
 
 ### Incoming
 
-| topic                 | Description
-| --------------------- | -------------------------------------------------------------------------------------------------------
-| `net/network/get`     | Returns a network information object in json format in a message with topic `net/network`
-| `net/network/control` | Starts, stops or restarts the network (put `start`, `stop` or `restart` in the message body)
-| `net/networks/get`    | Requests a WiFi network scan. The list is returned in a message with topic `net/networks`. The additional options `sync` and/or `hidden` can be sent in the body.
+| Topic                       | Message Body        | Description
+| --------------------------- | ------------------- | --------------------------------------------------------------------------------------------
+| `net/network/get`           |                     | Returns a network information object in json format in a message with topic `net/network`
+| `net/network/control`       | `<commands>`        | Starts, stops or restarts the network (put `start`, `stop` or `restart` in the message body)
+| `net/networks/get`          | `<options>`         | Requests a WiFi network scan. The list is returned in a message with topic `net/networks`. The additional options `sync` and/or `hidden` can be sent in the body.
+| `mqtt/outgoingblock/set`    | `topic[-wildcard]` | A topic or a topic wildcard for topics that should not be forwarded to the external mqtt server (e.g. to prevent message spam or routing problems) |
+| `mqtt/outgoingblock/remove` | `topic[-wildcard]` | Remove a block on a given outgoing topic wildcard. |
+| `mqtt/incomingblock/set`    | `topic[-wildcard]` | A topic or a topic wildcard for topics that should not be forwarded from the external mqtt server to muwerk. |
+| `mqtt/incomingblock/remove` | `topic[-wildcard]` | Remove a block on a given incoming topic wildcard. |
 
 
 ### Outgoing
@@ -242,16 +253,71 @@ Message Interface
 | `mqtt/config` | `<prefix>+<will_topic>+<will_message>` | The message contains three parts separated bei `+`: prefix, the last-will-topic and last-will message. `prefix` is the mqtt topic-prefix automatically prefixed to outgoing messages, composed of `omu` (set with mqtt) and `hostname`, e.g. `omu/myhost`. `prefix` can be useful for mupplets to know the actual topic names that get published externally. |
 | `mqtt/state` | `connected` or `disconnected` | muwerk processes that subscribe to `mqtt/state` are that way informed, if mqtt external connection is available. The `mqtt/state` topic with message `disconnected` is also the default configuration for mqtt's last will topic and message. |
 
-#### Messages received by mqtt:
 
-| topic        | message body   | comment                                |
-| ------------ | -------------- | -------------------------------------- |
-| `mqtt/outgoingblock/set` | `topic[-wildcard]` | A topic or a topic wildcard for topics that should not be forwarded to the external mqtt server (e.g. to prevent message spam or routing problems) |
-| `mqtt/outgoingblock/remove` | `topic[-wildcard]` | Remove a block on a given outgoing topic wildcard. |
-| `mqtt/incomingblock/set` | `topic[-wildcard]` | A topic or a topic wildcard for topics that should not be forwarded from the external mqtt server to muwerk. |
-| `mqtt/incomingblock/remove` | `topic[-wildcard]` | Remove a block on a given incoming topic wildcard. |
+MQTT Configuration
+------------------
 
-## History
+The MQTT configuration is stored in a file named `mqtt.json`.
+
+
+### Sample `mqtt.json`
+
+```json
+{
+    "host": "192.168.107.1",
+    "port": 1884,
+    "user": "",
+    "password": "",
+    "clientName": "${hostname}",
+    "domainToken": "mu",
+    "outDomainToken": "omu",
+    "lastWillTopic": "",
+    "lastWillMessage": "",
+    "subscriptions": [],
+    "retained": [],
+    "outgoingBlackList": [],
+    "incomingBlackList": []
+}
+```
+
+### Configuration Options Placeholder
+
+Some of the configuration options support the use of placeholders in order to allow values that are specific to
+a certain devince without the need to create separate configuration files. Placeholders are written in the form
+of `${PLACEHOLDER}`.
+
+The following options allow the the of placeholders:
+* The `clientName` of the device. The default value uses a plceholder: `${hostname}`
+* The `lastWillMessage` of the device.
+
+The following placeholders are currently available:
+* `mac`: full mac address
+* `macls`: last 4 digits of mac address
+* `macfs`: first 4 digits of mac address
+* `hostname`: hostname of the device
+
+
+### Top Level Configuration Options
+
+| Field               | Usage                                                                                                        |
+| ------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `host`              | Hostname or ip address of the MQTT server. This value is mandatory                                           |
+| `port`              | Port number under which the MQTT server is reachable. (default: 1884)                                        |
+| `user`              | Username for mqtt server authentication. (default: empty for no authentication)                              |
+| `password`          | Password for mqtt server authentication. (default: empty for no authentication)                              |
+| `clientName`        | The unique MQTT client name.  (default: `${hostname}`)                                                       |
+| `domainToken`       | Common domain token for device group. (default' `mu`)                                                        |
+| `outDomainToken`    | Domain token for outgoing messages. (default: `omu`)                                                         |
+| `lastWillTopic`     | Topic of MQTT last will message. (default: `<outDomainName>/<clientName>/mqtt/state`)                        |
+| `lastWillMessage`   | Message content for last will message. (default: `disconnected`)                                             |
+| `subscriptions`     | List of additional subscription to route into the scheduler's message queue. (default: empty)                |
+| `retained`          | List of topics and topic wildcards that will be flagged as retained when publishing to the external server   |
+| `outgoingBlackList` | List of topics and topic wildcards that will not be published to the external server                         |
+| `incomingBlackList` | List of topics and topic wildcards that will not be published to the muwerk scheduler's message queue        |
+
+
+History
+-------
 
 - 0.3.0 (2021-01-XX): [Under Construction] Next Generation Network:
   - xxx
