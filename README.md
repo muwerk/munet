@@ -373,7 +373,7 @@ History
   - Support for enhanced network scans (async and display of hidden networks)
   - Interface for controlling network operations (start, stop, restart)
   - Detailed and extensible configuration for network and MQTT
-  - Support for controlling the RETAINED flag in published messages
+  - Support for controlling the `RETAINED` flag in published messages
 - 0.2.1 (2021-01-02): Small breaking change: the format of the `mqtt/state` has been simplified: the message contains either `connected` or `disconnected`. Configuration information has been moved into a separate message `mqtt/config`. Support for no outgoing domain prefix (no 'omu') fixed.
 - 0.2.0 (2020-12-25): Initial support for LittleFS on ESP8266.
 - 0.1.99 2020-09 (not yet released): Ongoing preparations for switch to LittleFS, since SPIFFS is deprecated.
