@@ -98,6 +98,7 @@ class Mqtt {
     String lwTopic;
     String lwMsg;
     // computed configuration
+    ustd::array<String> ownedPrefixes;
     String outDomainPrefix;  // outDomainToken + '/' + clientName, or just clientName, if
                              // outDomainToken==""
 
@@ -357,6 +358,9 @@ class Mqtt {
         if (!isOn || !netUp || mqttServer.length() == 0) {
             return;
         }
+        if (mqttConnected) {
+            mqttClient.loop();
+        }
         if (bCheckConnection || mqttTickerTimeout.test()) {
             mqttTickerTimeout.reset();
             bCheckConnection = false;
@@ -392,38 +396,43 @@ class Mqtt {
     void mqttReceive(char *ctopic, unsigned char *payload, unsigned int length) {
         String msg;
         String topic;
-        String tokn;
-        ustd::array<String> toks;
 
-        msg = "";
-        char *szBuffer = (char *)malloc(length + 1);
-        if (szBuffer) {
-            memcpy(szBuffer, payload, length);
-            szBuffer[length] = 0;
-            msg = szBuffer;
-            free(szBuffer);
+        // prepare message and topic
+        topic = (const char *)ctopic;
+        if (length && payload) {
+            char *szBuffer = (char *)malloc(length + 1);
+            if (szBuffer) {
+                memcpy(szBuffer, payload, length);
+                szBuffer[length] = 0;
+                msg = szBuffer;
+                free(szBuffer);
+            } else {
+                DBG("mqtt: ERROR - message body lost due to memory outage");
+            }
         }
-        topic = String(ctopic);
+
         for (unsigned int i = 0; i < incomingBlockList.length(); i++) {
             if (Scheduler::mqttmatch(topic, incomingBlockList[i])) {
                 // blocked incoming
+                DBG2("mqtt: Blocked " + topic);
                 return;
             }
         }
         for (unsigned int i = 0; i < subsList.length(); i++) {
             if (Scheduler::mqttmatch(topic, subsList[i])) {
+                DBG2("mqtt: subscribed topic " + topic);
                 pSched->publish(topic, msg, "mqtt");
                 return;
             }
         }
-        toks.add(clientName);
-        String genTok = domainToken;
-        toks.add(genTok);
-        for (unsigned int i = 0; i < toks.length(); i++) {
-            if (strlen(ctopic) > toks[i].length()) {
-                tokn = toks[i] + '/';
-                if (!strncmp(ctopic, tokn.c_str(), tokn.length())) {
-                    topic = (const char *)(&ctopic[tokn.length()]);
+        // strip the client name token or the domain token in messages for us
+        for (unsigned int i = 0; i < ownedPrefixes.length(); i++) {
+            if (ownedPrefixes[i].length() <= topic.length()) {
+                // basically this comparison is not really needed since at this point we could ONLY
+                // have messages that match either the domainToken or the clientName since we have
+                // exactly subscribed to those. But who knows....
+                if (ownedPrefixes[i] == topic.substring(0, ownedPrefixes[i].length())) {
+                    topic = (const char *)(ctopic + ownedPrefixes[i].length());
                     pSched->publish(topic, msg, "mqtt");
                 }
             }
@@ -554,6 +563,11 @@ class Mqtt {
             lwTopic = outDomainPrefix + "/mqtt/state";
             lwMsg = "disconnected";
         }
+        String clientPrefix = clientName + "/";
+        String domainPrefix = domainToken + "/";
+        ownedPrefixes.erase();
+        ownedPrefixes.add(clientPrefix);
+        ownedPrefixes.add(domainPrefix);
     }
 
     String replaceVars(String val, String &hostname, String &macAddress) {
