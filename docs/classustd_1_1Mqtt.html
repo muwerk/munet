@@ -83,16 +83,12 @@ $(function() {
 Public Member Functions</h2></td></tr>
 <tr class="memitem:acf5f14eae3b54a704e2ccb6f278e2f3b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classustd_1_1Mqtt.html#acf5f14eae3b54a704e2ccb6f278e2f3b">Mqtt</a> ()</td></tr>
 <tr class="separator:acf5f14eae3b54a704e2ccb6f278e2f3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4e7a4a5dce22c03c85b23b606d7c493d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classustd_1_1Mqtt.html#a4e7a4a5dce22c03c85b23b606d7c493d">begin</a> (Scheduler *_pSched, String _mqttServer=&quot;&quot;, uint16_t _mqttServerPort=1883, String _clientName=&quot;${hostname}&quot;, String _domainToken=&quot;mu&quot;, String _outDomainToken=&quot;omu&quot;, String _mqttUsername=&quot;&quot;, String _mqttPassword=&quot;&quot;, String _willTopic=&quot;&quot;, String _willMessage=&quot;&quot;)</td></tr>
-<tr class="separator:a4e7a4a5dce22c03c85b23b606d7c493d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8aeeadb6e7c1df9b67ea34d12441677c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classustd_1_1Mqtt.html#a8aeeadb6e7c1df9b67ea34d12441677c">begin</a> (Scheduler *_pSched, String _mqttServer=&quot;&quot;, uint16_t _mqttServerPort=1883, bool _mqttRetained=false, String _clientName=&quot;${hostname}&quot;, String _domainToken=&quot;mu&quot;, String _outDomainToken=&quot;omu&quot;, String _mqttUsername=&quot;&quot;, String _mqttPassword=&quot;&quot;, String _willTopic=&quot;&quot;, String _willMessage=&quot;&quot;)</td></tr>
+<tr class="separator:a8aeeadb6e7c1df9b67ea34d12441677c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a278b44030a8a96926b02d28106bc1db1"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classustd_1_1Mqtt.html#a278b44030a8a96926b02d28106bc1db1">addSubscription</a> (int taskID, String topic, T_SUBS subs, String originator=&quot;&quot;)</td></tr>
 <tr class="separator:a278b44030a8a96926b02d28106bc1db1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a557f8139ed4edeff0f2f79cdb287890a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classustd_1_1Mqtt.html#a557f8139ed4edeff0f2f79cdb287890a">removeSubscription</a> (int subscriptionHandle, String topic)</td></tr>
 <tr class="separator:a557f8139ed4edeff0f2f79cdb287890a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7901c19809f00aa2dee365ce1f672bda"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classustd_1_1Mqtt.html#a7901c19809f00aa2dee365ce1f672bda">retainSet</a> (String topic)</td></tr>
-<tr class="separator:a7901c19809f00aa2dee365ce1f672bda"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa76edce5bb48c774ce0fd05cd57f57bd"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classustd_1_1Mqtt.html#aa76edce5bb48c774ce0fd05cd57f57bd">retainRemove</a> (String topic)</td></tr>
-<tr class="separator:aa76edce5bb48c774ce0fd05cd57f57bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9bc7417556f45142e028d5b3fbb97ffd"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classustd_1_1Mqtt.html#a9bc7417556f45142e028d5b3fbb97ffd">outgoingBlockSet</a> (String topic)</td></tr>
 <tr class="separator:a9bc7417556f45142e028d5b3fbb97ffd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9de557eb6556d342164a710af46a2ee9"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classustd_1_1Mqtt.html#a9de557eb6556d342164a710af46a2ee9">outgoingBlockRemove</a> (String topic)</td></tr>
@@ -113,7 +109,7 @@ Public Member Functions</h2></td></tr>
 <li><code>&lt;clientName&gt;/#</code></li>
 <li><code>&lt;domainToken&gt;/#</code></li>
 </ol>
-<p><code>&lt;clientName&gt;</code> is by default the hostname of the device chip, but can be overwritten using <code>_clientName</code> in <code><a class="el" href="classustd_1_1Mqtt.html#a4e7a4a5dce22c03c85b23b606d7c493d">ustd::Mqtt.begin()</a>;</code>. <code>domainToken</code> is "mu" by default and can be overwritten using <code>_domainToken</code> in <code><a class="el" href="classustd_1_1Mqtt.html#a4e7a4a5dce22c03c85b23b606d7c493d">ustd::Mqtt.begin()</a></code>;</p>
+<p><code>&lt;clientName&gt;</code> is by default the hostname of the device chip, but can be overwritten using <code>_clientName</code> in <code><a class="el" href="classustd_1_1Mqtt.html#a8aeeadb6e7c1df9b67ea34d12441677c">ustd::Mqtt.begin()</a>;</code>. <code>domainToken</code> is "mu" by default and can be overwritten using <code>_domainToken</code> in <code><a class="el" href="classustd_1_1Mqtt.html#a8aeeadb6e7c1df9b67ea34d12441677c">ustd::Mqtt.begin()</a></code>;</p>
 <p>Received messsages are stripped of <code>clientName</code> or <code>domainToken</code> prefix and published into <code>ustd::Scheduler.publish()</code>. That way external MQTT messages are routed to any muwerk task that uses the internal muwerk <code>ustd::Scheduler.subscribe()</code> mechanism, and all muwerk tasks can publish to external MQTT entities transparently.</p>
 <p>Additionally, arbitrary topics can be subscribed to via <code><a class="el" href="classustd_1_1Mqtt.html#a278b44030a8a96926b02d28106bc1db1">addSubscription()</a></code>. Topics that are added via <code><a class="el" href="classustd_1_1Mqtt.html#a278b44030a8a96926b02d28106bc1db1">addSubscription()</a></code> are transparently forwarded. Nothing is stripped, and it is user's responsibility to prevent loops.</p>
 <h2>Sample MQTT Integration</h2>
@@ -127,11 +123,11 @@ Public Member Functions</h2></td></tr>
 <div class="line"><a class="code" href="classustd_1_1Mqtt.html">ustd::Mqtt</a> mqtt;</div>
 <div class="line"> </div>
 <div class="line"><span class="keywordtype">void</span> setup() {</div>
-<div class="line">    net.<a class="code" href="classustd_1_1Mqtt.html#a4e7a4a5dce22c03c85b23b606d7c493d">begin</a>(&amp;sched);</div>
-<div class="line">    mqtt.<a class="code" href="classustd_1_1Mqtt.html#a4e7a4a5dce22c03c85b23b606d7c493d">begin</a>(&amp;sched);</div>
+<div class="line">    net.<a class="code" href="classustd_1_1Mqtt.html#a8aeeadb6e7c1df9b67ea34d12441677c">begin</a>(&amp;sched);</div>
+<div class="line">    mqtt.<a class="code" href="classustd_1_1Mqtt.html#a8aeeadb6e7c1df9b67ea34d12441677c">begin</a>(&amp;sched);</div>
 <div class="line">}</div>
 <div class="ttc" id="aclassustd_1_1Mqtt_html"><div class="ttname"><a href="classustd_1_1Mqtt.html">ustd::Mqtt</a></div><div class="ttdoc">munet MQTT Gateway Class</div><div class="ttdef"><b>Definition:</b> mqtt.h:79</div></div>
-<div class="ttc" id="aclassustd_1_1Mqtt_html_a4e7a4a5dce22c03c85b23b606d7c493d"><div class="ttname"><a href="classustd_1_1Mqtt.html#a4e7a4a5dce22c03c85b23b606d7c493d">ustd::Mqtt::begin</a></div><div class="ttdeci">void begin(Scheduler *_pSched, String _mqttServer=&quot;&quot;, uint16_t _mqttServerPort=1883, String _clientName=&quot;${hostname}&quot;, String _domainToken=&quot;mu&quot;, String _outDomainToken=&quot;omu&quot;, String _mqttUsername=&quot;&quot;, String _mqttPassword=&quot;&quot;, String _willTopic=&quot;&quot;, String _willMessage=&quot;&quot;)</div><div class="ttdef"><b>Definition:</b> mqtt.h:133</div></div>
+<div class="ttc" id="aclassustd_1_1Mqtt_html_a8aeeadb6e7c1df9b67ea34d12441677c"><div class="ttname"><a href="classustd_1_1Mqtt.html#a8aeeadb6e7c1df9b67ea34d12441677c">ustd::Mqtt::begin</a></div><div class="ttdeci">void begin(Scheduler *_pSched, String _mqttServer=&quot;&quot;, uint16_t _mqttServerPort=1883, bool _mqttRetained=false, String _clientName=&quot;${hostname}&quot;, String _domainToken=&quot;mu&quot;, String _outDomainToken=&quot;omu&quot;, String _mqttUsername=&quot;&quot;, String _mqttPassword=&quot;&quot;, String _willTopic=&quot;&quot;, String _willMessage=&quot;&quot;)</div><div class="ttdef"><b>Definition:</b> mqtt.h:133</div></div>
 <div class="ttc" id="aclassustd_1_1Net_html"><div class="ttname"><a href="classustd_1_1Net.html">ustd::Net</a></div><div class="ttdoc">munet, the muwerk network class for WiFi and NTP</div><div class="ttdef"><b>Definition:</b> net.h:72</div></div>
 </div><!-- fragment --> </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="acf5f14eae3b54a704e2ccb6f278e2f3b"></a>
@@ -223,8 +219,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a4e7a4a5dce22c03c85b23b606d7c493d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4e7a4a5dce22c03c85b23b606d7c493d">&#9670;&nbsp;</a></span>begin()</h2>
+<a id="a8aeeadb6e7c1df9b67ea34d12441677c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8aeeadb6e7c1df9b67ea34d12441677c">&#9670;&nbsp;</a></span>begin()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -249,6 +245,12 @@ Public Member Functions</h2></td></tr>
           <td></td>
           <td class="paramtype">uint16_t&#160;</td>
           <td class="paramname"><em>_mqttServerPort</em> = <code>1883</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>_mqttRetained</em> = <code>false</code>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -311,6 +313,7 @@ Public Member Functions</h2></td></tr>
     <tr><td class="paramname">_pSched</td><td>Pointer to the muwerk scheduler. </td></tr>
     <tr><td class="paramname">_mqttServer</td><td>(optional, default is empty) Hostname or ip address of the MQTT server. </td></tr>
     <tr><td class="paramname">_mqttServerPort</td><td>(optional, default is 1883) Port number under which the MQTT server is reachable </td></tr>
+    <tr><td class="paramname">_mqttRetained</td><td>(optional, default is <code>false</code>) If <code>true</code>, all messages published to the MQTT server will be flagged as RETAINED. </td></tr>
     <tr><td class="paramname">_clientName</td><td>(optional, default is ${hostname}) the MQTT client name. <b>WARNING:</b> this name must be unique! Otherwise the MQTT server will rapidly disconnect. </td></tr>
     <tr><td class="paramname">_domainToken</td><td>(optional, default is "mu") The MQTT client submitts to message topics <code>&lt;_clientName&gt;/#</code> and <code>&lt;_domainToken&gt;/#</code>, strips both <code>&lt;_domainToken&gt;</code> and <code>&lt;_clientName&gt;</code> from received topics and publishes those messages to the internal muwerk interface <code>ustd::scheduler.publish()</code>. </td></tr>
     <tr><td class="paramname">_outDomainToken</td><td>(optional, default is "omu") All pubblications from this client to outside MQTT-servers have their topic prefixed by <code>&lt;outDomainName&gt;/&lt;clientName&gt;/topic</code>. This is to prevent recursions. </td></tr>
@@ -509,74 +512,6 @@ Public Member Functions</h2></td></tr>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd><code>true</code> on successful unsubscription, <code>false</code> if no corresponding subscription is found.</dd></dl>
-
-</div>
-</div>
-<a id="aa76edce5bb48c774ce0fd05cd57f57bd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa76edce5bb48c774ce0fd05cd57f57bd">&#9670;&nbsp;</a></span>retainRemove()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool ustd::Mqtt::retainRemove </td>
-          <td>(</td>
-          <td class="paramtype">String&#160;</td>
-          <td class="paramname"><em>topic</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Publish a topic-wildcard without a retained flag to external mqtt server</p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">topic</td><td>An mqtt topic wildcard for topics that should be forwarded to external mqtt without a retain flag. This method only removes topic wildcard identical identical to a topic (wildcard) that has been used with <code>outgoingRetainSet()</code>. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd><code>true</code> on success, <code>false</code> if no corresponding entry could be found.</dd></dl>
-
-</div>
-</div>
-<a id="a7901c19809f00aa2dee365ce1f672bda"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7901c19809f00aa2dee365ce1f672bda">&#9670;&nbsp;</a></span>retainSet()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool ustd::Mqtt::retainSet </td>
-          <td>(</td>
-          <td class="paramtype">String&#160;</td>
-          <td class="paramname"><em>topic</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Publish a topic-wildcard with a retained flag to external mqtt server</p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">topic</td><td>An mqtt topic wildcard for topics that should be forwarded to external mqtt with a retain flag. E.g. <code>mymupplet/#</code> Would publish all messages a mupplet with name 'mymupplet' publishes with a retain flag when being forwarded to the extern mqtt server </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd><code>true</code> on success or if entry already exists, <code>false</code> if entry couldn't be added.</dd></dl>
 
 </div>
 </div>

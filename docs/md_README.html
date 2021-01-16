@@ -123,6 +123,22 @@ $(function() {
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">Mqtt.h   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone">x   </td></tr>
 </table>
+<h1>Breaking Changes at Version 0.3.0 </h1>
+<p>All network classes in Version 3.0.0 have been deeply refactored in order to provide more functionality and better reliability. Nevertheless there are some breaking changes.</p>
+<h2>Changed Method Signatures</h2>
+<p><code><a class="el" href="classustd_1_1Net.html" title="munet, the muwerk network class for WiFi and NTP">ustd::Net</a></code> has now two different <code>Net::begin</code> methods. The default one (selected when invoking <code>net.begin(&amp;sched);</code>) starts the network based on configuration stored in a configuration file located at the filesystem of the device. If the device implements means for managing the configuration, this is the most versatile method. There is still a <code>Net::begin</code> method with a function signature similar to the older version that is intended for hardcoded devices. When starting the network with the other <code>Net::begin</code> method, the configuration is stored in memory and connot be changed any more at runtime.</p>
+<p>Since the other network classes have also own configuration files when needed, the support for querying information about network services by publishing <code>net/services/get</code> has been removed.</p>
+<p>The format of the <code>net/network/state</code> message has been extended to cover the new features, but is still compatible with older versions.</p>
+<p>Also the interface of <code>Mqtt::begin</code> has changed in order to resemble the fact that all passed options are the defaults for options <b>not set</b> in the configuration file <code>mqtt.json</code>.</p>
+<h2>Changed Configuration File Format</h2>
+<p>When the device starts for the first time with the new <code>munet</code> library, it will detect an old configuration file and will migrate the content to the new format automatically. After the conversion, the filesystem will contain two configuration files:</p><ul>
+<li><code>net.json</code> - the migrated version of the original net.json</li>
+<li><code>mqtt.json</code> - the new configuration file for MQTT if the mqtt service was defined in the old configuration file.</li>
+</ul>
+<p>See the documentation below for details about the supported configuration options in each file.</p>
+<h2>Retained Messages</h2>
+<p>All messages published by the older version of <code><a class="el" href="classustd_1_1Mqtt.html" title="munet MQTT Gateway Class">ustd::Mqtt</a></code> were flagged with the <code>RETAINED</code> flag. This default behaviour has been changed: It is now possible to configure if the default behaviour should be to flag the messages or not. The default is <code>false</code> but if the configuration file was created by migrating an older <code>net.json</code>, the old behaviour will be preserved in order to maintain compatibility of the device (See configuration option <code>alwaysRetain</code> in <code>mqtt.json</code>).</p>
+<p>When this option is <code>false</code> (the default setting), there is a new way (for explicit MQTT topics) to specify that a message shall be published as <code>RETAINED</code>: instead of prefixing the topic with one exclamation point, the topic shall be prefixed with double exclamation points. E.g.: <code>!!homeassistant/config</code>.</p>
 <h1>Configuration </h1>
 <p>All muwerk network and mqtt configuration is stored in <code>json</code> formatted files in the LittleFS/SPIFFS file system of the ESP chip. In order to initialize a filesystem on a specific device, create a directory in your local file system of your project named <code>data</code> and place all initial configuration files like <code>net.json</code> or <code>mqtt.json</code> there.</p>
 <p>Using platformio, the initial file system containing all files in your <code>data</code> directory is saved to the ESP chip by executing the following commands:</p>
@@ -132,7 +148,29 @@ $(function() {
 <div class="fragment"><div class="line">board_build.filesystem = littlefs</div>
 </div><!-- fragment --><p>SPIFFS and LittleFS are not compatible, if the library is updated, a new file system needs to be created and upload with <code>pio run -t buildfs</code> and <code>pio run -t uploadfs</code>.</p>
 <p>Since ESP32 currently does not (yet) support LittleFS, ESP32 projects require the define <code>__USE_OLD_FS__</code> to continue to use SPIFFS for the time being.</p>
-<h1>Network Configuration </h1>
+<h1>Minimal Required Configuration Files </h1>
+<p>The following minimum configuration files are needed in order to connect to a WiFi network and have mqtt up and running.</p>
+<h2>Minimum <code>net.json</code></h2>
+<div class="fragment"><div class="line">{</div>
+<div class="line">    &quot;version&quot;: 1,</div>
+<div class="line">    &quot;mode&quot;: &quot;station&quot;,</div>
+<div class="line">    &quot;hostname&quot;: &quot;my-host-name&quot;,</div>
+<div class="line">    &quot;station&quot;: {</div>
+<div class="line">        &quot;SSID&quot;: &quot;my-network-SSID&quot;,</div>
+<div class="line">        &quot;password&quot;: &quot;myS3cr3t&quot;,</div>
+<div class="line">    },</div>
+<div class="line">    &quot;services&quot;: {</div>
+<div class="line">        &quot;ntp&quot;: {</div>
+<div class="line">            &quot;host&quot;: [&quot;time.nist.gov&quot;],</div>
+<div class="line">            &quot;dstrules&quot;: &quot;CET-1CEST,M3.5.0,M10.5.0/3&quot;</div>
+<div class="line">        }</div>
+<div class="line">    }</div>
+<div class="line">}</div>
+</div><!-- fragment --><h2>Minimum <code>mqtt.json</code></h2>
+<div class="fragment"><div class="line">{</div>
+<div class="line">    &quot;host&quot;:&quot;my-mqtt-hostname&quot;</div>
+<div class="line">}</div>
+</div><!-- fragment --><h1>Network Configuration </h1>
 <p>The network configuration is stored in a file named <code>net.json</code>.</p>
 <h2>Sample <code>net.json</code></h2>
 <div class="fragment"><div class="line">{</div>
@@ -263,7 +301,7 @@ $(function() {
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>dstrules</code>   </td><td class="markdownTableBodyNone">optional timezone and daylight saving rules in <a href="https://mm.icann.org/pipermail/tz/2016-April/023570.html">unix format</a>   </td></tr>
 </table>
-<h1>Message Interface </h1>
+<h1>Network Message Interface </h1>
 <h2>Incoming</h2>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -273,24 +311,20 @@ $(function() {
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>net/network/control</code>   </td><td class="markdownTableBodyNone"><code>&lt;commands&gt;</code>   </td><td class="markdownTableBodyNone">Starts, stops or restarts the network (put <code>start</code>, <code>stop</code> or <code>restart</code> in the message body)    </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>net/networks/get</code>   </td><td class="markdownTableBodyNone"><code>&lt;options&gt;</code>   </td><td class="markdownTableBodyNone">Requests a WiFi network scan. The list is returned in a message with topic <code>net/networks</code>. The additional options <code>sync</code> and/or <code>hidden</code> can be sent in the body.    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>mqtt/outgoingblock/set</code>   </td><td class="markdownTableBodyNone"><code>topic[-wildcard]</code>   </td><td class="markdownTableBodyNone">A topic or a topic wildcard for topics that should not be forwarded to the external mqtt server (e.g. to prevent message spam or routing problems)    </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>mqtt/outgoingblock/remove</code>   </td><td class="markdownTableBodyNone"><code>topic[-wildcard]</code>   </td><td class="markdownTableBodyNone">Remove a block on a given outgoing topic wildcard.    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>mqtt/incomingblock/set</code>   </td><td class="markdownTableBodyNone"><code>topic[-wildcard]</code>   </td><td class="markdownTableBodyNone">A topic or a topic wildcard for topics that should not be forwarded from the external mqtt server to muwerk.    </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>mqtt/incomingblock/remove</code>   </td><td class="markdownTableBodyNone"><code>topic[-wildcard]</code>   </td><td class="markdownTableBodyNone">Remove a block on a given incoming topic wildcard.   </td></tr>
+<td class="markdownTableBodyNone"><code>net/networks/get</code>   </td><td class="markdownTableBodyNone"><code>&lt;options&gt;</code>   </td><td class="markdownTableBodyNone">Requests a WiFi network scan. The list is returned in a message with topic <code>net/networks</code>. The additional options <code>sync</code> and/or <code>hidden</code> can be sent in the body.   </td></tr>
 </table>
 <h2>Outgoing</h2>
 <table class="markdownTable">
 <tr class="markdownTableHead">
-<th class="markdownTableHeadNone">topic   </th><th class="markdownTableHeadNone">message body   </th><th class="markdownTableHeadNone">comment    </th></tr>
+<th class="markdownTableHeadNone">Topic   </th><th class="markdownTableHeadNone">Message Body   </th><th class="markdownTableHeadNone">Description    </th></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>mqtt/config</code>   </td><td class="markdownTableBodyNone"><code>&lt;prefix&gt;+&lt;will_topic&gt;+&lt;will_message&gt;</code>   </td><td class="markdownTableBodyNone">The message contains three parts separated bei <code>+</code>: prefix, the last-will-topic and last-will message. <code>prefix</code> is the mqtt topic-prefix automatically prefixed to outgoing messages, composed of <code>omu</code> (set with mqtt) and <code>hostname</code>, e.g. <code>omu/myhost</code>. <code>prefix</code> can be useful for mupplets to know the actual topic names that get published externally.    </td></tr>
+<td class="markdownTableBodyNone"><code>net/network</code>   </td><td class="markdownTableBodyNone"><code>{...}</code>   </td><td class="markdownTableBodyNone">The current network state as JSON object    </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>mqtt/state</code>   </td><td class="markdownTableBodyNone"><code>connected</code> or <code>disconnected</code>   </td><td class="markdownTableBodyNone">muwerk processes that subscribe to <code>mqtt/state</code> are that way informed, if mqtt external connection is available. The <code>mqtt/state</code> topic with message <code>disconnected</code> is also the default configuration for mqtt's last will topic and message.   </td></tr>
+<td class="markdownTableBodyNone"><code>net/rssi</code>   </td><td class="markdownTableBodyNone"><code>&lt;rssi value&gt;</code>   </td><td class="markdownTableBodyNone">The current signal value when connected to a WiFi    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone"><code>net/connections</code>   </td><td class="markdownTableBodyNone"><code>&lt;connection count&gt;</code>   </td><td class="markdownTableBodyNone">The number of stations connected to the device in access point mode    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone"><code>net/networks</code>   </td><td class="markdownTableBodyNone"><code>{..}</code>   </td><td class="markdownTableBodyNone">The result of a WiFi scan as JSON object   </td></tr>
 </table>
 <h1>MQTT Configuration </h1>
 <p>The MQTT configuration is stored in a file named <code>mqtt.json</code>.</p>
@@ -305,8 +339,8 @@ $(function() {
 <div class="line">    &quot;outDomainToken&quot;: &quot;omu&quot;,</div>
 <div class="line">    &quot;lastWillTopic&quot;: &quot;&quot;,</div>
 <div class="line">    &quot;lastWillMessage&quot;: &quot;&quot;,</div>
+<div class="line">    &quot;alwaysRetain&quot;: false,</div>
 <div class="line">    &quot;subscriptions&quot;: [],</div>
-<div class="line">    &quot;retained&quot;: [],</div>
 <div class="line">    &quot;outgoingBlackList&quot;: [],</div>
 <div class="line">    &quot;incomingBlackList&quot;: []</div>
 <div class="line">}</div>
@@ -345,19 +379,45 @@ $(function() {
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code>lastWillMessage</code>   </td><td class="markdownTableBodyNone">Message content for last will message. (default: <code>disconnected</code>)    </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>subscriptions</code>   </td><td class="markdownTableBodyNone">List of additional subscription to route into the scheduler's message queue. (default: empty)    </td></tr>
+<td class="markdownTableBodyNone"><code>alwaysRetain</code>   </td><td class="markdownTableBodyNone">If <code>true</code> all messages published to MQQ will flagged as <code>RETAINED</code>. (default: <code>false</code>)    </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>retained</code>   </td><td class="markdownTableBodyNone">List of topics and topic wildcards that will be flagged as retained when publishing to the external server    </td></tr>
+<td class="markdownTableBodyNone"><code>subscriptions</code>   </td><td class="markdownTableBodyNone">List of additional subscription to route into the scheduler's message queue. (default: empty)    </td></tr>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>outgoingBlackList</code>   </td><td class="markdownTableBodyNone">List of topics and topic wildcards that will not be published to the external server    </td></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code>incomingBlackList</code>   </td><td class="markdownTableBodyNone">List of topics and topic wildcards that will not be published to the muwerk scheduler's message queue   </td></tr>
 </table>
+<h1>MQTT Message Interface </h1>
+<h2>Incoming</h2>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadNone">Topic &#160;   </th><th class="markdownTableHeadNone">Message Body   </th><th class="markdownTableHeadNone">Description    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone"><code>mqtt/outgoingblock/set</code>   </td><td class="markdownTableBodyNone"><code>topic[-wildcard]</code>   </td><td class="markdownTableBodyNone">A topic or a topic wildcard for topics that should not be forwarded to the external mqtt server (e.g. to prevent message spam or routing problems)    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone"><code>mqtt/outgoingblock/remove</code>   </td><td class="markdownTableBodyNone"><code>topic[-wildcard]</code>   </td><td class="markdownTableBodyNone">Remove a block on a given outgoing topic wildcard.    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone"><code>mqtt/incomingblock/set</code>   </td><td class="markdownTableBodyNone"><code>topic[-wildcard]</code>   </td><td class="markdownTableBodyNone">A topic or a topic wildcard for topics that should not be forwarded from the external mqtt server to muwerk.    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone"><code>mqtt/incomingblock/remove</code>   </td><td class="markdownTableBodyNone"><code>topic[-wildcard]</code>   </td><td class="markdownTableBodyNone">Remove a block on a given incoming topic wildcard.   </td></tr>
+</table>
+<h2>Outgoing</h2>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadNone">Topic   </th><th class="markdownTableHeadNone">Message Body   </th><th class="markdownTableHeadNone">Description    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone"><code>mqtt/config</code>   </td><td class="markdownTableBodyNone"><code>&lt;prefix&gt;+&lt;will_topic&gt;+&lt;will_message&gt;</code>   </td><td class="markdownTableBodyNone">The message contains three parts separated bei <code>+</code>: prefix, the last-will-topic and last-will message. <code>prefix</code> is the mqtt topic-prefix automatically prefixed to outgoing messages, composed of <code>omu</code> (set with mqtt) and <code>hostname</code>, e.g. <code>omu/myhost</code>. <code>prefix</code> can be useful for mupplets to know the actual topic names that get published externally.    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone"><code>mqtt/state</code>   </td><td class="markdownTableBodyNone"><code>connected</code> or <code>disconnected</code>   </td><td class="markdownTableBodyNone">muwerk processes that subscribe to <code>mqtt/state</code> are that way informed, if mqtt external connection is available. The <code>mqtt/state</code> topic with message <code>disconnected</code> is also the default configuration for mqtt's last will topic and message.   </td></tr>
+</table>
 <h1>History </h1>
 <ul>
-<li>0.3.0 (2021-01-XX): [Under Construction] Next Generation Network:<ul>
-<li>xxx</li>
-<li>yyy</li>
+<li>0.3.0 (2021-01-XX): [Under Construction] Next Generation Network: See section _"Breaking Changes at Version 0.3.0"_ for caveats.<ul>
+<li>Support for Access Point mode and Dual Mode (both network station and access point mode)</li>
+<li>Support for enhanced network scans (async and display of hidden networks)</li>
+<li>Interface for controlling network operations (start, stop, restart)</li>
+<li>Detailed and extensible configuration for network and MQTT</li>
+<li>Support for controlling the <code>RETAINED</code> flag in published messages</li>
 </ul>
 </li>
 <li>0.2.1 (2021-01-02): Small breaking change: the format of the <code>mqtt/state</code> has been simplified: the message contains either <code>connected</code> or <code>disconnected</code>. Configuration information has been moved into a separate message <code>mqtt/config</code>. Support for no outgoing domain prefix (no 'omu') fixed.</li>

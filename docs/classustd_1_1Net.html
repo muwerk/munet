@@ -83,8 +83,8 @@ $(function() {
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a8e11f58403f0d2ff4918352209a47349"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classustd_1_1Net.html#a8e11f58403f0d2ff4918352209a47349">Net</a> (uint8_t signalLed=0xff, bool signalLogic=false)</td></tr>
 <tr class="separator:a8e11f58403f0d2ff4918352209a47349"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8bed53d1d3f89b57180f99cc22cbadf4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classustd_1_1Net.html#a8bed53d1d3f89b57180f99cc22cbadf4">begin</a> (Scheduler *pScheduler, Netmode opmode=AP)</td></tr>
-<tr class="separator:a8bed53d1d3f89b57180f99cc22cbadf4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0d075f7d15c5e3ff3355959c840cd408"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classustd_1_1Net.html#a0d075f7d15c5e3ff3355959c840cd408">begin</a> (Scheduler *pScheduler, Netmode opmode=AP, bool restartOnMultipleFailures=true)</td></tr>
+<tr class="separator:a0d075f7d15c5e3ff3355959c840cd408"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a81a9d3aa22ddec85d46effa088d0e670"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classustd_1_1Net.html#a81a9d3aa22ddec85d46effa088d0e670">begin</a> (Scheduler *pScheduler, String SSID, String password=&quot;&quot;, String hostname=&quot;muwerk-${macls}&quot;, Netmode opmode=AP, bool restartOnMultipleFailures=true)</td></tr>
 <tr class="separator:a81a9d3aa22ddec85d46effa088d0e670"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -93,7 +93,7 @@ Public Member Functions</h2></td></tr>
 <p>The library header-only and relies on the libraries ustd, muwerk, Arduino_JSON and PubSubClient.</p>
 <p>Make sure to provide the <a href="https://github.com/muwerk/ustd/blob/master/README.md">required platform define</a> before including ustd headers.</p>
 <p>See <a href="https://github.com/muwerk/munet/blob/master/README.md">README.md</a> for a detailed description of all network configuration options.</p>
-<p>Alternatively, operating mode and credentials can be given in source code during <a class="el" href="classustd_1_1Net.html#a8bed53d1d3f89b57180f99cc22cbadf4">Net.begin()</a>. (s.b.)</p>
+<p>Alternatively, operating mode and credentials can be given in source code during <a class="el" href="classustd_1_1Net.html#a0d075f7d15c5e3ff3355959c840cd408">Net.begin()</a>. (s.b.)</p>
 <h2>Sample network connection</h2>
 <div class="fragment"><div class="line"><span class="preprocessor">#define __ESP__ 1   </span><span class="comment">// Platform defines required, see doc, mainpage.</span></div>
 <div class="line"><span class="preprocessor">#include &quot;scheduler.h&quot;</span></div>
@@ -183,8 +183,8 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a8bed53d1d3f89b57180f99cc22cbadf4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8bed53d1d3f89b57180f99cc22cbadf4">&#9670;&nbsp;</a></span>begin() <span class="overload">[1/2]</span></h2>
+<a id="a0d075f7d15c5e3ff3355959c840cd408"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0d075f7d15c5e3ff3355959c840cd408">&#9670;&nbsp;</a></span>begin() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -202,7 +202,13 @@ Public Member Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">Netmode&#160;</td>
-          <td class="paramname"><em>opmode</em> = <code>AP</code>&#160;</td>
+          <td class="paramname"><em>opmode</em> = <code>AP</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>restartOnMultipleFailures</em> = <code>true</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -222,7 +228,8 @@ Public Member Functions</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">pScheduler</td><td>Pointer to the muwerk scheduler. </td></tr>
-    <tr><td class="paramname">opmode</td><td>(optional, default AP) Default operation mode if none is configured</td></tr>
+    <tr><td class="paramname">opmode</td><td>(optional, default AP) Default operation mode if none is configured </td></tr>
+    <tr><td class="paramname">restartOnMultipleFailures</td><td>(optional, default <code>true</code>) Default restart on continued failure if none is configured.</td></tr>
   </table>
   </dd>
 </dl>
