@@ -187,7 +187,7 @@ class Mqtt {
         mqttRetained = conf.readBool("mqtt/alwaysRetained", _mqttRetained);
         clientName = isvalid(conf.readString("mqtt/clientName", _clientName), 1, "${hostname}");
         domainToken = isvalid(conf.readString("mqtt/domainToken", _domainToken), 1, "mu");
-        outDomainToken = conf.readString("mqtt/outDOmainToken", _outDomainToken);
+        outDomainToken = conf.readString("mqtt/outDomainToken", _outDomainToken);
         lwTopic = conf.readString("mqtt/lastWillTopic", _willTopic);
         lwMsg = conf.readString("mqtt/lastWillMessage", _willMessage);
 
