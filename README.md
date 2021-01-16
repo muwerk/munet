@@ -274,7 +274,6 @@ The MQTT configuration is stored in a file named `mqtt.json`.
     "lastWillTopic": "",
     "lastWillMessage": "",
     "subscriptions": [],
-    "retained": [],
     "outgoingBlackList": [],
     "incomingBlackList": []
 }
@@ -311,7 +310,6 @@ The following placeholders are currently available:
 | `lastWillTopic`     | Topic of MQTT last will message. (default: `<outDomainName>/<clientName>/mqtt/state`)                        |
 | `lastWillMessage`   | Message content for last will message. (default: `disconnected`)                                             |
 | `subscriptions`     | List of additional subscription to route into the scheduler's message queue. (default: empty)                |
-| `retained`          | List of topics and topic wildcards that will be flagged as retained when publishing to the external server   |
 | `outgoingBlackList` | List of topics and topic wildcards that will not be published to the external server                         |
 | `incomingBlackList` | List of topics and topic wildcards that will not be published to the muwerk scheduler's message queue        |
 
