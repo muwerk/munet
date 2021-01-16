@@ -110,14 +110,14 @@ See the documentation below for details about the supported configuration option
 
 ### Retained Messages
 
-All messages published by the older version of `ustd::Mqtt` were flagged with the RETAINED flag.
+All messages published by the older version of `ustd::Mqtt` were flagged with the `RETAINED` flag.
 This default behaviour has been changed: It is now possible to configure if the default behaviour
 should be to flag the messages or not. The default is `false` but if the configuration file was
 created by migrating an older `net.json`, the old behaviour will be preserved in order to maintain
 compatibility of the device (See configuration option `alwaysRetain` in `mqtt.json`).
 
 When this option is `false` (the default setting), there is a new way (for explicit MQTT topics)
-to specify that a message shall be published as RETAINED: instead of prefixing the topic with one
+to specify that a message shall be published as `RETAINED`: instead of prefixing the topic with one
 exclamation point, the topic shall be prefixed with double exclamation points. E.g.:
 `!!homeassistant/config`.
 
@@ -359,7 +359,7 @@ The following placeholders are currently available:
 | `outDomainToken`    | Domain token for outgoing messages. (default: `omu`)                                                         |
 | `lastWillTopic`     | Topic of MQTT last will message. (default: `<outDomainName>/<clientName>/mqtt/state`)                        |
 | `lastWillMessage`   | Message content for last will message. (default: `disconnected`)                                             |
-| `alwaysRetain`      | If `true` all messages published to MQQ will flagged as RETAINED. (default: `false`)                         |
+| `alwaysRetain`      | If `true` all messages published to MQQ will flagged as `RETAINED`. (default: `false`)                       |
 | `subscriptions`     | List of additional subscription to route into the scheduler's message queue. (default: empty)                |
 | `outgoingBlackList` | List of topics and topic wildcards that will not be published to the external server                         |
 | `incomingBlackList` | List of topics and topic wildcards that will not be published to the muwerk scheduler's message queue        |

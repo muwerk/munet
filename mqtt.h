@@ -452,11 +452,10 @@ class Mqtt {
             }
 
             bool bRetain = mqttRetained;
-            if (!bRetain && (tpc.c_str()[0] == '!')) {
-                // if retain flag is not set by default, publish with retain flag if topic starts
-                // with !!
-                bRetain = true;
+            if (tpc.c_str()[0] == '!') {
+                // remove second exclamation point
                 tpc = &(topic.c_str()[2]);
+                bRetain = true;
             }
 
             DBG3("mqtt: publishing...");
