@@ -151,6 +151,40 @@ created and upload with `pio run -t buildfs` and `pio run -t uploadfs`.
 Since ESP32 currently does not (yet) support LittleFS, ESP32 projects require the define
 `__USE_OLD_FS__` to continue to use SPIFFS for the time being.
 
+Minimal Required Configuration Files
+------------------------------------
+
+The following minimum configuration files are needed in order to connect to a WiFi network and
+have mqtt up and running.
+
+### Minimum `net.json`
+
+```json
+{
+    "version": 1,
+    "mode": "station",
+    "hostname": "my-host-name",
+    "station": {
+        "SSID": "my-network-SSID",
+        "password": "myS3cr3t",
+    },
+    "services": {
+        "ntp": {
+            "host": ["time.nist.gov"],
+            "dstrules": "CET-1CEST,M3.5.0,M10.5.0/3"
+        }
+    }
+}
+```
+
+### Minimum `mqtt.json`
+
+```json
+{
+    "host":"my-mqtt-hostname"
+}
+```
+
 Network Configuration
 ---------------------
 
@@ -279,8 +313,8 @@ used in network station or dual mode.
 | `dstrules`   | optional timezone and daylight saving rules in [unix format](https://mm.icann.org/pipermail/tz/2016-April/023570.html)  |
 
 
-Message Interface
------------------
+Network Message Interface
+-------------------------
 
 ### Incoming
 
@@ -289,18 +323,16 @@ Message Interface
 | `net/network/get`           |                     | Returns a network information object in json format in a message with topic `net/network`
 | `net/network/control`       | `<commands>`        | Starts, stops or restarts the network (put `start`, `stop` or `restart` in the message body)
 | `net/networks/get`          | `<options>`         | Requests a WiFi network scan. The list is returned in a message with topic `net/networks`. The additional options `sync` and/or `hidden` can be sent in the body.
-| `mqtt/outgoingblock/set`    | `topic[-wildcard]` | A topic or a topic wildcard for topics that should not be forwarded to the external mqtt server (e.g. to prevent message spam or routing problems) |
-| `mqtt/outgoingblock/remove` | `topic[-wildcard]` | Remove a block on a given outgoing topic wildcard. |
-| `mqtt/incomingblock/set`    | `topic[-wildcard]` | A topic or a topic wildcard for topics that should not be forwarded from the external mqtt server to muwerk. |
-| `mqtt/incomingblock/remove` | `topic[-wildcard]` | Remove a block on a given incoming topic wildcard. |
 
 
 ### Outgoing
 
-| topic        | message body   | comment                                |
-| ------------ | -------------- | -------------------------------------- |
-| `mqtt/config` | `<prefix>+<will_topic>+<will_message>` | The message contains three parts separated bei `+`: prefix, the last-will-topic and last-will message. `prefix` is the mqtt topic-prefix automatically prefixed to outgoing messages, composed of `omu` (set with mqtt) and `hostname`, e.g. `omu/myhost`. `prefix` can be useful for mupplets to know the actual topic names that get published externally. |
-| `mqtt/state` | `connected` or `disconnected` | muwerk processes that subscribe to `mqtt/state` are that way informed, if mqtt external connection is available. The `mqtt/state` topic with message `disconnected` is also the default configuration for mqtt's last will topic and message. |
+| Topic             | Message Body          | Description
+| ----------------- | --------------------- | --------------------------------------------------------------------------------------------
+| `net/network`     | `{...}`               | The current network state as JSON object
+| `net/rssi`        | `<rssi value>`        | The current signal value when connected to a WiFi
+| `net/connections` | `<connection count>`  | The number of stations connected to the device in access point mode
+| `net/networks`    | `{..}`                | The result of a WiFi scan as JSON object
 
 
 MQTT Configuration
@@ -363,6 +395,26 @@ The following placeholders are currently available:
 | `subscriptions`     | List of additional subscription to route into the scheduler's message queue. (default: empty)                |
 | `outgoingBlackList` | List of topics and topic wildcards that will not be published to the external server                         |
 | `incomingBlackList` | List of topics and topic wildcards that will not be published to the muwerk scheduler's message queue        |
+
+
+MQTT Message Interface
+----------------------
+
+### Incoming
+
+| Topic                       | Message Body        | Description
+| --------------------------- | ------------------- | --------------------------------------------------------------------------------------------
+| `mqtt/outgoingblock/set`    | `topic[-wildcard]` | A topic or a topic wildcard for topics that should not be forwarded to the external mqtt server (e.g. to prevent message spam or routing problems) |
+| `mqtt/outgoingblock/remove` | `topic[-wildcard]` | Remove a block on a given outgoing topic wildcard. |
+| `mqtt/incomingblock/set`    | `topic[-wildcard]` | A topic or a topic wildcard for topics that should not be forwarded from the external mqtt server to muwerk. |
+| `mqtt/incomingblock/remove` | `topic[-wildcard]` | Remove a block on a given incoming topic wildcard. |
+
+### Outgoing
+
+| Topic         | Message Body                           | Description
+| ------------- | -------------------------------------- | --------------------------------------------------------------------------------------------
+| `mqtt/config` | `<prefix>+<will_topic>+<will_message>` | The message contains three parts separated bei `+`: prefix, the last-will-topic and last-will message. `prefix` is the mqtt topic-prefix automatically prefixed to outgoing messages, composed of `omu` (set with mqtt) and `hostname`, e.g. `omu/myhost`. `prefix` can be useful for mupplets to know the actual topic names that get published externally.
+| `mqtt/state`  | `connected` or `disconnected`          | muwerk processes that subscribe to `mqtt/state` are that way informed, if mqtt external connection is available. The `mqtt/state` topic with message `disconnected` is also the default configuration for mqtt's last will topic and message.
 
 
 History

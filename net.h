@@ -140,10 +140,6 @@ class Net {
          */
         oldState = NOTDEFINED;
         curState = NOTCONFIGURED;
-        if (signalLed != 0xff) {
-            pinMode(signalLed, OUTPUT);
-            setLed(signalLogic);  // Turn the LED off
-        }
     }
 
     void begin(Scheduler *pScheduler, Netmode opmode = AP, bool restartOnMultipleFailures = true) {
@@ -164,6 +160,7 @@ class Net {
          * See <a href="https://github.com/muwerk/munet/blob/master/README.md">README.md</a> for a
          * detailed description of all network configuration options.
          */
+        initLed();
         initHardwareAddresses();
         readNetConfig(opmode, restartOnMultipleFailures);
         initScheduler(pScheduler);
@@ -213,6 +210,7 @@ class Net {
             DBG("ERROR: Wrong operation mode specified on Net::begin");
             return;
         }
+        initLed();
         initHardwareAddresses();
         initNetConfig(SSID, password, hostname, opmode, restartOnMultipleFailures);
         initScheduler(pScheduler);
@@ -343,16 +341,10 @@ class Net {
             } else {
                 DBG();
             }
-            switch (curState) {
-            case SERVING:
-            case CONNECTED:
-                cleanupNetConfig();
-                setLed(true);  // Turn the LED on
-                break;
-            default:
-                setLed(false);  // Turn the LED off
-                break;
-            }
+
+            // Turn the LED on when device is connecting to a WiFi
+            setLed(curState == CONNECTINGAP);
+
             oldState = curState;
             publishState();
         }
@@ -736,6 +728,13 @@ class Net {
             res["networks"][i] = network;
         }
         pSched->publish("net/networks", JSON.stringify(res));
+    }
+
+    void initLed() {
+        if (signalLed != 0xff) {
+            pinMode(signalLed, OUTPUT);
+            setLed(signalLogic);  // Turn the LED off
+        }
     }
 
     void setLed(bool on) {
