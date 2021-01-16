@@ -138,8 +138,8 @@ pio run -t updatefs
 ```
 
 '''Note:''' This project is currently preparing to move from SPIFFS (deprecated) to LittleFS. To
-continue to use SPIFFS, define `__USE_OLD_FS__`. In order to activate LittleFS, your `platformio.ini`
-currently needs to contain:
+continue to use SPIFFS on ESP8266 systems, define `__USE_OLD_FS__`. In order to activate LittleFS, 
+your `platformio.ini` currently needs to contain:
 
 ```
 board_build.filesystem = littlefs
@@ -148,8 +148,8 @@ board_build.filesystem = littlefs
 SPIFFS and LittleFS are not compatible, if the library is updated, a new file system needs to be
 created and upload with `pio run -t buildfs` and `pio run -t uploadfs`.
 
-Since ESP32 currently does not (yet) support LittleFS, ESP32 projects require the define
-`__USE_OLD_FS__` to continue to use SPIFFS for the time being.
+Since ESP32 currently does not (yet) support LittleFS, ESP32 projects automatically use SPIFFS 
+for the time being.
 
 Minimal Required Configuration Files
 ------------------------------------
@@ -166,7 +166,7 @@ have mqtt up and running.
     "hostname": "my-host-name",
     "station": {
         "SSID": "my-network-SSID",
-        "password": "myS3cr3t",
+        "password": "myS3cr3t"
     },
     "services": {
         "ntp": {
