@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['configurentp_51',['configureNTP',['../classustd_1_1Net.html#a26e41f33f0e8a159e639c5940e84aff9',1,'ustd::Net']]]
+  ['incomingblockremove_21',['incomingBlockRemove',['../classustd_1_1Mqtt.html#aa853edd665175ae45c205ac05c88427e',1,'ustd::Mqtt']]],
+  ['incomingblockset_22',['incomingBlockSet',['../classustd_1_1Mqtt.html#aa9fc3892c0af74b22cfbfecec51d355e',1,'ustd::Mqtt']]]
 ];
