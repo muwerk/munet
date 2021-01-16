@@ -466,8 +466,10 @@ class Net {
                         } else if (JSON.typeof(services[i]["mqttserver"]) == "string") {
                             String mqttserver = (const char *)(services[i]["mqttserver"]);
                             DBG("Found mqtt host entry: " + mqttserver);
-                            ustd::jsonfile mqtt;
+                            ustd::jsonfile mqtt(false, true);  // no autocommit, force new
                             mqtt.writeString("mqtt/host", mqttserver);
+                            mqtt.writeBool("mqtt/alwaysRetained", true);
+                            mqtt.commit();
                         }
                     } else {
                         DBG("Wrong service entry");

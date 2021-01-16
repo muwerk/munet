@@ -87,10 +87,11 @@ class Mqtt {
     PubSubClient mqttClient;
 
     // active configuration
-    uint16_t mqttServerPort;
     String mqttServer;
+    uint16_t mqttServerPort;
     String mqttUsername;
     String mqttPassword;
+    bool mqttRetained;
     String clientName;
     String domainToken;
     String outDomainToken;
@@ -129,9 +130,10 @@ class Mqtt {
     }
 
     void begin(Scheduler *_pSched, String _mqttServer = "", uint16_t _mqttServerPort = 1883,
-               String _clientName = "${hostname}", String _domainToken = "mu",
-               String _outDomainToken = "omu", String _mqttUsername = "", String _mqttPassword = "",
-               String _willTopic = "", String _willMessage = "") {
+               bool _mqttRetained = false, String _clientName = "${hostname}",
+               String _domainToken = "mu", String _outDomainToken = "omu",
+               String _mqttUsername = "", String _mqttPassword = "", String _willTopic = "",
+               String _willMessage = "") {
         /*! Connect to external MQTT server as soon as network is available
          *
          * This method starts the MQTT gateway using the information stored into the configuration
@@ -144,6 +146,8 @@ class Mqtt {
          * server.
          * @param _mqttServerPort (optional, default is 1883) Port number under which the MQTT
          * server is reachable
+         * @param _mqttRetained (optional, default is `false`) If `true`, all messages published to
+         * the MQTT server will be flagged as RETAINED.
          * @param _clientName (optional, default is ${hostname}) the MQTT client name. **WARNING:**
          * this name must be unique! Otherwise the MQTT server will rapidly disconnect.
          * @param _domainToken (optional, default is "mu") The MQTT client submitts to message
@@ -179,6 +183,7 @@ class Mqtt {
         mqttServerPort = (uint16_t)conf.readLong("mqtt/port", 1, 65535, _mqttServerPort);
         mqttUsername = conf.readString("mqtt/username", _mqttUsername);
         mqttPassword = conf.readString("mqtt/password", _mqttPassword);
+        mqttRetained = conf.readBool("mqtt/alwaysRetained", _mqttRetained);
         clientName = isvalid(conf.readString("mqtt/clientName", _clientName), 1, "${hostname}");
         domainToken = isvalid(conf.readString("mqtt/domainToken", _domainToken), 1, "mu");
         outDomainToken = conf.readString("mqtt/outDOmainToken", _outDomainToken);
@@ -446,9 +451,11 @@ class Mqtt {
                 tpc = outDomainPrefix + "/" + topic;
             }
 
-            // publish with retain flag if topic starts with !!
-            bool bRetain = tpc.c_str()[0] == '!';
-            if (bRetain) {
+            bool bRetain = mqttRetained;
+            if (!bRetain && (tpc.c_str()[0] == '!')) {
+                // if retain flag is not set by default, publish with retain flag if topic starts
+                // with !!
+                bRetain = true;
                 tpc = &(topic.c_str()[2]);
             }
 
