@@ -82,6 +82,7 @@ class Net {
 
     // active configuration
     Netmode defaultMode;
+    bool defaultReboot;
     ustd::jsonfile config;
 
     // hardware info
@@ -98,7 +99,7 @@ class Net {
     ustd::heartbeat connectionMonitor = 1000;
     ustd::timeout connectTimeout = 15000;
     unsigned int reconnectMaxRetries = 40;
-    bool bRebootOnContinuedWifiFailure = true;
+    bool bRebootOnContinuedFailure = true;
     bool bOnceConnected;
     int initialCounter;
     int deathCounter;
@@ -145,7 +146,7 @@ class Net {
         }
     }
 
-    void begin(Scheduler *pScheduler, Netmode opmode = AP) {
+    void begin(Scheduler *pScheduler, Netmode opmode = AP, bool restartOnMultipleFailures = true) {
         /*! Starts the network based on the stored configuration.
          *
          * This method starts the network using the information stored into the configuration
@@ -157,13 +158,14 @@ class Net {
          *
          * @param pScheduler Pointer to the muwerk scheduler.
          * @param opmode (optional, default AP) Default operation mode if none is configured
+         * @param restartOnMultipleFailures (optional, default `true`) Default restart on continued
+         * failure if none is configured.
          *
          * See <a href="https://github.com/muwerk/munet/blob/master/README.md">README.md</a> for a
          * detailed description of all network configuration options.
          */
-        defaultMode = opmode;
         initHardwareAddresses();
-        readNetConfig();
+        readNetConfig(opmode, restartOnMultipleFailures);
         initScheduler(pScheduler);
         startServices();
     }
@@ -275,12 +277,12 @@ class Net {
             if (connectTimeout.test()) {
                 DBG("Timout connecting to WiFi " + WiFi.SSID());
                 if (bOnceConnected) {
-                    if (bRebootOnContinuedWifiFailure) {
+                    if (bRebootOnContinuedFailure) {
                         --deathCounter;
                     }
                     if (deathCounter == 0) {
                         DBG("Final connection failure, restarting...");
-                        if (bRebootOnContinuedWifiFailure) {
+                        if (bRebootOnContinuedFailure) {
                             ESP.restart();
                         }
                     }
@@ -290,7 +292,7 @@ class Net {
                 } else {
                     DBG("Retrying to connect...");
                     if (initialCounter > 0) {
-                        if (bRebootOnContinuedWifiFailure) {
+                        if (bRebootOnContinuedFailure) {
                             --initialCounter;
                         }
                         WiFi.reconnect();
@@ -299,7 +301,7 @@ class Net {
                     } else {
                         DBG("Final connect failure, configuration invalid?");
                         curState = NOTCONFIGURED;
-                        if (bRebootOnContinuedWifiFailure) {
+                        if (bRebootOnContinuedFailure) {
                             ESP.restart();
                         }
                     }
@@ -376,7 +378,10 @@ class Net {
 
     void initNetConfig(String SSID, String password, String hostname, Netmode opmode,
                        bool restart) {
-        // hardcoded network configuration provided by program code
+        // initialize default values
+        defaultMode = opmode;
+        defaultReboot = restart;
+
         String prefix = "net/" + getStringFromMode(opmode) + "/";
 
         // prepare mode and device id
@@ -395,7 +400,11 @@ class Net {
         config.writeBool("net/station/rebootOnFailure", restart);
     }
 
-    void readNetConfig() {
+    void readNetConfig(Netmode opmode, bool restart) {
+        // initialize default values
+        defaultMode = opmode;
+        defaultReboot = restart;
+
         // handle config version migrations
         long version = config.readLong("net/version", 0);
         if (version == 0) {
@@ -584,7 +593,7 @@ class Net {
         // read some cached values
         connectTimeout = config.readLong("net/station/connectTimeout", 3, 3600, 15) * 1000;
         reconnectMaxRetries = config.readLong("net/station/maxRetries", 1, 1000000000, 40);
-        bRebootOnContinuedWifiFailure = config.readBool("net/station/rebootOnFailure", true);
+        bRebootOnContinuedFailure = config.readBool("net/station/rebootOnFailure", defaultReboot);
 
         DBG("Connecting WiFi " + SSID);
         wifiSetHostname(hostname);
