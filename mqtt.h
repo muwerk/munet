@@ -99,6 +99,7 @@ class Mqtt {
     String lwMsg;
     // computed configuration
     ustd::array<String> ownedPrefixes;
+    bool bStateRetained;
     String outDomainPrefix;  // outDomainToken + '/' + clientName, or just clientName, if
                              // outDomainToken==""
 
@@ -224,6 +225,7 @@ class Mqtt {
         netUp = false;
         bMqInit = configureMqttClient();
         bWarned = false;
+        bStateRetained = false;
         bCheckConnection = false;
         mqttConnected = false;
         mqttTickerTimeout = 5000L;  // 5 seconds
@@ -472,7 +474,7 @@ class Mqtt {
                 tpc = &(topic.c_str()[2]);
                 bRetain = true;
             }
-            if (!bRetain && topic == "mqtt/state") {
+            if (!bRetain && bStateRetained && topic == "mqtt/state") {
                 // the state topic shall always be retained
                 bRetain = true;
             }
@@ -573,6 +575,7 @@ class Mqtt {
         } else {
             lwTopic = outDomainPrefix + "/mqtt/state";
             lwMsg = "disconnected";
+            bStateRetained = true;
         }
         String clientPrefix = clientName + "/";
         String domainPrefix = domainToken + "/";
