@@ -97,7 +97,6 @@ class Mqtt {
     String outDomainToken;
     String lwTopic;
     String lwMsg;
-    String stateTopic;
     // computed configuration
     ustd::array<String> ownedPrefixes;
     String outDomainPrefix;  // outDomainToken + '/' + clientName, or just clientName, if
@@ -216,16 +215,9 @@ class Mqtt {
         if (mqttServer.length()) {
             // query update from network stack
             pSched->publish("net/network/get");
+        } else {
+            DBG("mqtt: WARNING - no server defined.");
         }
-        /*
-        // This is unnecessary and wrong:
-        - unnecessary, because it add a useless 3rd state
-        - wrong, since thsi remains after a configuration is read, and is only updated on connected
-        -> replaced by publishState() below:
-        else {
-            pSched->publish("mqtt/state", "unconfigured");
-        }
-        */
 
         // initialize runtime
         isOn = true;
@@ -234,8 +226,6 @@ class Mqtt {
         bWarned = false;
         bCheckConnection = false;
         mqttConnected = false;
-        stateTopic =
-            "mqtt/state";  // will be transformed by finalizeConfiguration() on net-connect.
         mqttTickerTimeout = 5000L;  // 5 seconds
 
         publishState();
@@ -366,11 +356,8 @@ class Mqtt {
     }
 
   private:
-    void publishState() {
-        if (mqttConnected)
-            pSched->publish(stateTopic, "connected");
-        else
-            pSched->publish(stateTopic, "disconnected");
+    inline void publishState() {
+        pSched->publish("mqtt/state", mqttConnected ? "connected" : "disconnected");
     }
 
     void loop() {
@@ -485,6 +472,10 @@ class Mqtt {
                 tpc = &(topic.c_str()[2]);
                 bRetain = true;
             }
+            if (!bRetain && topic == "mqtt/state") {
+                // the state topic shall always be retained
+                bRetain = true;
+            }
 
             DBG3("mqtt: publishing...");
             if (mqttClient.publish(tpc.c_str(), msg.c_str(), bRetain)) {
@@ -579,12 +570,9 @@ class Mqtt {
         }
         if (lwTopic.length()) {
             lwMsg = replaceVars(lwMsg, hostname, mac);
-            stateTopic = "!" + outDomainPrefix + "/mqtt/state";
         } else {
             lwTopic = outDomainPrefix + "/mqtt/state";
             lwMsg = "disconnected";
-            stateTopic = "!!" + lwTopic;  // use a persistant message, since disconnected is
-                                          // hangled by last will.
         }
         String clientPrefix = clientName + "/";
         String domainPrefix = domainToken + "/";
