@@ -97,6 +97,7 @@ class Mqtt {
     String outDomainToken;
     String lwTopic;
     String lwMsg;
+    String stateTopic;
     // computed configuration
     ustd::array<String> ownedPrefixes;
     String outDomainPrefix;  // outDomainToken + '/' + clientName, or just clientName, if
@@ -215,9 +216,16 @@ class Mqtt {
         if (mqttServer.length()) {
             // query update from network stack
             pSched->publish("net/network/get");
-        } else {
+        }
+        /*
+        // This is unnecessary and wrong:
+        - unnecessary, because it add a useless 3rd state
+        - wrong, since thsi remains after a configuration is read, and is only updated on connected
+        -> replaced by publishState() below:
+        else {
             pSched->publish("mqtt/state", "unconfigured");
         }
+        */
 
         // initialize runtime
         isOn = true;
@@ -226,7 +234,11 @@ class Mqtt {
         bWarned = false;
         bCheckConnection = false;
         mqttConnected = false;
+        stateTopic =
+            "mqtt/state";  // will be transformed by finalizeConfiguration() on net-connect.
         mqttTickerTimeout = 5000L;  // 5 seconds
+
+        publishState();
     }
 
     int addSubscription(int taskID, String topic, T_SUBS subs, String originator = "") {
@@ -354,6 +366,13 @@ class Mqtt {
     }
 
   private:
+    void publishState() {
+        if (mqttConnected)
+            pSched->publish(stateTopic, "connected");
+        else
+            pSched->publish(stateTopic, "disconnected");
+    }
+
     void loop() {
         if (!isOn || !netUp || mqttServer.length() == 0) {
             return;
@@ -380,12 +399,12 @@ class Mqtt {
                     }
                     bWarned = false;
                     pSched->publish("mqtt/config", outDomainPrefix + "+" + lwTopic + "+" + lwMsg);
-                    pSched->publish("mqtt/state", "connected");
+                    publishState();
                 } else {
                     mqttConnected = false;
                     if (!bWarned) {
                         bWarned = true;
-                        pSched->publish("mqtt/state", "disconnected");
+                        publishState();
                         DBG2("MQTT disconnected.");
                     }
                 }
@@ -428,9 +447,9 @@ class Mqtt {
         // strip the client name token or the domain token in messages for us
         for (unsigned int i = 0; i < ownedPrefixes.length(); i++) {
             if (ownedPrefixes[i].length() <= topic.length()) {
-                // basically this comparison is not really needed since at this point we could ONLY
-                // have messages that match either the domainToken or the clientName since we have
-                // exactly subscribed to those. But who knows....
+                // basically this comparison is not really needed since at this point we could
+                // ONLY have messages that match either the domainToken or the clientName since
+                // we have exactly subscribed to those. But who knows....
                 if (ownedPrefixes[i] == topic.substring(0, ownedPrefixes[i].length())) {
                     topic = (const char *)(ctopic + ownedPrefixes[i].length());
                     pSched->publish(topic, msg, "mqtt");
@@ -473,7 +492,8 @@ class Mqtt {
             } else {
                 DBG("mqtt: ERROR len=" + String(len) + ", not published: " + topic + " | " + msg);
                 if (len > 128) {
-                    DBG("mqtt: FATAL ERROR: you need to re-compile the PubSubClient library and "
+                    DBG("mqtt: FATAL ERROR: you need to re-compile the PubSubClient library "
+                        "and "
                         "increase #define MQTT_MAX_PACKET_SIZE.");
                 }
             }
@@ -483,7 +503,7 @@ class Mqtt {
 
         // internal processing
         if (topic == "mqtt/state/get") {
-            pSched->publish("mqtt/state", mqttConnected ? "connected" : "disconnected");
+            publishState();
         } else if (topic == "mqtt/config/get") {
             pSched->publish("mqtt/config", outDomainPrefix + "+" + lwTopic + "+" + lwMsg);
         } else if (topic == "mqtt/outgoingblock/set") {
@@ -559,9 +579,12 @@ class Mqtt {
         }
         if (lwTopic.length()) {
             lwMsg = replaceVars(lwMsg, hostname, mac);
+            stateTopic = "!" + outDomainPrefix + "/mqtt/state";
         } else {
             lwTopic = outDomainPrefix + "/mqtt/state";
             lwMsg = "disconnected";
+            stateTopic = "!!" + lwTopic;  // use a persistant message, since disconnected is
+                                          // hangled by last will.
         }
         String clientPrefix = clientName + "/";
         String domainPrefix = domainToken + "/";
