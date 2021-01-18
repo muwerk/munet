@@ -186,8 +186,8 @@ class Mqtt {
         mqttUsername = conf.readString("mqtt/username", _mqttUsername);
         mqttPassword = conf.readString("mqtt/password", _mqttPassword);
         mqttRetained = conf.readBool("mqtt/alwaysRetained", _mqttRetained);
-        clientName = isvalid(conf.readString("mqtt/clientName", _clientName), 1, "${hostname}");
-        domainToken = isvalid(conf.readString("mqtt/domainToken", _domainToken), 1, "mu");
+        clientName = conf.readString("mqtt/clientName", 1, _clientName);
+        domainToken = conf.readString("mqtt/domainToken", 1, _domainToken);
         outDomainToken = conf.readString("mqtt/outDomainToken", _outDomainToken);
         lwTopic = conf.readString("mqtt/lastWillTopic", _willTopic);
         lwMsg = conf.readString("mqtt/lastWillMessage", _willMessage);

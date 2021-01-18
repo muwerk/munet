@@ -28,14 +28,5 @@ used by:
 * * <a href="https://github.com/muwerk/mupplets">mupplets github repository</a>
 */
 
-#include "platform.h"
-
 //! \brief The muwerk namespace
-namespace ustd {
-
-// candidate for muwerk utility functions
-static String isvalid(String value, unsigned int minlength, String defaultValue) {
-    return value.length() < minlength ? defaultValue : value;
-}
-
-}  // namespace ustd
+namespace ustd {}  // namespace ustd
