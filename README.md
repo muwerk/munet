@@ -137,8 +137,10 @@ pio run -t buildfs
 pio run -t updatefs
 ```
 
-'''Note:''' This project is currently preparing to move from SPIFFS (deprecated) to LittleFS. To
-continue to use SPIFFS on ESP8266 systems, define `__USE_OLD_FS__`. In order to activate LittleFS, 
+'''Note:''' This project has moved from SPIFFS (deprecated) to LittleFS for ESP8266. To
+continue to use SPIFFS on ESP8266 systems, define `USTD_OPTION_FS_FORCE_SPIFFS`. 
+
+In order to be able to create LittleFS file system images with platformio,
 your `platformio.ini` currently needs to contain:
 
 ```
