@@ -144,10 +144,11 @@ $(function() {
 <p>Using platformio, the initial file system containing all files in your <code>data</code> directory is saved to the ESP chip by executing the following commands:</p>
 <div class="fragment"><div class="line">pio run -t buildfs</div>
 <div class="line">pio run -t updatefs</div>
-</div><!-- fragment --><p>'''Note:''' This project is currently preparing to move from SPIFFS (deprecated) to LittleFS. To continue to use SPIFFS, define <code>__USE_OLD_FS__</code>. In order to activate LittleFS, your <code>platformio.ini</code> currently needs to contain:</p>
+</div><!-- fragment --><p>'''Note:''' This project has moved from SPIFFS (deprecated) to LittleFS for ESP8266. To continue to use SPIFFS on ESP8266 systems, define <code>USTD_OPTION_FS_FORCE_SPIFFS</code>. See <a href="https://github.com/muwerk/ustd/blob/master/README.md#platform-defines">USTD</a> for more information about configuration options and platform defines.</p>
+<p>In order to be able to create LittleFS file system images with platformio, your <code>platformio.ini</code> currently needs to contain:</p>
 <div class="fragment"><div class="line">board_build.filesystem = littlefs</div>
 </div><!-- fragment --><p>SPIFFS and LittleFS are not compatible, if the library is updated, a new file system needs to be created and upload with <code>pio run -t buildfs</code> and <code>pio run -t uploadfs</code>.</p>
-<p>Since ESP32 currently does not (yet) support LittleFS, ESP32 projects require the define <code>__USE_OLD_FS__</code> to continue to use SPIFFS for the time being.</p>
+<p>Since ESP32 currently does not (yet) support LittleFS, ESP32 projects automatically use SPIFFS for the time being.</p>
 <h1>Minimal Required Configuration Files </h1>
 <p>The following minimum configuration files are needed in order to connect to a WiFi network and have mqtt up and running.</p>
 <h2>Minimum <code>net.json</code></h2>
@@ -157,7 +158,7 @@ $(function() {
 <div class="line">    &quot;hostname&quot;: &quot;my-host-name&quot;,</div>
 <div class="line">    &quot;station&quot;: {</div>
 <div class="line">        &quot;SSID&quot;: &quot;my-network-SSID&quot;,</div>
-<div class="line">        &quot;password&quot;: &quot;myS3cr3t&quot;,</div>
+<div class="line">        &quot;password&quot;: &quot;myS3cr3t&quot;</div>
 <div class="line">    },</div>
 <div class="line">    &quot;services&quot;: {</div>
 <div class="line">        &quot;ntp&quot;: {</div>
