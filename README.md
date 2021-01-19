@@ -138,7 +138,8 @@ pio run -t updatefs
 ```
 
 '''Note:''' This project has moved from SPIFFS (deprecated) to LittleFS for ESP8266. To
-continue to use SPIFFS on ESP8266 systems, define `USTD_OPTION_FS_FORCE_SPIFFS`. 
+continue to use SPIFFS on ESP8266 systems, define `USTD_OPTION_FS_FORCE_SPIFFS`. See [USTD](https://github.com/muwerk/ustd/blob/master/README.md#platform-defines) for
+more information about configuration options and platform defines.
 
 In order to be able to create LittleFS file system images with platformio,
 your `platformio.ini` currently needs to contain:
