@@ -151,7 +151,7 @@ board_build.filesystem = littlefs
 SPIFFS and LittleFS are not compatible, if the library is updated, a new file system needs to be
 created and upload with `pio run -t buildfs` and `pio run -t uploadfs`.
 
-Since ESP32 currently does not (yet) support LittleFS, ESP32 projects automatically use SPIFFS 
+Since ESP32 currently does not (yet) support LittleFS, ESP32 projects automatically use SPIFFS
 for the time being.
 
 Minimal Required Configuration Files
@@ -405,8 +405,8 @@ MQTT Message Interface
 
 ### Incoming
 
-| Topic                       | Message Body        | Description
-| --------------------------- | ------------------- | --------------------------------------------------------------------------------------------
+| Topic                       | Message Body       | Description
+| --------------------------- | ------------------ | --------------------------------------------------------------------------------------------
 | `mqtt/outgoingblock/set`    | `topic[-wildcard]` | A topic or a topic wildcard for topics that should not be forwarded to the external mqtt server (e.g. to prevent message spam or routing problems) |
 | `mqtt/outgoingblock/remove` | `topic[-wildcard]` | Remove a block on a given outgoing topic wildcard. |
 | `mqtt/incomingblock/set`    | `topic[-wildcard]` | A topic or a topic wildcard for topics that should not be forwarded from the external mqtt server to muwerk. |
@@ -423,7 +423,7 @@ MQTT Message Interface
 History
 -------
 
-- 0.3.0 (2021-01-XX): [Under Construction] Next Generation Network: See section _"Breaking Changes at Version 0.3.0"_ for caveats.
+- 0.3.0 (2021-01-20): Next Generation Network: See section _"Breaking Changes at Version 0.3.0"_ for caveats.
   - Support for Access Point mode and Dual Mode (both network station and access point mode)
   - Support for enhanced network scans (async and display of hidden networks)
   - Interface for controlling network operations (start, stop, restart)
