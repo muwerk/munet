@@ -306,7 +306,7 @@ $(function() {
 <h2>Incoming</h2>
 <table class="markdownTable">
 <tr class="markdownTableHead">
-<th class="markdownTableHeadNone">Topic &#160;   </th><th class="markdownTableHeadNone">Message Body   </th><th class="markdownTableHeadNone">Description    </th></tr>
+<th class="markdownTableHeadNone">Topic   </th><th class="markdownTableHeadNone">Message Body   </th><th class="markdownTableHeadNone">Description    </th></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code>net/network/get</code>   </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">Returns a network information object in json format in a message with topic <code>net/network</code>    </td></tr>
 <tr class="markdownTableRowEven">
@@ -392,7 +392,7 @@ $(function() {
 <h2>Incoming</h2>
 <table class="markdownTable">
 <tr class="markdownTableHead">
-<th class="markdownTableHeadNone">Topic &#160;   </th><th class="markdownTableHeadNone">Message Body   </th><th class="markdownTableHeadNone">Description    </th></tr>
+<th class="markdownTableHeadNone">Topic   </th><th class="markdownTableHeadNone">Message Body   </th><th class="markdownTableHeadNone">Description    </th></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code>mqtt/outgoingblock/set</code>   </td><td class="markdownTableBodyNone"><code>topic[-wildcard]</code>   </td><td class="markdownTableBodyNone">A topic or a topic wildcard for topics that should not be forwarded to the external mqtt server (e.g. to prevent message spam or routing problems)    </td></tr>
 <tr class="markdownTableRowEven">
@@ -413,6 +413,7 @@ $(function() {
 </table>
 <h1>History </h1>
 <ul>
+<li>0.3.1 (2021-01-20): Minor change: enable dependency-managment for Arduino library manager.</li>
 <li>0.3.0 (2021-01-20): Next Generation Network: See section _"Breaking Changes at Version 0.3.0"_ for caveats.<ul>
 <li>Support for Access Point mode and Dual Mode (both network station and access point mode)</li>
 <li>Support for enhanced network scans (async and display of hidden networks)</li>

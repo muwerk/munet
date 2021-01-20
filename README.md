@@ -254,30 +254,30 @@ The following placeholders are currently available:
 
 ### Top Level Configuration Options
 
-| Field        | Usage                                                                                                        |
-| ------------ | ------------------------------------------------------------------------------------------------------------ |
-| `version`    | The configuration format version number. Current version is `1`. This field is mandatory.                    |
-| `deviceID`   | Unique device ID - will be automatically generated and saved on first start. Useful when replacing a device  |
-| `mode`       | Operating mode. Can be: `off`, `ap`, `station` or `both`. Default is `ap`                                    |
-| `hostname`   | Hostname the device will use and report to other services. May also be used to querythe DHCP server          |
-| `ap`         | Configuration options for access point mode. See description below.                                          |
-| `station`    | Configuration options for network station mode. See description below.                                       |
-| `services`   | Configuration options for network services. See description below.                                           |
+| Field      | Usage                                                                                                       |
+| ---------- | ----------------------------------------------------------------------------------------------------------- |
+| `version`  | The configuration format version number. Current version is `1`. This field is mandatory.                   |
+| `deviceID` | Unique device ID - will be automatically generated and saved on first start. Useful when replacing a device |
+| `mode`     | Operating mode. Can be: `off`, `ap`, `station` or `both`. Default is `ap`                                   |
+| `hostname` | Hostname the device will use and report to other services. May also be used to querythe DHCP server         |
+| `ap`       | Configuration options for access point mode. See description below.                                         |
+| `station`  | Configuration options for network station mode. See description below.                                      |
+| `services` | Configuration options for network services. See description below.                                          |
 
 
 #### Configuration Options for Access Point Mode
 
 The following options are stored in the `ap` object and apply to access point mode and dual mdoe.
 
-| Field        | Usage                                                                                          |
-| ------------ | ---------------------------------------------------------------------------------------------- |
-| `SSID`       | Network name of the wireless network the ESP will host                                         |
-| `password`   | Wireless network password                                                                      |
-| `address`    | Static IP address. If not defined, the default of the library is taken - usually `192.168.4.1` |
-| `netmask`    | Netmask of static IP address. Must be defined if `address` is also defined.                    |
-| `gateway`    | Default gateway. Does not really make sense in AP mode, but must be specified.                 |
-| `channel`    | Channel used for AP mode. If not specified, channel 1 is used.                                 |
-| `hidden`     | If `true`, the network created by the AP is hidden. Default is `false`                         |
+| Field      | Usage                                                                                          |
+| ---------- | ---------------------------------------------------------------------------------------------- |
+| `SSID`     | Network name of the wireless network the ESP will host                                         |
+| `password` | Wireless network password                                                                      |
+| `address`  | Static IP address. If not defined, the default of the library is taken - usually `192.168.4.1` |
+| `netmask`  | Netmask of static IP address. Must be defined if `address` is also defined.                    |
+| `gateway`  | Default gateway. Does not really make sense in AP mode, but must be specified.                 |
+| `channel`  | Channel used for AP mode. If not specified, channel 1 is used.                                 |
+| `hidden`   | If `true`, the network created by the AP is hidden. Default is `false`                         |
 
 
 #### Configuration Options for Network Station Mode
@@ -301,19 +301,19 @@ The following options are stored in the `station` object and apply to network st
 The DNS client is configured with an object named `dns` in the `services` object. The DNS client is only
 used in network station or dual mode.
 
-| Field        | Usage                                                                                                       |
-| ------------ | ----------------------------------------------------------------------------------------------------------- |
-| `host`       | Array of hostnames/ip of DNS servers If empty the provided DHCP value is used                               |
+| Field  | Usage                                                                         |
+| ------ | ----------------------------------------------------------------------------- |
+| `host` | Array of hostnames/ip of DNS servers If empty the provided DHCP value is used |
 
 #### Configuration Options for Network Service NTP Client
 
 The NTP client is configured with an object named `ntp` in the `services` object. The NTP client is only
 used in network station or dual mode.
 
-| Field        | Usage                                                                                                                   |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| `host`       | Array of hostnames/ip of NTP time servers from which the device synchronizes it's time. If empty the DHCP value is used |
-| `dstrules`   | optional timezone and daylight saving rules in [unix format](https://mm.icann.org/pipermail/tz/2016-April/023570.html)  |
+| Field      | Usage                                                                                                                   |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `host`     | Array of hostnames/ip of NTP time servers from which the device synchronizes it's time. If empty the DHCP value is used |
+| `dstrules` | optional timezone and daylight saving rules in [unix format](https://mm.icann.org/pipermail/tz/2016-April/023570.html)  |
 
 
 Network Message Interface
@@ -321,21 +321,21 @@ Network Message Interface
 
 ### Incoming
 
-| Topic                       | Message Body        | Description
-| --------------------------- | ------------------- | --------------------------------------------------------------------------------------------
-| `net/network/get`           |                     | Returns a network information object in json format in a message with topic `net/network`
-| `net/network/control`       | `<commands>`        | Starts, stops or restarts the network (put `start`, `stop` or `restart` in the message body)
-| `net/networks/get`          | `<options>`         | Requests a WiFi network scan. The list is returned in a message with topic `net/networks`. The additional options `sync` and/or `hidden` can be sent in the body.
+| Topic                 | Message Body | Description                                                                                                                                                       |
+| --------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `net/network/get`     |              | Returns a network information object in json format in a message with topic `net/network`                                                                         |
+| `net/network/control` | `<commands>` | Starts, stops or restarts the network (put `start`, `stop` or `restart` in the message body)                                                                      |
+| `net/networks/get`    | `<options>`  | Requests a WiFi network scan. The list is returned in a message with topic `net/networks`. The additional options `sync` and/or `hidden` can be sent in the body. |
 
 
 ### Outgoing
 
-| Topic             | Message Body          | Description
-| ----------------- | --------------------- | --------------------------------------------------------------------------------------------
-| `net/network`     | `{...}`               | The current network state as JSON object
-| `net/rssi`        | `<rssi value>`        | The current signal value when connected to a WiFi
-| `net/connections` | `<connection count>`  | The number of stations connected to the device in access point mode
-| `net/networks`    | `{..}`                | The result of a WiFi scan as JSON object
+| Topic             | Message Body         | Description                                                         |
+| ----------------- | -------------------- | ------------------------------------------------------------------- |
+| `net/network`     | `{...}`              | The current network state as JSON object                            |
+| `net/rssi`        | `<rssi value>`       | The current signal value when connected to a WiFi                   |
+| `net/connections` | `<connection count>` | The number of stations connected to the device in access point mode |
+| `net/networks`    | `{..}`               | The result of a WiFi scan as JSON object                            |
 
 
 MQTT Configuration
@@ -383,21 +383,21 @@ The following placeholders are currently available:
 
 ### Top Level Configuration Options
 
-| Field               | Usage                                                                                                        |
-| ------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `host`              | Hostname or ip address of the MQTT server. This value is mandatory                                           |
-| `port`              | Port number under which the MQTT server is reachable. (default: 1884)                                        |
-| `user`              | Username for mqtt server authentication. (default: empty for no authentication)                              |
-| `password`          | Password for mqtt server authentication. (default: empty for no authentication)                              |
-| `clientName`        | The unique MQTT client name.  (default: `${hostname}`)                                                       |
-| `domainToken`       | Common domain token for device group. (default' `mu`)                                                        |
-| `outDomainToken`    | Domain token for outgoing messages. (default: `omu`)                                                         |
-| `lastWillTopic`     | Topic of MQTT last will message. (default: `<outDomainName>/<clientName>/mqtt/state`)                        |
-| `lastWillMessage`   | Message content for last will message. (default: `disconnected`)                                             |
-| `alwaysRetain`      | If `true` all messages published to MQQ will flagged as `RETAINED`. (default: `false`)                       |
-| `subscriptions`     | List of additional subscription to route into the scheduler's message queue. (default: empty)                |
-| `outgoingBlackList` | List of topics and topic wildcards that will not be published to the external server                         |
-| `incomingBlackList` | List of topics and topic wildcards that will not be published to the muwerk scheduler's message queue        |
+| Field               | Usage                                                                                                 |
+| ------------------- | ----------------------------------------------------------------------------------------------------- |
+| `host`              | Hostname or ip address of the MQTT server. This value is mandatory                                    |
+| `port`              | Port number under which the MQTT server is reachable. (default: 1884)                                 |
+| `user`              | Username for mqtt server authentication. (default: empty for no authentication)                       |
+| `password`          | Password for mqtt server authentication. (default: empty for no authentication)                       |
+| `clientName`        | The unique MQTT client name.  (default: `${hostname}`)                                                |
+| `domainToken`       | Common domain token for device group. (default' `mu`)                                                 |
+| `outDomainToken`    | Domain token for outgoing messages. (default: `omu`)                                                  |
+| `lastWillTopic`     | Topic of MQTT last will message. (default: `<outDomainName>/<clientName>/mqtt/state`)                 |
+| `lastWillMessage`   | Message content for last will message. (default: `disconnected`)                                      |
+| `alwaysRetain`      | If `true` all messages published to MQQ will flagged as `RETAINED`. (default: `false`)                |
+| `subscriptions`     | List of additional subscription to route into the scheduler's message queue. (default: empty)         |
+| `outgoingBlackList` | List of topics and topic wildcards that will not be published to the external server                  |
+| `incomingBlackList` | List of topics and topic wildcards that will not be published to the muwerk scheduler's message queue |
 
 
 MQTT Message Interface
@@ -405,24 +405,26 @@ MQTT Message Interface
 
 ### Incoming
 
-| Topic                       | Message Body       | Description
-| --------------------------- | ------------------ | --------------------------------------------------------------------------------------------
+| Topic                       | Message Body       | Description                                                                                                                                        |
+| --------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `mqtt/outgoingblock/set`    | `topic[-wildcard]` | A topic or a topic wildcard for topics that should not be forwarded to the external mqtt server (e.g. to prevent message spam or routing problems) |
-| `mqtt/outgoingblock/remove` | `topic[-wildcard]` | Remove a block on a given outgoing topic wildcard. |
-| `mqtt/incomingblock/set`    | `topic[-wildcard]` | A topic or a topic wildcard for topics that should not be forwarded from the external mqtt server to muwerk. |
-| `mqtt/incomingblock/remove` | `topic[-wildcard]` | Remove a block on a given incoming topic wildcard. |
+| `mqtt/outgoingblock/remove` | `topic[-wildcard]` | Remove a block on a given outgoing topic wildcard.                                                                                                 |
+| `mqtt/incomingblock/set`    | `topic[-wildcard]` | A topic or a topic wildcard for topics that should not be forwarded from the external mqtt server to muwerk.                                       |
+| `mqtt/incomingblock/remove` | `topic[-wildcard]` | Remove a block on a given incoming topic wildcard.                                                                                                 |
 
 ### Outgoing
 
-| Topic         | Message Body                           | Description
-| ------------- | -------------------------------------- | --------------------------------------------------------------------------------------------
-| `mqtt/config` | `<prefix>+<will_topic>+<will_message>` | The message contains three parts separated bei `+`: prefix, the last-will-topic and last-will message. `prefix` is the mqtt topic-prefix automatically prefixed to outgoing messages, composed of `omu` (set with mqtt) and `hostname`, e.g. `omu/myhost`. `prefix` can be useful for mupplets to know the actual topic names that get published externally.
-| `mqtt/state`  | `connected` or `disconnected`          | muwerk processes that subscribe to `mqtt/state` are that way informed, if mqtt external connection is available. The `mqtt/state` topic with message `disconnected` is also the default configuration for mqtt's last will topic and message.
+| Topic         | Message Body                           | Description                                                                                                                                                                                                                                                                                                                                                  |
+| ------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `mqtt/config` | `<prefix>+<will_topic>+<will_message>` | The message contains three parts separated bei `+`: prefix, the last-will-topic and last-will message. `prefix` is the mqtt topic-prefix automatically prefixed to outgoing messages, composed of `omu` (set with mqtt) and `hostname`, e.g. `omu/myhost`. `prefix` can be useful for mupplets to know the actual topic names that get published externally. |
+| `mqtt/state`  | `connected` or `disconnected`          | muwerk processes that subscribe to `mqtt/state` are that way informed, if mqtt external connection is available. The `mqtt/state` topic with message `disconnected` is also the default configuration for mqtt's last will topic and message.                                                                                                                |
 
 
 History
 -------
 
+- 0.3.1 (2021-01-20): Minor change: enable dependency-managment for Arduino
+  library manager.
 - 0.3.0 (2021-01-20): Next Generation Network: See section _"Breaking Changes at Version 0.3.0"_ for caveats.
   - Support for Access Point mode and Dual Mode (both network station and access point mode)
   - Support for enhanced network scans (async and display of hidden networks)
