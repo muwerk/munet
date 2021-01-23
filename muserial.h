@@ -8,12 +8,7 @@
 #include "scheduler.h"
 //#include <Arduino_JSON.h>
 
-#ifdef __ARDUINO__
-#include <time.h>
-#endif
-
 #ifdef __ATTINY__
-#include <time.h>
 #define HardwareSerial TinySoftwareSerial
 #endif
 
@@ -33,9 +28,9 @@ class MuSerial {
     bool bCheckLink = false;
     uint8_t blockNum = 0;
     LinkState linkState;
-    time_t lastRead = 0;
-    time_t lastMsg = 0;
-    time_t lastPingSent = 0;
+    unsigned long lastRead = 0;
+    unsigned long lastMsg = 0;
+    unsigned long lastPingSent = 0;
     bool linkConnected = false;
     unsigned long readTimeout = 5;          // sec
     unsigned long pingReceiveTimeout = 10;  // sec
@@ -104,6 +99,10 @@ class MuSerial {
          */
         pSched = _pSched;
         pSerial->begin(baudRate);
+#ifdef __ARDUINO__
+        while (!*pSerial) {
+        }
+#endif
 
         auto ft = [=]() { this->loop(); };
         tID = pSched->add(ft, "serlink", 50000L);  // check every 50ms
@@ -113,6 +112,10 @@ class MuSerial {
         pSched->subscribe(tID, "#", fnall);
         bCheckLink = true;
         linkState = SYNC;
+        if (connectionLed != -1) {
+            pinMode(connectionLed, OUTPUT);
+            digitalWrite(connectionLed, HIGH);
+        }
         ping();
     }
 
@@ -198,6 +201,8 @@ class MuSerial {
 
     void ping() {
         T_PING p;
+        if (connectionLed != -1)
+            digitalWrite(connectionLed, LOW);
         memset(&p, 0, sizeof(p));
         p.soh = SOH;
         p.ver = VER;
@@ -206,14 +211,20 @@ class MuSerial {
         p.hLen = 0;
         p.lLen = sizeof(unsigned long) + 10;
         p.stx = STX;
+#ifdef __ARDUINO__
+        p.time = pSched->getUptime();
+#else
         p.time = time(nullptr);
-        strcpy(p.name, name.substring(0, 9).c_str());
+#endif
+        strncpy(p.name, name.c_str(), 9);
         p.etx = ETX;
         p.crc = crc((unsigned char *)&(p.ver), sizeof(T_PING) - 3);
         p.eot = EOT;
         pSerial->write((unsigned char *)&p, sizeof(p));
-        lastPingSent = time(nullptr);
-        pSched->publish("muserial/link", "Ping sent");
+        lastPingSent = pSched->getUptime();
+        // pSched->publish("muserial/link", "Ping sent", name);
+        if (connectionLed != -1)
+            digitalWrite(connectionLed, HIGH);
     }
 
     void sendOut(String topic, String msg) {
@@ -264,7 +275,6 @@ class MuSerial {
     T_FOOTER fo;
     unsigned char *pFo;
     uint16_t cLen;
-    LinkState state;
 
     bool internalPub(String topic, String msg) {
         for (unsigned int i = 0; i < incomingBlockList.length(); i++) {
@@ -284,56 +294,68 @@ class MuSerial {
         return true;
     }
 
+    bool ld = false;
     void loop() {
         unsigned char ccrc;
         unsigned char c;
         if (bCheckLink) {
-            if (time(nullptr) - lastPingSent > pingPeriod) {
+            if (pSched->getUptime() - lastPingSent > pingPeriod) {
+                if (ld) {
+                    ld = false;
+                    digitalWrite(LED_BUILTIN, LOW);
+                } else {
+                    ld = true;
+                    digitalWrite(LED_BUILTIN, HIGH);
+                }
                 ping();
             }
             while (pSerial->available() > 0) {
                 c = pSerial->read();
-                lastRead = time(nullptr);
-                switch (state) {
+                lastRead = pSched->getUptime();
+                switch (linkState) {
                 case SYNC:
                     if (c == SOH) {
-                        state = HEADER;
+                        linkState = HEADER;
                         pHd = (unsigned char *)&hd;
                         hLen = 0;
                     }
+                    continue;
                     break;
                 case HEADER:
-                    pSched->publish("muserial/link", "SOH");
                     pHd[hLen] = c;
                     hLen++;
                     if (hLen == 6) {
                         // XXX: check block number
                         if (hd.ver != VER || hd.stx != STX) {
-                            state = SYNC;
+                            linkState = SYNC;
                         } else {
                             msgLen = 256 * hd.hLen + hd.lLen;
-                            msgBuf = (unsigned char *)malloc(msgLen);
-                            curMsg = 0;
-                            if (msgBuf) {
-                                state = MSG;
-                                allocated = true;
+                            if (msgLen < 1024) {
+                                msgBuf = (unsigned char *)malloc(msgLen);
+                                curMsg = 0;
+                                if (msgBuf) {
+                                    linkState = MSG;
+                                    allocated = true;
+                                } else {
+                                    linkState = SYNC;
+                                }
                             } else {
-                                state = SYNC;
+                                linkState = SYNC;
                             }
                         }
                     }
+                    continue;
                     break;
                 case MSG:
-                    pSched->publish("muserial/link", "MSG");
                     msgBuf[curMsg] = c;
                     ++curMsg;
                     if (curMsg == msgLen) {
-                        state = CRC;
+                        linkState = CRC;
                         cLen = 0;
                     }
+                    continue;
                     break;
                 case CRC:
-                    pSched->publish("muserial/link", "CRC");
                     pFo[cLen] = c;
                     ++cLen;
                     if (cLen == 3) {
@@ -342,7 +364,7 @@ class MuSerial {
                                 free(msgBuf);
                                 allocated = false;
                             }
-                            state = SYNC;
+                            linkState = SYNC;
                             continue;
                         }
                     }
@@ -354,25 +376,25 @@ class MuSerial {
                             free(msgBuf);
                             allocated = 0;
                         }
-                        state = SYNC;
+                        linkState = SYNC;
                         continue;
                     } else {
                         switch ((LinkCmd)hd.cmd) {
                         case MUPING:
                             if (strlen((const char *)&msgBuf[4]) < 10) {
                                 remoteName = (const char *)&msgBuf[4];
-                                lastMsg = time(nullptr);
+                                lastMsg = pSched->getUptime();
                                 if (!linkConnected) {
                                     linkConnected = true;
-                                    pSched->publish(name + "/link", "connected");
+                                    pSched->publish(name + "/link", "connected", name);
                                 }
                             } else {
                                 if (allocated && msgBuf != nullptr) {
                                     free(msgBuf);
                                     allocated = 0;
                                 }
-                                state = SYNC;
-                                pSched->publish(name + "/ping", remoteName);
+                                linkState = SYNC;
+                                // pSched->publish(name + "/ping", remoteName, name);
                                 continue;
                             }
                             break;
@@ -382,7 +404,7 @@ class MuSerial {
                                     (const char *)&msgBuf[strlen((const char *)msgBuf) + 1];
                                 if (strlen(pM) + strlen((const char *)msgBuf) + 2 < msgLen) {
                                     internalPub((const char *)msgBuf, pM);
-                                    lastMsg = time(nullptr);
+                                    lastMsg = pSched->getUptime();
                                 }
                             }
                             break;
@@ -391,17 +413,18 @@ class MuSerial {
                             free(msgBuf);
                             allocated = 0;
                         }
-                        state = SYNC;
+                        linkState = SYNC;
                     }
+                    continue;
                     break;
                 }
             }
         } else {
-            if (state != SYNC) {
-                if ((unsigned long)(time(nullptr) - lastRead) > readTimeout) {
-                    state = SYNC;
+            if (linkState != SYNC) {
+                if ((unsigned long)(pSched->getUptime() - lastRead) > readTimeout) {
+                    linkState = SYNC;
                     if (linkConnected) {
-                        pSched->publish(name + "/link", "disconnected");
+                        pSched->publish(name + "/link", "disconnected", name);
                     }
                     linkConnected = false;
                     if (allocated) {
@@ -410,9 +433,9 @@ class MuSerial {
                     }
                 }
             } else {
-                if ((unsigned long)(time(nullptr) - lastMsg) > pingReceiveTimeout) {
+                if ((unsigned long)(pSched->getUptime() - lastMsg) > pingReceiveTimeout) {
                     if (linkConnected) {
-                        pSched->publish(name + "/link", "disconnected");
+                        pSched->publish(name + "/link", "disconnected", name);
                     }
                     linkConnected = false;
                 }
@@ -421,7 +444,7 @@ class MuSerial {
     }
 
     void subsMsg(String topic, String msg, String originator) {
-        if (originator == name) {
+        if (originator == name || (remoteName != "" && originator == remoteName)) {
             // prevent loops;
             return;
         }
