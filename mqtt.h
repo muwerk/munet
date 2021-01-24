@@ -527,6 +527,8 @@ class Mqtt {
                 }
             } else {
                 netUp = false;
+                mqttConnected = false;
+                publishState();
                 DBG2("mqtt: net state offline");
             }
         }

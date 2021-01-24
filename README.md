@@ -423,6 +423,8 @@ MQTT Message Interface
 History
 -------
 
+- 0.3.2 (2021-01-XX): [not yet published]: Minor changes
+  * Fixed handling of mqtt connection state when network connection changes
 - 0.3.1 (2021-01-20): Minor change: enable dependency-managment for Arduino library manager.
 - 0.3.0 (2021-01-20): Next Generation Network: See section _"Breaking Changes at Version 0.3.0"_ for caveats.
   - Support for Access Point mode and Dual Mode (both network station and access point mode)
