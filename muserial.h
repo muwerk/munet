@@ -47,35 +47,40 @@ class MuSerial {
     enum LinkCmd { MUPING, MQTT };
 
     typedef struct t_header {
-        unsigned char ver;   // = VER;  // CRC start
-        unsigned char num;   // block number
-        unsigned char cmd;   // LinkCmd
-        unsigned char hLen;  // = 0;  // Hi byte length
-        unsigned char lLen;  // = 0;  // Lo byte length
-        unsigned char stx;   // = STX;
+        uint8_t soh;   // = SOH;
+        uint8_t ver;   // = VER;  // CRC start
+        uint8_t num;   // block number
+        uint8_t cmd;   // LinkCmd
+        uint8_t hLen;  // = 0;  // Hi byte length
+        uint8_t lLen;  // = 0;  // Lo byte length
+        uint8_t stx;   // = STX;
+        uint8_t pad;   // = 0;
     } T_HEADER;
 
     typedef struct t_footer {
-        unsigned char etx;  // = ETX;  // CRC end
-        unsigned char crc;  // = 0;
-        unsigned char eot;  // = EOT;
+        uint8_t etx;   // = ETX;  // CRC end
+        uint8_t pad2;  // = 0;
+        uint8_t crc;   // = 0;
+        uint8_t eot;   // = EOT;
     } T_FOOTER;
 
     typedef struct t_ping {
-        unsigned char soh;   // = SOH;
-        unsigned char ver;   // = VER;  // CRC start
-        unsigned char num;   // block number
-        unsigned char cmd;   // LinkCmd
-        unsigned char hLen;  // = 0;  // Hi byte length
-        unsigned char lLen;  // = 0;  // Lo byte length
-        unsigned char stx;   // = STX;
+        uint8_t soh;   // = SOH;
+        uint8_t ver;   // = VER;  // CRC start
+        uint8_t num;   // block number
+        uint8_t cmd;   // LinkCmd
+        uint8_t hLen;  // = 0;  // Hi byte length
+        uint8_t lLen;  // = 0;  // Lo byte length
+        uint8_t stx;   // = STX;
+        uint8_t pad;   // = 0;
         // len start
-        unsigned long time;  // XXX: byte order!
-        char name[10];       // first 9 chars of name
+        uint64_t time;  // XXX: byte order!
+        char name[10];  // first 9 chars of name
         // len end
-        unsigned char etx;  // = ETX;  // CRC end
-        unsigned char crc;  // = 0;
-        unsigned char eot;  // = EOT;
+        uint8_t etx;   // = ETX;  // CRC end
+        uint8_t pad2;  // = 0;
+        uint8_t crc;   // = 0;
+        uint8_t eot;   // = EOT;
 
     } T_PING;
 
@@ -105,7 +110,7 @@ class MuSerial {
 #endif
 
         auto ft = [=]() { this->loop(); };
-        tID = pSched->add(ft, "serlink", 50000L);  // check every 50ms
+        tID = pSched->add(ft, "serlink", 50000L);  // check every 5ms
         auto fnall = [=](String topic, String msg, String originator) {
             this->subsMsg(topic, msg, originator);
         };
@@ -200,42 +205,40 @@ class MuSerial {
     }
 
     void ping() {
-        T_PING p;
+        T_PING p = {};
         if (connectionLed != -1)
             digitalWrite(connectionLed, LOW);
-        memset(&p, 0, sizeof(p));
         p.soh = SOH;
         p.ver = VER;
         p.num = blockNum++;
         p.cmd = LinkCmd::MUPING;
         p.hLen = 0;
-        p.lLen = sizeof(unsigned long) + 10;
+        p.lLen = sizeof(p.time) + 10;
         p.stx = STX;
 #ifdef __ARDUINO__
-        p.time = pSched->getUptime();
+        p.time = (uint64_t)pSched->getUptime();
 #else
-        p.time = time(nullptr);
+        p.time = (uint64_t)time(nullptr);
 #endif
         strncpy(p.name, name.c_str(), 9);
+        p.name[9] = 0;
         p.etx = ETX;
         p.crc = crc((unsigned char *)&(p.ver), sizeof(T_PING) - 3);
         p.eot = EOT;
         pSerial->write((unsigned char *)&p, sizeof(p));
         lastPingSent = pSched->getUptime();
-        // pSched->publish("muserial/link", "Ping sent", name);
         if (connectionLed != -1)
             digitalWrite(connectionLed, HIGH);
     }
 
     void sendOut(String topic, String msg) {
-        T_HEADER th;
-        T_FOOTER tf;
+        T_HEADER th = {};
+        T_FOOTER tf = {};
         unsigned char ccrc;
-        unsigned char startbyte = SOH;
         unsigned char nul = 0x0;
-        memset(&th, 0, sizeof(th));
-        memset(&tf, 0, sizeof(tf));
 
+        // Serial.println("Sending " + topic + ", " + msg);
+        th.soh = SOH;
         th.ver = VER;
         th.num = blockNum++;
         th.cmd = LinkCmd::MQTT;
@@ -245,24 +248,23 @@ class MuSerial {
         th.stx = STX;
 
         tf.etx = ETX;
-        tf.etx = EOT;
+        tf.eot = EOT;
 
-        ccrc = crc((const unsigned char *)&th, 6);
-        ccrc = crc((const unsigned char *)topic.c_str(), topic.length(), ccrc);
-        ccrc = crc(&nul, 1, ccrc);
-        ccrc = crc((const unsigned char *)msg.c_str(), msg.length(), ccrc);
-        ccrc = crc(&nul, 1, ccrc);
-        ccrc = crc((const unsigned char *)&fo, 1, ccrc);
+        ccrc = crc((const uint8_t *)&(th.ver), sizeof(th) - 1);
+        ccrc = crc((const uint8_t *)topic.c_str(), topic.length(), ccrc);
+        ccrc = crc((const uint8_t *)&nul, 1, ccrc);
+        ccrc = crc((const uint8_t *)msg.c_str(), msg.length(), ccrc);
+        ccrc = crc((const uint8_t *)&nul, 1, ccrc);
+        ccrc = crc((const uint8_t *)&tf, 2, ccrc);
 
-        fo.crc = ccrc;
+        tf.crc = ccrc;
 
-        pSerial->write(&startbyte, 1);
-        pSerial->write((unsigned char *)&th, 6);
+        pSerial->write((unsigned char *)&th, sizeof(th));
         pSerial->write((unsigned char *)topic.c_str(), topic.length());
-        pSerial->write(&nul, 1);
+        pSerial->write((uint8_t)nul);
         pSerial->write((unsigned char *)msg.c_str(), msg.length());
-        pSerial->write(&nul, 1);
-        pSerial->write((unsigned char *)&tf, 3);
+        pSerial->write((uint8_t)nul);
+        pSerial->write((unsigned char *)&tf, sizeof(tf));
     }
 
   private:
@@ -278,8 +280,9 @@ class MuSerial {
 
     bool internalPub(String topic, String msg) {
         for (unsigned int i = 0; i < incomingBlockList.length(); i++) {
-            if (Scheduler::mqttmatch(topic, incomingBlockList[i]))
+            if (Scheduler::mqttmatch(topic, incomingBlockList[i])) {
                 return false;
+            }
         }
         String inT;
         if (inDomainToken == "$remoteName") {
@@ -290,6 +293,7 @@ class MuSerial {
         if (inT != "") {
             topic = inT + "/" + topic;
         }
+        // Serial.println("MuPub: " + topic + ", " + msg + ", from: " + remoteName);
         pSched->publish(topic, msg, remoteName);
         return true;
     }
@@ -315,16 +319,17 @@ class MuSerial {
                 switch (linkState) {
                 case SYNC:
                     if (c == SOH) {
+                        hd.soh = SOH;
                         linkState = HEADER;
                         pHd = (unsigned char *)&hd;
-                        hLen = 0;
+                        hLen = 1;
                     }
                     continue;
                     break;
                 case HEADER:
                     pHd[hLen] = c;
                     hLen++;
-                    if (hLen == 6) {
+                    if (hLen == sizeof(hd)) {
                         // XXX: check block number
                         if (hd.ver != VER || hd.stx != STX) {
                             linkState = SYNC;
@@ -351,6 +356,7 @@ class MuSerial {
                     ++curMsg;
                     if (curMsg == msgLen) {
                         linkState = CRC;
+                        pFo = (unsigned char *)&fo;
                         cLen = 0;
                     }
                     continue;
@@ -358,99 +364,114 @@ class MuSerial {
                 case CRC:
                     pFo[cLen] = c;
                     ++cLen;
-                    if (cLen == 3) {
+                    if (cLen == sizeof(fo)) {
                         if (fo.etx != ETX || fo.eot != EOT) {
                             if (allocated && msgBuf != nullptr) {
                                 free(msgBuf);
+                                msgBuf = nullptr;
                                 allocated = false;
                             }
                             linkState = SYNC;
                             continue;
-                        }
-                    }
-                    ccrc = crc((const unsigned char *)&hd, 6);
-                    ccrc = crc(msgBuf, msgLen, ccrc);
-                    ccrc = crc((const unsigned char *)&fo, 1, ccrc);
-                    if (ccrc != fo.crc) {
-                        if (allocated && msgBuf != nullptr) {
-                            free(msgBuf);
-                            allocated = 0;
-                        }
-                        linkState = SYNC;
-                        continue;
-                    } else {
-                        switch ((LinkCmd)hd.cmd) {
-                        case MUPING:
-                            if (strlen((const char *)&msgBuf[4]) < 10) {
-                                remoteName = (const char *)&msgBuf[4];
-                                lastMsg = pSched->getUptime();
-                                if (!linkConnected) {
-                                    linkConnected = true;
-                                    pSched->publish(name + "/link", "connected", name);
-                                }
-                            } else {
+                        } else {
+                            ccrc = crc((const uint8_t *)&(hd.ver), sizeof(hd) - 1);
+                            ccrc = crc(msgBuf, msgLen, ccrc);
+                            ccrc = crc((const uint8_t *)&fo, 2, ccrc);
+                            if (ccrc != fo.crc) {
                                 if (allocated && msgBuf != nullptr) {
                                     free(msgBuf);
-                                    allocated = 0;
+                                    msgBuf = nullptr;
+                                    allocated = false;
                                 }
                                 linkState = SYNC;
-                                // pSched->publish(name + "/ping", remoteName, name);
                                 continue;
-                            }
-                            break;
-                        case MQTT:
-                            if (strlen((const char *)msgBuf) + 2 < msgLen) {
-                                const char *pM =
-                                    (const char *)&msgBuf[strlen((const char *)msgBuf) + 1];
-                                if (strlen(pM) + strlen((const char *)msgBuf) + 2 < msgLen) {
-                                    internalPub((const char *)msgBuf, pM);
-                                    lastMsg = pSched->getUptime();
+                            } else {
+                                switch ((LinkCmd)hd.cmd) {
+                                case MUPING:
+                                    // Serial.println("Ping received");
+                                    if (strlen((const char *)&msgBuf[8]) < 10) {
+                                        remoteName = (const char *)&msgBuf[8];
+                                        lastMsg = pSched->getUptime();
+                                        if (!linkConnected) {
+                                            linkConnected = true;
+                                            pSched->publish(name + "/link", "connected", name);
+                                        }
+                                    } else {
+                                        if (allocated && msgBuf != nullptr) {
+                                            free(msgBuf);
+                                            msgBuf = nullptr;
+                                            allocated = false;
+                                        }
+                                        linkState = SYNC;
+                                        continue;
+                                    }
+                                    break;
+                                case MQTT:
+                                    // Serial.println("Msg received");
+                                    if (strlen((const char *)msgBuf) + 2 <= msgLen) {
+                                        const char *pM =
+                                            (const char *)&msgBuf[strlen((const char *)msgBuf) + 1];
+                                        if (strlen(pM) + strlen((const char *)msgBuf) + 2 <=
+                                            msgLen) {
+                                            // Serial.println(
+                                            //    "Msg pub: " + String((const char *)msgBuf) + ", "
+                                            //    + String(pM));
+                                            internalPub((const char *)msgBuf, pM);
+                                            lastMsg = pSched->getUptime();
+                                        }
+                                    }
+                                    break;
                                 }
+                                if (allocated && msgBuf != nullptr) {
+                                    free(msgBuf);
+                                    msgBuf = nullptr;
+                                    allocated = false;
+                                }
+                                linkState = SYNC;
                             }
-                            break;
                         }
-                        if (allocated && msgBuf != nullptr) {
-                            free(msgBuf);
-                            allocated = 0;
-                        }
-                        linkState = SYNC;
                     }
                     continue;
                     break;
                 }
             }
-        } else {
-            if (linkState != SYNC) {
-                if ((unsigned long)(pSched->getUptime() - lastRead) > readTimeout) {
-                    linkState = SYNC;
-                    if (linkConnected) {
-                        pSched->publish(name + "/link", "disconnected", name);
+            if (linkConnected || linkState != SYNC) {
+                if (linkState != SYNC) {
+                    if ((unsigned long)(pSched->getUptime() - lastRead) > readTimeout) {
+                        linkState = SYNC;
+                        if (linkConnected) {
+                            pSched->publish(name + "/link", "disconnected", name);
+                        }
+                        linkConnected = false;
+                        if (allocated && msgBuf != nullptr) {
+                            free(msgBuf);
+                            msgBuf = nullptr;
+                            allocated = false;
+                        }
                     }
-                    linkConnected = false;
-                    if (allocated) {
-                        free(msgBuf);
-                        msgBuf = nullptr;
+                } else {
+                    if ((unsigned long)(pSched->getUptime() - lastMsg) > pingReceiveTimeout) {
+                        if (linkConnected) {
+                            pSched->publish(name + "/link", "disconnected", name);
+                        }
+                        linkConnected = false;
                     }
-                }
-            } else {
-                if ((unsigned long)(pSched->getUptime() - lastMsg) > pingReceiveTimeout) {
-                    if (linkConnected) {
-                        pSched->publish(name + "/link", "disconnected", name);
-                    }
-                    linkConnected = false;
                 }
             }
         }
     }
 
     void subsMsg(String topic, String msg, String originator) {
-        if (originator == name || (remoteName != "" && originator == remoteName)) {
+        //       if (originator == name || (remoteName != "" && originator == remoteName)) {
+        if (originator == remoteName) {
             // prevent loops;
+            // Serial.println("Loop prevented: " + topic + " - " + msg + " from: " + originator);
             return;
         }
+        // Serial.println("MQ-in: " + topic + " - " + msg + " from: " + originator);
         for (unsigned int i = 0; i < outgoingBlockList.length(); i++) {
             if (Scheduler::mqttmatch(topic, outgoingBlockList[i])) {
-                // blocked.
+                // Serial.println("blocked: " + topic + " - " + msg + " from: " + originator);
                 return;
             }
         }
