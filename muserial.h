@@ -333,7 +333,7 @@ class MuSerial {
             }
         }
 
-        Serial.println("In: " + topic);
+        // Serial.println("In: " + topic);
         String pre2 = remoteName + "/";
         String pre1 = name + "/";
         if (topic.substring(0, pre1.length()) == pre1) {
@@ -343,7 +343,7 @@ class MuSerial {
             topic = topic.substring(pre2.length());
         }
 
-        Serial.println("InPub: " + topic);
+        // Serial.println("InPub: " + topic);
         pSched->publish(topic, msg, remoteName);
         return true;
     }
