@@ -66,11 +66,12 @@ munet relies only on:
 - [Arduino_JSON](https://github.com/arduino-libraries/Arduino_JSON).
   **Note**: Earlier versions used a different lib: ArduinoJson.
 
-| munet component | depends on ustd | muwerk | Arduino_JSON | PubSubClient |
-| --------------- | --------------- | ------ | ------------ | ------------ |
-| Net.h           | x               | x      | x            |              |
-| Ota.h           | x               | x      | x            |              |
-| Mqtt.h          | x               | x      | x            | x            |
+| munet component | depends on ustd | muwerk | Arduino_JSON | PubSubClient | Network required
+| --------------- | --------------- | ------ | ------------ | ------------ | ----------------
+| Net.h           | x               | x      | x            |              | x
+| Ota.h           | x               | x      | x            |              | x
+| Mqtt.h          | x               | x      | x            | x            | x
+| MuSerial.h      | x               | x      |              |              | serial link
 
 Breaking Changes at Version 0.3.0
 ---------------------------------
