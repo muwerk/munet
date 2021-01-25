@@ -55,7 +55,7 @@ The library provides:
   MQTT interface.
 - MCUs without network hardware can be connected to a second system with network hardware via a
   serial link (`MuSerial.h`). The two connected systems appear as one system to the outside world,
-  both can publish/subscribe.
+  both can publish/subscribe. pub/sub message synchronization is handled automatically via serial link.
 
 Dependencies
 ------------
