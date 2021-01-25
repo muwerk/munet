@@ -104,6 +104,7 @@ $(function() {
 <li>Over-the-air (OTA) update is supported with one line of code [optional]</li>
 <li>Time synchronization with NTP servers, including daylight saving handling [optional]</li>
 <li>Connection to an MQTT server (via PubSubClient) [optional] This transparently connects the pub/sub inter-task communication that is provided by the muwerk scheduler with extern MQTT publishers and subscribers. Messages between muwerk tasks are published to the external MQTT server, and muwerk tasks can transparently subscribe to both other tasks on the same ESP and external topics via the MQTT interface.</li>
+<li>MCUs without network hardware can be connected to a second system with network hardware via a serial link (<code>MuSerial.h</code>). The two connected systems appear as one system to the outside world, both can publish/subscribe.</li>
 </ul>
 <h1>Dependencies </h1>
 <p>munet relies only on:</p>
@@ -115,13 +116,15 @@ $(function() {
 </ul>
 <table class="markdownTable">
 <tr class="markdownTableHead">
-<th class="markdownTableHeadNone">munet component   </th><th class="markdownTableHeadNone">depends on ustd   </th><th class="markdownTableHeadNone">muwerk   </th><th class="markdownTableHeadNone">Arduino_JSON   </th><th class="markdownTableHeadNone">PubSubClient    </th></tr>
+<th class="markdownTableHeadNone">munet component   </th><th class="markdownTableHeadNone">depends on ustd   </th><th class="markdownTableHeadNone">muwerk   </th><th class="markdownTableHeadNone">Arduino_JSON   </th><th class="markdownTableHeadNone">PubSubClient   </th><th class="markdownTableHeadNone">Network required    </th></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">Net.h   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone"></td></tr>
+<td class="markdownTableBodyNone">Net.h   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">x    </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">Ota.h   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone"></td></tr>
+<td class="markdownTableBodyNone">Ota.h   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">x    </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">Mqtt.h   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone">x   </td></tr>
+<td class="markdownTableBodyNone">Mqtt.h   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone">x    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">MuSerial.h   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone">x   </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">serial link between two muwerk nodes   </td></tr>
 </table>
 <h1>Breaking Changes at Version 0.3.0 </h1>
 <p>All network classes in Version 3.0.0 have been deeply refactored in order to provide more functionality and better reliability. Nevertheless there are some breaking changes.</p>
