@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['incomingblockremove_2',['incomingBlockRemove',['../classustd_1_1Mqtt.html#aa853edd665175ae45c205ac05c88427e',1,'ustd::Mqtt']]],
-  ['incomingblockset_3',['incomingBlockSet',['../classustd_1_1Mqtt.html#aa9fc3892c0af74b22cfbfecec51d355e',1,'ustd::Mqtt']]]
+  ['connectionledblinkdurationms_3',['connectionLedBlinkDurationMs',['../classustd_1_1MuSerial.html#a0c3d1683988f840d48191cf8fe10ce51',1,'ustd::MuSerial']]]
 ];

@@ -411,8 +411,16 @@ $(function() {
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>mqtt/state</code>   </td><td class="markdownTableBodyNone"><code>connected</code> or <code>disconnected</code>   </td><td class="markdownTableBodyNone">muwerk processes that subscribe to <code>mqtt/state</code> are that way informed, if mqtt external connection is available. The <code>mqtt/state</code> topic with message <code>disconnected</code> is also the default configuration for mqtt's last will topic and message.   </td></tr>
 </table>
+<h1>MuSerial - exchange of MQTT pub/sub messages between two muwerk MCUs via serial link </h1>
+<p>Two muwerk systems can be linked via a serial connection, if both run <code>MuSerial</code>. Pub/Sub Messages are exchanged transparently over the serial link. If one of the systems is connected to an external MQTT server, then both systems have access to MQTT pub/sub. To the outside, the system appears as one system, e.g. sensors or actors can be connected to either system, behaving identical to the outside world</p>
+<p>That way, a muwerk MCU without networking hardware can be connected to a network via a second muwerk system with network access.</p>
+<p>See <a href="https://github.com/muwerk/examples/tree/master/serialBridge">Example link setup</a></p>
 <h1>History </h1>
 <ul>
+<li>0.3.2 (2021-01-XX): [not yet published]: Minor changes, MuSerial serial MQTT-via-serial between two muwerk MCUs.<ul>
+<li>Fixed handling of mqtt connection state when network connection changes</li>
+</ul>
+</li>
 <li>0.3.1 (2021-01-20): Minor change: enable dependency-managment for Arduino library manager.</li>
 <li>0.3.0 (2021-01-20): Next Generation Network: See section _"Breaking Changes at Version 0.3.0"_ for caveats.<ul>
 <li>Support for Access Point mode and Dual Mode (both network station and access point mode)</li>

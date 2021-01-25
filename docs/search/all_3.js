@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['mqtt_4',['Mqtt',['../classustd_1_1Mqtt.html#acf5f14eae3b54a704e2ccb6f278e2f3b',1,'ustd::Mqtt::Mqtt()'],['../classustd_1_1Mqtt.html',1,'ustd::Mqtt']]],
-  ['munet_5',['munet',['../md_README.html',1,'']]],
-  ['munet_20is_20a_20collection_20of_20network_20libraries_20for_20esp8266_20and_20esp32_6',['munet is a collection of network libraries for ESP8266 and ESP32',['../index.html',1,'']]]
+  ['incomingblockremove_4',['incomingBlockRemove',['../classustd_1_1Mqtt.html#aa853edd665175ae45c205ac05c88427e',1,'ustd::Mqtt::incomingBlockRemove()'],['../classustd_1_1MuSerial.html#a1a690b37280bf4d9cae42ecd85f0b718',1,'ustd::MuSerial::incomingBlockRemove()']]],
+  ['incomingblockset_5',['incomingBlockSet',['../classustd_1_1Mqtt.html#aa9fc3892c0af74b22cfbfecec51d355e',1,'ustd::Mqtt::incomingBlockSet()'],['../classustd_1_1MuSerial.html#aa95d4d99f2d9218da86d6132423a1e57',1,'ustd::MuSerial::incomingBlockSet()']]]
 ];
