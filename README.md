@@ -55,7 +55,7 @@ The library provides:
   MQTT interface.
 - MCUs without network hardware can be connected to a second system with network hardware via a
   serial link (`MuSerial.h`). The two connected systems appear as one system to the outside world,
-  both can publish/subscribe.
+  both can publish/subscribe. pub/sub message synchronization is handled automatically via serial link.
 
 Dependencies
 ------------
@@ -69,12 +69,12 @@ munet relies only on:
 - [Arduino_JSON](https://github.com/arduino-libraries/Arduino_JSON).
   **Note**: Earlier versions used a different lib: ArduinoJson.
 
-| munet component | depends on ustd | muwerk | Arduino_JSON | PubSubClient | Network required
-| --------------- | --------------- | ------ | ------------ | ------------ | ----------------
-| Net.h           | x               | x      | x            |              | x
-| Ota.h           | x               | x      | x            |              | x
-| Mqtt.h          | x               | x      | x            | x            | x
-| MuSerial.h      | x               | x      |              |              | serial link between two muwerk nodes
+| munet component | depends on ustd | muwerk | Arduino_JSON | PubSubClient | Network required | Platforms
+| --------------- | --------------- | ------ | ------------ | ------------ | ---------------- | ---------
+| Net.h           | x               | x      | x            |              | x                | ESP8266, ESP32
+| Ota.h           | x               | x      | x            |              | x                | ESP8266, ESP32
+| Mqtt.h          | x               | x      | x            | x            | x                | ESP8266, ESP32
+| MuSerial.h      | x               | x      |              |              | serial link between two muwerk nodes | All (only serial port required)
 
 Breaking Changes at Version 0.3.0
 ---------------------------------
@@ -430,17 +430,18 @@ Two muwerk systems can be linked via a serial connection, if both run `MuSerial`
 are exchanged transparently over the serial link. If one of the systems is connected to an external
 MQTT server, then both systems have access to MQTT pub/sub. To the outside, the system appears as
 one system, e.g. sensors or actors can be connected to either system, behaving identical to the outside
-world
+world.
 
 That way, a muwerk MCU without networking hardware can be connected to a network via a second muwerk
-system with network access.
+system with network access via MuSerial.
 
-See [Example link setup](https://github.com/muwerk/examples/tree/master/serialBridge)
+See [Example SerialBridge](https://github.com/muwerk/examples/tree/master/serialBridge) for a complete overview.
 
 History
 -------
 
-- 0.3.2 (2021-01-XX): [not yet published]: Minor changes, MuSerial serial MQTT-via-serial between two muwerk MCUs.
+- 0.3.2 (2021-01-XX): [not yet published (note: supported platforms should be set to `*` in `library.*` on release)]: 
+  * MuSerial MQTT-via-serial link between two muwerk MCUs to provide MQTT access to hardware without network via serial.
   * Fixed handling of mqtt connection state when network connection changes
 - 0.3.1 (2021-01-20): Minor change: enable dependency-managment for Arduino library manager.
 - 0.3.0 (2021-01-20): Next Generation Network: See section _"Breaking Changes at Version 0.3.0"_ for caveats.
@@ -476,7 +477,7 @@ History
 
 ## ESP32 notes
 
-- In order to build MQTT for ESP32, PubSubClient v2.7 or newer is needed.
+- In order to build MQTT for ESP32, PubSubClient v2.7 is needed (PubSubClient 2.8 crashes!).
 - SPIFFS filesystem: Optionally use this [Arduino plugin](https://github.com/me-no-dev/arduino-esp32fs-plugin) to upload the SPIFFS filesystem to ESP32.
 
 ## References

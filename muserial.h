@@ -102,17 +102,14 @@ class MuSerial {
     const uint8_t SOH = 0x01, STX = 0x02, ETX = 0x03, EOT = 0x04;
     const uint8_t VER = 0x01;
 
-    /*! \brief protocol elements of MuSerial */
+    /*! protocol elements of MuSerial */
     enum LinkCmd {
         MUPING,  //!< period ping messages consisting of
                  //!< <unix-time-as-string><nul><remote-system-name><nul>
         MQTT     //!< MQTT message consisting of: <topic><nul><message><nul>
     };
 
-    /*! \brief Header of serial transmission
-
-    MuSerial sends messages as <Header><payload><Footer>
-    */
+    /*! Header of serial transmission: MuSerial sends messages as <Header><payload><Footer> */
     typedef struct t_header {
         uint8_t soh;   //!< = SOH;
         uint8_t ver;   //!< = VER;  first byte included in CRC calculation
@@ -124,7 +121,7 @@ class MuSerial {
         uint8_t pad;   //!< = 0;  (padding)
     } T_HEADER;
 
-    /*! \brief Footer of serial transmission */
+    /*! Footer of serial transmission */
     typedef struct t_footer {
         uint8_t etx;   //!< = ETX;  Last byte included in CRC calculation
         uint8_t pad2;  //!< = 0; (padding)
@@ -169,7 +166,7 @@ class MuSerial {
 #endif
 
         auto ft = [=]() { this->loop(); };
-        tID = pSched->add(ft, "serlink", 5000L);  // check every 5ms
+        tID = pSched->add(ft, "serlink", 20000L);  // check every 20ms
         auto fnall = [=](String topic, String msg, String originator) {
             this->subsMsg(topic, msg, originator);
         };
@@ -333,7 +330,7 @@ class MuSerial {
             }
         }
 
-        Serial.println("In: " + topic);
+        // Serial.println("In: " + topic);
         String pre2 = remoteName + "/";
         String pre1 = name + "/";
         if (topic.substring(0, pre1.length()) == pre1) {
@@ -343,7 +340,7 @@ class MuSerial {
             topic = topic.substring(pre2.length());
         }
 
-        Serial.println("InPub: " + topic);
+        // Serial.println("InPub: " + topic);
         pSched->publish(topic, msg, remoteName);
         return true;
     }
@@ -440,6 +437,7 @@ class MuSerial {
                                 uint64_t remoteTime = 0;
                                 // Serial.println("Msg received");
                                 if (strlen((const char *)msgBuf) + 2 <= msgLen) {
+                                    lastMsg = pSched->getUptime();
                                     const char *pM =
                                         (const char *)&msgBuf[strlen((const char *)msgBuf) + 1];
                                     if (strlen(pM) + strlen((const char *)msgBuf) + 2 <= msgLen) {
@@ -462,7 +460,6 @@ class MuSerial {
                                             break;
                                         case LinkCmd::MQTT:
                                             internalPub((const char *)msgBuf, pM);
-                                            lastMsg = pSched->getUptime();
                                             break;
                                         }
                                     }
