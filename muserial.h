@@ -70,7 +70,8 @@ void setup() {
 \endcode
 
 For a complete example, see:
-<a href="https://github.com/muwerk/examples/serialBridge">muwerk SerialBridge example</a>
+<a href="https://github.com/muwerk/examples/tree/master/serialBridge">muwerk SerialBridge
+example</a>
 */
 class MuSerial {
   private:
