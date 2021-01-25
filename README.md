@@ -74,7 +74,7 @@ munet relies only on:
 | Net.h           | x               | x      | x            |              | x
 | Ota.h           | x               | x      | x            |              | x
 | Mqtt.h          | x               | x      | x            | x            | x
-| MuSerial.h      | x               | x      |              |              | serial link between to muwerk nodes
+| MuSerial.h      | x               | x      |              |              | serial link between two muwerk nodes
 
 Breaking Changes at Version 0.3.0
 ---------------------------------
