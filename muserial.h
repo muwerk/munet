@@ -290,16 +290,15 @@ class MuSerial {
         */
 
         Serial.println("In: " + topic);
-        String pre = name + "/";
-        if (topic.substring(0, pre.length()) == pre) {
-            topic = topic.substring(pre.length());
-        } else {
-            pre = inDomainToken + "/";
-            if (topic.substring(0, pre.length()) == pre) {
-                topic = topic.substring(pre.length());
-            }
+        String pre2 = remoteName + "/";
+        String pre1 = name + "/";
+        if (topic.substring(0, pre1.length()) == pre1) {
+            topic = topic.substring(pre1.length());
         }
-        topic = remoteName + "/" + topic;
+        if (topic.substring(0, pre2.length()) == pre1) {
+            topic = topic.substring(pre2.length());
+        }
+
         Serial.println("InPub: " + topic);
         pSched->publish(topic, msg, remoteName);
         return true;
