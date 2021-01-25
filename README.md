@@ -430,12 +430,12 @@ Two muwerk systems can be linked via a serial connection, if both run `MuSerial`
 are exchanged transparently over the serial link. If one of the systems is connected to an external
 MQTT server, then both systems have access to MQTT pub/sub. To the outside, the system appears as
 one system, e.g. sensors or actors can be connected to either system, behaving identical to the outside
-world
+world.
 
 That way, a muwerk MCU without networking hardware can be connected to a network via a second muwerk
-system with network access.
+system with network access via MuSerial.
 
-See [Example link setup](https://github.com/muwerk/examples/tree/master/serialBridge)
+See [Example SerialBridge](https://github.com/muwerk/examples/tree/master/serialBridge) for a complete overview.
 
 History
 -------
