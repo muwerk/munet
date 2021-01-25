@@ -9,6 +9,9 @@ munet implements the following classes based on the cooperative scheduler muwerk
 * * \ref ustd::Net WiFi client and access point connectivity with NTP time synchronization
 * * \ref ustd::Ota Over-the-air (OTA) software update
 * * \ref ustd::Mqtt Gateway to MQTT server
+* * \ref ustd::MuSerial Serial protocol to connect two muwerk MCUs to allow transparent
+         pub/sub message exchange. This allows non-networked hardware to be connected
+         to networked hardware via a serial link.
 
 Libraries are header-only and should work with any c++11 compiler and
 and support platforms esp8266 and esp32.
