@@ -477,7 +477,7 @@ History
 
 ## ESP32 notes
 
-- In order to build MQTT for ESP32, PubSubClient v2.7 or newer is needed.
+- In order to build MQTT for ESP32, PubSubClient v2.7 is needed (PubSubClient 2.8 crashes!).
 - SPIFFS filesystem: Optionally use this [Arduino plugin](https://github.com/me-no-dev/arduino-esp32fs-plugin) to upload the SPIFFS filesystem to ESP32.
 
 ## References
