@@ -419,11 +419,24 @@ MQTT Message Interface
 | `mqtt/config` | `<prefix>+<will_topic>+<will_message>` | The message contains three parts separated bei `+`: prefix, the last-will-topic and last-will message. `prefix` is the mqtt topic-prefix automatically prefixed to outgoing messages, composed of `omu` (set with mqtt) and `hostname`, e.g. `omu/myhost`. `prefix` can be useful for mupplets to know the actual topic names that get published externally.
 | `mqtt/state`  | `connected` or `disconnected`          | muwerk processes that subscribe to `mqtt/state` are that way informed, if mqtt external connection is available. The `mqtt/state` topic with message `disconnected` is also the default configuration for mqtt's last will topic and message.
 
+MuSerial - exchange of MQTT pub/sub messages between two muwerk MCUs via serial link
+------------------------------------------------------------------------------------
+
+Two muwerk systems can be linked via a serial connection, if both run `MuSerial`. Pub/Sub Messages
+are exchanged transparently over the serial link. If one of the systems is connected to an external
+MQTT server, then both systems have access to MQTT pub/sub. To the outside, the system appears as
+one system, e.g. sensors or actors can be connected to either system, behaving identical to the outside
+world
+
+That way, a muwerk MCU without networking hardware can be connected to a network via a second muwerk
+system with network access.
+
+See [Example link setup](https://github.com/muwerk/examples/tree/master/serialBridge)
 
 History
 -------
 
-- 0.3.2 (2021-01-XX): [not yet published]: Minor changes
+- 0.3.2 (2021-01-XX): [not yet published]: Minor changes, MuSerial serial MQTT-via-serial between two muwerk MCUs.
   * Fixed handling of mqtt connection state when network connection changes
 - 0.3.1 (2021-01-20): Minor change: enable dependency-managment for Arduino library manager.
 - 0.3.0 (2021-01-20): Next Generation Network: See section _"Breaking Changes at Version 0.3.0"_ for caveats.
