@@ -14,6 +14,64 @@
 
 namespace ustd {
 
+/*! \brief munet MuSerial Class
+
+The MuSerial class connects two muwerk MCUs via a serial connection.
+The serial connection automatically fowards all pub/sub messages (that are not
+blocked by exception lists) between the two nodes.
+
+A main application could be to connect a non-networked MCU to a networked
+MCU to allow forwarding and receiving MQTT messages on MCUs without network
+connection via a serial link.
+
+A system of two muwerk MCUs connected via MuSerial act to the outside world
+as if they were one system. Hardware (mupplets) can be addressed the same
+way, regardless if they are on node1 or node2.
+
+## Sample MuSerial node (without network acces)
+
+\code{cpp}
+#define __ESP__ 1   // Platform defines required, see doc, mainpage.
+#include "scheduler.h"
+#include "muserial.h"
+
+ustd::Scheduler sched;
+ustd::MuSerial serlink("serlink", &Serial2, 115200, LED_BUILTIN);
+
+void setup() {
+    muserial.begin(&sched);
+}
+\endcode
+
+## Sample MuSerial node (with network access)
+
+\code{cpp}
+#include "scheduler.h"
+
+#include "muserial.h"
+
+#include "net.h"
+#include "mqtt.h"
+#include "ota.h"
+
+ustd::Scheduler sched(10, 16, 32);
+ustd::MuSerial muser("esp32", &Serial1, 115200, LED_BUILTIN);
+
+ustd::Net net(LED_BUILTIN);
+ustd::Mqtt mqtt;
+ustd::Ota ota;
+
+void setup() {
+    muser.begin(&sched);
+    net.begin(&sched);
+    mqtt.begin(&sched);
+    ota.begin(&sched);
+}
+\endcode
+
+For a complete example, see:
+<a href="https://github.com/muwerk/examples/serialBridge">muwerk SerialBridge example</a>
+*/
 class MuSerial {
   private:
     Scheduler *pSched;
@@ -37,64 +95,60 @@ class MuSerial {
     unsigned long pingReceiveTimeout = 10;  // sec
     unsigned long pingPeriod = 5;           // sec
     String remoteName = "";
-    String inDomainToken;
-    String outDomainToken;
     ustd::array<String> outgoingBlockList;
     ustd::array<String> incomingBlockList;
 
     const uint8_t SOH = 0x01, STX = 0x02, ETX = 0x03, EOT = 0x04;
     const uint8_t VER = 0x01;
 
-    enum LinkCmd { MUPING, MQTT };
+    /*! \brief protocol elements of MuSerial */
+    enum LinkCmd {
+        MUPING,  //!< period ping messages consisting of
+                 //!< <unix-time-as-string><nul><remote-system-name><nul>
+        MQTT     //!< MQTT message consisting of: <topic><nul><message><nul>
+    };
 
+    /*! \brief Header of serial transmission
+
+    MuSerial sends messages as <Header><payload><Footer>
+    */
     typedef struct t_header {
-        uint8_t soh;   // = SOH;
-        uint8_t ver;   // = VER;  // CRC start
-        uint8_t num;   // block number
-        uint8_t cmd;   // LinkCmd
-        uint8_t hLen;  // = 0;  // Hi byte length
-        uint8_t lLen;  // = 0;  // Lo byte length
-        uint8_t stx;   // = STX;
-        uint8_t pad;   // = 0;
+        uint8_t soh;   //!< = SOH;
+        uint8_t ver;   //!< = VER;  first byte included in CRC calculation
+        uint8_t num;   //!< block number
+        uint8_t cmd;   //!< \ref LinkCmd
+        uint8_t hLen;  //!< Hi byte payload length
+        uint8_t lLen;  //!< Lo byte length, payload length is hLen*256+lLen
+        uint8_t stx;   //!< = STX;
+        uint8_t pad;   //!< = 0;  (padding)
     } T_HEADER;
 
+    /*! \brief Footer of serial transmission */
     typedef struct t_footer {
-        uint8_t etx;   // = ETX;  // CRC end
-        uint8_t pad2;  // = 0;
-        uint8_t crc;   // = 0;
-        uint8_t eot;   // = EOT;
+        uint8_t etx;   //!< = ETX;  Last byte included in CRC calculation
+        uint8_t pad2;  //!< = 0; (padding)
+        uint8_t crc;   //!< primite CRC, calculated starting with ver-field of header, payload and
+                       //!< footer up and including etx.
+        uint8_t eot;   //!< = EOT;
     } T_FOOTER;
 
-    typedef struct t_ping {
-        uint8_t soh;   // = SOH;
-        uint8_t ver;   // = VER;  // CRC start
-        uint8_t num;   // block number
-        uint8_t cmd;   // LinkCmd
-        uint8_t hLen;  // = 0;  // Hi byte length
-        uint8_t lLen;  // = 0;  // Lo byte length
-        uint8_t stx;   // = STX;
-        uint8_t pad;   // = 0;
-        // len start
-        uint64_t time;  // XXX: byte order!
-        char name[10];  // first 9 chars of name
-        // len end
-        uint8_t etx;   // = ETX;  // CRC end
-        uint8_t pad2;  // = 0;
-        uint8_t crc;   // = 0;
-        uint8_t eot;   // = EOT;
-
-    } T_PING;
-
   public:
-    bool activeLogic = false;
-    unsigned long connectionLedBlinkDurationMs = 200;
+    bool activeLogic = false;  //!< If a connectionLed is used, this defines if active-high (true)
+                               //!< or active-low (false) logic is used.
+    unsigned long connectionLedBlinkDurationMs =
+        200;  //!< milli-secs the connectionLed is flashed on receiving a ping.
 
     MuSerial(String name, HardwareSerial *pSerial, unsigned long baudRate = 115200,
-             uint8_t connectionLed = -1, String inDomainToken = "$remoteName",
-             String outDomainToken = "$name")
-        : name(name), pSerial(pSerial), baudRate(baudRate), connectionLed(connectionLed),
-          inDomainToken(inDomainToken), outDomainToken(outDomainToken) {
+             uint8_t connectionLed = -1)
+        : name(name), pSerial(pSerial), baudRate(baudRate), connectionLed(connectionLed) {
         /*! Instantiate a serial link between two muwerk instances.
+
+        @param name Name of this node (used in pub/sub protocol, received as 'remoteName' by other
+        system)
+        @param pSerial pointer to Serial object
+        @param baudRate baud rate for communication. Must be same as used by other node.
+        @param connectionLed optional gpio pin number of a led (e.g. LED_BUILTIN) that is flashed on
+        receiving a PING from other system.
          */
     }
 
@@ -114,7 +168,7 @@ class MuSerial {
 #endif
 
         auto ft = [=]() { this->loop(); };
-        tID = pSched->add(ft, "serlink", 50000L);  // check every 5ms
+        tID = pSched->add(ft, "serlink", 5000L);  // check every 5ms
         auto fnall = [=](String topic, String msg, String originator) {
             this->subsMsg(topic, msg, originator);
         };
@@ -201,6 +255,7 @@ class MuSerial {
         return false;
     }
 
+  private:
     unsigned char crc(const unsigned char *buf, unsigned int len, unsigned char init = 0) {
         unsigned char c = init;
         for (unsigned int i = 0; i < len; i++)
@@ -276,18 +331,6 @@ class MuSerial {
                 return false;
             }
         }
-        /*
-        String inT;
-        if (inDomainToken == "$remoteName") {
-            inT = remoteName;
-        } else {
-            inT = inDomainToken;
-        }
-        if (inT != "") {
-            topic = inT + "/" + topic;
-        }
-        // Serial.println("MuPub: " + topic + ", " + msg + ", from: " + remoteName);
-        */
 
         Serial.println("In: " + topic);
         String pre2 = remoteName + "/";
@@ -463,7 +506,6 @@ class MuSerial {
     }
 
     void subsMsg(String topic, String msg, String originator) {
-        //       if (originator == name || (remoteName != "" && originator == remoteName)) {
         if (originator == remoteName) {
             // prevent loops;
             // Serial.println("Loop prevented: " + topic + " - " + msg + " from: " + originator);
