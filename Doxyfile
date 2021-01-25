@@ -32,7 +32,7 @@ DOXYFILE_ENCODING      = UTF-8
 # title of most generated pages and in a few other places.
 # The default value is: My Project.
 
-PROJECT_NAME           = "munet Network Library for muwerk Scheduler on ESP Hardware"
+PROJECT_NAME           = "munet Network Library for muwerk Scheduler"
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. This
 # could be handy for archiving the generated documentation or if some version
@@ -44,7 +44,7 @@ PROJECT_NUMBER         =
 # for a project that appears at the top of each page and should give viewer a
 # quick idea about the purpose of the project. Keep the description short.
 
-PROJECT_BRIEF          = "A muwerk network library supporting WiFi, NTP, OTA and MQTT for ESP8266 and ESP32"
+PROJECT_BRIEF          = "A muwerk network library supporting WiFi, NTP, OTA and MQTT for ESP8266 and ESP32 and serial links for all platforms"
 
 # With the PROJECT_LOGO tag one can specify a logo or an icon that is included
 # in the documentation. The maximum height of the logo should not exceed 55
