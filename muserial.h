@@ -23,6 +23,7 @@ class MuSerial {
     HardwareSerial *pSerial;
     unsigned long baudRate;
     uint8_t connectionLed;
+    unsigned long ledTimer = 0;
 
     enum LinkState { SYNC, HEADER, MSG, CRC };
     bool bCheckLink = false;
@@ -85,6 +86,9 @@ class MuSerial {
     } T_PING;
 
   public:
+    bool activeLogic = false;
+    unsigned long connectionLedBlinkDurationMs = 200;
+
     MuSerial(String name, HardwareSerial *pSerial, unsigned long baudRate = 115200,
              uint8_t connectionLed = -1, String inDomainToken = "$remoteName",
              String outDomainToken = "$name")
@@ -119,7 +123,7 @@ class MuSerial {
         linkState = SYNC;
         if (connectionLed != -1) {
             pinMode(connectionLed, OUTPUT);
-            digitalWrite(connectionLed, HIGH);
+            digitalWrite(connectionLed, activeLogic);
         }
         ping();
     }
@@ -205,33 +209,21 @@ class MuSerial {
     }
 
     void ping() {
-        T_PING p = {};
-        if (connectionLed != -1)
-            digitalWrite(connectionLed, LOW);
-        p.soh = SOH;
-        p.ver = VER;
-        p.num = blockNum++;
-        p.cmd = LinkCmd::MUPING;
-        p.hLen = 0;
-        p.lLen = sizeof(p.time) + 10;
-        p.stx = STX;
+        char strTime[16];
 #ifdef __ARDUINO__
-        p.time = (uint64_t)pSched->getUptime();
+        ltoa(pSched->getUptime(), strTime, 15);
 #else
-        p.time = (uint64_t)time(nullptr);
+        ltoa(time(nullptr), strTime, 15);
 #endif
-        strncpy(p.name, name.c_str(), 9);
-        p.name[9] = 0;
-        p.etx = ETX;
-        p.crc = crc((unsigned char *)&(p.ver), sizeof(T_PING) - 3);
-        p.eot = EOT;
-        pSerial->write((unsigned char *)&p, sizeof(p));
+        sendOut(strTime, name, LinkCmd::MUPING);
         lastPingSent = pSched->getUptime();
-        if (connectionLed != -1)
-            digitalWrite(connectionLed, HIGH);
     }
 
-    void sendOut(String topic, String msg) {
+    void handleTime(uint64_t remoteTime) {
+        // XXX do maybe something?
+    }
+
+    void sendOut(String topic, String msg, LinkCmd cmd = LinkCmd::MQTT) {
         T_HEADER th = {};
         T_FOOTER tf = {};
         unsigned char ccrc;
@@ -241,7 +233,7 @@ class MuSerial {
         th.soh = SOH;
         th.ver = VER;
         th.num = blockNum++;
-        th.cmd = LinkCmd::MQTT;
+        th.cmd = cmd;
         unsigned int len = topic.length() + msg.length() + 2;
         th.hLen = len / 256;
         th.lLen = len % 256;
@@ -318,14 +310,15 @@ class MuSerial {
         unsigned char ccrc;
         unsigned char c;
         if (bCheckLink) {
-            if (pSched->getUptime() - lastPingSent > pingPeriod) {
-                if (ld) {
-                    ld = false;
-                    digitalWrite(LED_BUILTIN, LOW);
-                } else {
-                    ld = true;
-                    digitalWrite(LED_BUILTIN, HIGH);
+            if (ledTimer) {
+                if (timeDiff(ledTimer, millis()) > connectionLedBlinkDurationMs) {
+                    ledTimer = 0;
+                    if (connectionLed != -1) {
+                        digitalWrite(connectionLed, activeLogic);
+                    }
                 }
+            }
+            if (pSched->getUptime() - lastPingSent > pingPeriod) {
                 ping();
             }
             while (pSerial->available() > 0) {
@@ -401,42 +394,35 @@ class MuSerial {
                                 linkState = SYNC;
                                 continue;
                             } else {
-                                switch ((LinkCmd)hd.cmd) {
-                                case MUPING:
-                                    // Serial.println("Ping received");
-                                    if (strlen((const char *)&msgBuf[8]) < 10) {
-                                        remoteName = (const char *)&msgBuf[8];
-                                        lastMsg = pSched->getUptime();
-                                        if (!linkConnected) {
-                                            linkConnected = true;
-                                            pSched->publish(name + "/link/" + remoteName,
-                                                            "connected", name);
-                                        }
-                                    } else {
-                                        if (allocated && msgBuf != nullptr) {
-                                            free(msgBuf);
-                                            msgBuf = nullptr;
-                                            allocated = false;
-                                        }
-                                        linkState = SYNC;
-                                        continue;
-                                    }
-                                    break;
-                                case MQTT:
-                                    // Serial.println("Msg received");
-                                    if (strlen((const char *)msgBuf) + 2 <= msgLen) {
-                                        const char *pM =
-                                            (const char *)&msgBuf[strlen((const char *)msgBuf) + 1];
-                                        if (strlen(pM) + strlen((const char *)msgBuf) + 2 <=
-                                            msgLen) {
-                                            // Serial.println(
-                                            //    "Msg pub: " + String((const char *)msgBuf) + ", "
-                                            //    + String(pM));
+                                uint64_t remoteTime = 0;
+                                // Serial.println("Msg received");
+                                if (strlen((const char *)msgBuf) + 2 <= msgLen) {
+                                    const char *pM =
+                                        (const char *)&msgBuf[strlen((const char *)msgBuf) + 1];
+                                    if (strlen(pM) + strlen((const char *)msgBuf) + 2 <= msgLen) {
+                                        switch ((LinkCmd)hd.cmd) {
+                                        case LinkCmd::MUPING:
+                                            remoteName = pM;
+                                            // XXX: Y2031?
+                                            remoteTime = atol((const char *)msgBuf);
+                                            handleTime(remoteTime);
+                                            lastMsg = pSched->getUptime();
+                                            if (connectionLed != -1) {
+                                                digitalWrite(connectionLed, !activeLogic);
+                                                ledTimer = millis();
+                                            }
+                                            if (!linkConnected) {
+                                                linkConnected = true;
+                                                pSched->publish(name + "/link/" + remoteName,
+                                                                "connected", name);
+                                            }
+                                            break;
+                                        case LinkCmd::MQTT:
                                             internalPub((const char *)msgBuf, pM);
                                             lastMsg = pSched->getUptime();
+                                            break;
                                         }
                                     }
-                                    break;
                                 }
                                 if (allocated && msgBuf != nullptr) {
                                     free(msgBuf);
