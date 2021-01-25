@@ -53,6 +53,9 @@ The library provides:
   subscribers. Messages between muwerk tasks are published to the external MQTT server, and muwerk
   tasks can transparently subscribe to both other tasks on the same ESP and external topics via the
   MQTT interface.
+- MCUs without network hardware can be connected to a second system with network hardware via a
+  serial link (`MuSerial.h`). The two connected systems appear as one system to the outside world,
+  both can publish/subscribe.
 
 Dependencies
 ------------
@@ -66,11 +69,12 @@ munet relies only on:
 - [Arduino_JSON](https://github.com/arduino-libraries/Arduino_JSON).
   **Note**: Earlier versions used a different lib: ArduinoJson.
 
-| munet component | depends on ustd | muwerk | Arduino_JSON | PubSubClient |
-| --------------- | --------------- | ------ | ------------ | ------------ |
-| Net.h           | x               | x      | x            |              |
-| Ota.h           | x               | x      | x            |              |
-| Mqtt.h          | x               | x      | x            | x            |
+| munet component | depends on ustd | muwerk | Arduino_JSON | PubSubClient | Network required
+| --------------- | --------------- | ------ | ------------ | ------------ | ----------------
+| Net.h           | x               | x      | x            |              | x
+| Ota.h           | x               | x      | x            |              | x
+| Mqtt.h          | x               | x      | x            | x            | x
+| MuSerial.h      | x               | x      |              |              | serial link between two muwerk nodes
 
 Breaking Changes at Version 0.3.0
 ---------------------------------
