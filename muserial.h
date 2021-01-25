@@ -284,6 +284,7 @@ class MuSerial {
                 return false;
             }
         }
+        /*
         String inT;
         if (inDomainToken == "$remoteName") {
             inT = remoteName;
@@ -294,6 +295,20 @@ class MuSerial {
             topic = inT + "/" + topic;
         }
         // Serial.println("MuPub: " + topic + ", " + msg + ", from: " + remoteName);
+        */
+
+        Serial.println("In: " + topic);
+        String pre = name + "/";
+        if (topic.substring(0, pre.length()) == pre) {
+            topic = topic.substring(pre.length());
+        } else {
+            pre = inDomainToken + "/";
+            if (topic.substring(0, pre.length()) == pre) {
+                topic = topic.substring(pre.length());
+            }
+        }
+        topic = remoteName + "/" + topic;
+        Serial.println("InPub: " + topic);
         pSched->publish(topic, msg, remoteName);
         return true;
     }
@@ -394,7 +409,8 @@ class MuSerial {
                                         lastMsg = pSched->getUptime();
                                         if (!linkConnected) {
                                             linkConnected = true;
-                                            pSched->publish(name + "/link", "connected", name);
+                                            pSched->publish(name + "/link/" + remoteName,
+                                                            "connected", name);
                                         }
                                     } else {
                                         if (allocated && msgBuf != nullptr) {
@@ -440,7 +456,7 @@ class MuSerial {
                     if ((unsigned long)(pSched->getUptime() - lastRead) > readTimeout) {
                         linkState = SYNC;
                         if (linkConnected) {
-                            pSched->publish(name + "/link", "disconnected", name);
+                            pSched->publish(name + "/link/" + remoteName, "disconnected", name);
                         }
                         linkConnected = false;
                         if (allocated && msgBuf != nullptr) {
@@ -452,7 +468,7 @@ class MuSerial {
                 } else {
                     if ((unsigned long)(pSched->getUptime() - lastMsg) > pingReceiveTimeout) {
                         if (linkConnected) {
-                            pSched->publish(name + "/link", "disconnected", name);
+                            pSched->publish(name + "/link/" + remoteName, "disconnected", name);
                         }
                         linkConnected = false;
                     }
@@ -475,7 +491,12 @@ class MuSerial {
                 return;
             }
         }
-        sendOut(topic, msg);
+        String pre = remoteName + "/";
+        if (topic.substring(0, pre.length()) == pre) {
+            sendOut(topic, msg);
+        } else {
+            sendOut(remoteName + "/" + topic, msg);
+        }
     };
 };
 
