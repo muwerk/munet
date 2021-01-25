@@ -440,7 +440,8 @@ See [Example link setup](https://github.com/muwerk/examples/tree/master/serialBr
 History
 -------
 
-- 0.3.2 (2021-01-XX): [not yet published (note: supported platforms should be set to `*` in `library.*` on release)]: Minor changes, MuSerial serial MQTT-via-serial between two muwerk MCUs.
+- 0.3.2 (2021-01-XX): [not yet published (note: supported platforms should be set to `*` in `library.*` on release)]: 
+  * MuSerial MQTT-via-serial link between two muwerk MCUs to provide MQTT access to hardware without network via serial.
   * Fixed handling of mqtt connection state when network connection changes
 - 0.3.1 (2021-01-20): Minor change: enable dependency-managment for Arduino library manager.
 - 0.3.0 (2021-01-20): Next Generation Network: See section _"Breaking Changes at Version 0.3.0"_ for caveats.
