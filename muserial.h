@@ -440,6 +440,7 @@ class MuSerial {
                                 uint64_t remoteTime = 0;
                                 // Serial.println("Msg received");
                                 if (strlen((const char *)msgBuf) + 2 <= msgLen) {
+                                    lastMsg = pSched->getUptime();
                                     const char *pM =
                                         (const char *)&msgBuf[strlen((const char *)msgBuf) + 1];
                                     if (strlen(pM) + strlen((const char *)msgBuf) + 2 <= msgLen) {
@@ -462,7 +463,6 @@ class MuSerial {
                                             break;
                                         case LinkCmd::MQTT:
                                             internalPub((const char *)msgBuf, pM);
-                                            lastMsg = pSched->getUptime();
                                             break;
                                         }
                                     }
