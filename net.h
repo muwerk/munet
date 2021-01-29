@@ -607,9 +607,14 @@ class Net {
         return false;
     }
 
+    // Buggy config*Time ESP8266 APIs assume api param char* remain valid indefinitly!
+    // Unresolved as of now: https://github.com/esp8266/Arduino/issues/7056
+    // Hence:
+    ustd::array<String> ntpHosts;
+    String ntpDstRules;
+
     void configureTime() {
-        ustd::array<String> ntpHosts;
-        String ntpDstRules = config.readString("net/services/ntp/dstrules");
+        ntpDstRules = config.readString("net/services/ntp/dstrules");
         config.readStringArray("net/services/ntp/host", ntpHosts);
 
         if (ntpDstRules.length() && ntpHosts.length()) {
