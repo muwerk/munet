@@ -66,7 +66,7 @@ $(function() {
 <div class="title">munet </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a href="https://travis-ci.org/muwerk/munet"><img src="https://travis-ci.org/muwerk/munet.svg?branch=master" alt="ESP12e build" style="pointer-events: none;" class="inline"/></a> <a href="https://muwerk.github.io/munet/docs/index.html"><img src="https://img.shields.io/badge/docs-dev-blue.svg" alt="Dev Docs" style="pointer-events: none;" class="inline"/></a></p>
+<div class="textblock"><p><a href="https://travis-ci.org/muwerk/munet"><img src="https://travis-ci.org/muwerk/munet.svg?branch=master" alt="ESP12e build" style="pointer-events: none;" class="inline"/></a> <a href="https://muwerk.github.io/munet/docs/index.html"><img src="https://img.shields.io/badge/docs-dev-blue.svg" alt="Dev Docs" style="pointer-events: none;" class="inline"/></a> <a href="https://github.com/muwerk/munet/actions"><img src="https://github.com/muwerk/munet/workflows/PlatformIO%20CI/badge.svg" alt="PlatformIO CI" style="pointer-events: none;" class="inline"/></a></p>
 <p>The munet libraries use the <a href="https://github.com/muwerk/muwerk">muwerk scheduler</a> to provide a comprehensive set of network functionality: WiFi connection, Access Point Mode, NTP time sync, OTA software update and MQTT communication for ESP8266 and ESP32 chips with a minimum of code:</p>
 <div class="fragment"><div class="line"> {c++}</div>
 <div class="line">#define __ESP__   // Platform define, add #define __ESP32__ for ESP32 (see dependencies)</div>
@@ -420,10 +420,13 @@ $(function() {
 <p>See <a href="https://github.com/muwerk/examples/tree/master/serialBridge">Example SerialBridge</a> for a complete overview.</p>
 <h1>History </h1>
 <ul>
-<li>0.3.2 (2021-01-XX): [not yet published (note: supported platforms should be set to <code>*</code> in <code>library.*</code> on release)]:<ul>
-<li>MuSerial MQTT-via-serial link between two muwerk MCUs to provide MQTT access to hardware without network via serial.</li>
+<li>0.3.2 (2021-01-29): MuSerial: MQTT-enable non-networked hardware via serial link, NTP Bugfix, MQTT connection state fix.<ul>
+<li>Bugfix: NTP initialization on ESP8266 <a href="https://github.com/muwerk/munet/issues/6">failed often, #6</a>, due to unsafe parameter handling in current configTime() API of ESP8266, fixed.</li>
+<li>MuSerial: MQTT-via-serial link between two muwerk MCUs to provide MQTT access to hardware without network via serial. MuSerial runs on all platforms and can be used to network-enable hardware via ESPs. See <a href="https://github.com/muwerk/examples/tree/master/serialBridge">SerialBridge</a>.</li>
 <li>Fixed handling of mqtt connection state when network connection changes</li>
 </ul>
+</li>
+<li>CI (2021-01-38): Github actions build-check for all supported platforms: network for ESPxx, serial for all others. <br  />
 </li>
 <li>0.3.1 (2021-01-20): Minor change: enable dependency-managment for Arduino library manager.</li>
 <li>0.3.0 (2021-01-20): Next Generation Network: See section _"Breaking Changes at Version 0.3.0"_ for caveats.<ul>

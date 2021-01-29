@@ -93,7 +93,7 @@ $(function() {
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    uint8_t connectionLed;</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> ledTimer = 0;</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160; </div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="keyword">enum</span> LinkState { SYNC, HEADER, MSG, CRC };</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="keyword">enum</span> LinkState { SYNC, HEADER, MSG, MUCRC };</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    <span class="keywordtype">bool</span> bCheckLink = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    uint8_t blockNum = 0;</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    LinkState linkState;</div>
@@ -222,7 +222,7 @@ $(function() {
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160; </div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;    <span class="keywordtype">void</span> ping() {</div>
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;        <span class="keywordtype">char</span> strTime[16];</div>
-<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;<span class="preprocessor">#ifdef __ARDUINO__</span></div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;<span class="preprocessor">#if defined(__ARDUINO__) || defined(__ARM__) || defined(__RISC_V__)</span></div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;        ltoa(pSched-&gt;getUptime(), strTime, 15);</div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;<span class="preprocessor">#else</span></div>
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;        ltoa(time(<span class="keyword">nullptr</span>), strTime, 15);</div>
@@ -362,13 +362,13 @@ $(function() {
 <div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;                    msgBuf[curMsg] = c;</div>
 <div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;                    ++curMsg;</div>
 <div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;                    <span class="keywordflow">if</span> (curMsg == msgLen) {</div>
-<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;                        linkState = CRC;</div>
+<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;                        linkState = MUCRC;</div>
 <div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;                        pFo = (<span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> *)&amp;fo;</div>
 <div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;                        cLen = 0;</div>
 <div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;                    }</div>
 <div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;                    <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;                    <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;                <span class="keywordflow">case</span> CRC:</div>
+<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;                <span class="keywordflow">case</span> MUCRC:</div>
 <div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;                    pFo[cLen] = c;</div>
 <div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;                    ++cLen;</div>
 <div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;                    <span class="keywordflow">if</span> (cLen == <span class="keyword">sizeof</span>(fo)) {</div>

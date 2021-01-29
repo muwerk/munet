@@ -550,373 +550,378 @@ $(function() {
 <div class="line"><a name="l00607"></a><span class="lineno">  607</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00608"></a><span class="lineno">  608</span>&#160;    }</div>
 <div class="line"><a name="l00609"></a><span class="lineno">  609</span>&#160; </div>
-<div class="line"><a name="l00610"></a><span class="lineno">  610</span>&#160;    <span class="keywordtype">void</span> configureTime() {</div>
-<div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;        ustd::array&lt;String&gt; ntpHosts;</div>
-<div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;        String ntpDstRules = config.readString(<span class="stringliteral">&quot;net/services/ntp/dstrules&quot;</span>);</div>
-<div class="line"><a name="l00613"></a><span class="lineno">  613</span>&#160;        config.readStringArray(<span class="stringliteral">&quot;net/services/ntp/host&quot;</span>, ntpHosts);</div>
-<div class="line"><a name="l00614"></a><span class="lineno">  614</span>&#160; </div>
-<div class="line"><a name="l00615"></a><span class="lineno">  615</span>&#160;        <span class="keywordflow">if</span> (ntpDstRules.length() &amp;&amp; ntpHosts.length()) {</div>
-<div class="line"><a name="l00616"></a><span class="lineno">  616</span>&#160;            <span class="comment">// configure ntp servers AND TZ variable</span></div>
-<div class="line"><a name="l00617"></a><span class="lineno">  617</span>&#160;            configTzTime(ntpDstRules.c_str(), ntpHosts[0].c_str(),</div>
-<div class="line"><a name="l00618"></a><span class="lineno">  618</span>&#160;                         ntpHosts.length() &gt; 1 ? ntpHosts[1].c_str() : <span class="keyword">nullptr</span>,</div>
-<div class="line"><a name="l00619"></a><span class="lineno">  619</span>&#160;                         ntpHosts.length() &gt; 2 ? ntpHosts[2].c_str() : <span class="keyword">nullptr</span>);</div>
-<div class="line"><a name="l00620"></a><span class="lineno">  620</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (ntpHosts.length()) {</div>
-<div class="line"><a name="l00621"></a><span class="lineno">  621</span>&#160;            <span class="comment">// configure ntp servers without TZ variable</span></div>
-<div class="line"><a name="l00622"></a><span class="lineno">  622</span>&#160;            configTime(0, 0, ntpHosts[0].c_str(),</div>
-<div class="line"><a name="l00623"></a><span class="lineno">  623</span>&#160;                       ntpHosts.length() &gt; 1 ? ntpHosts[1].c_str() : <span class="keyword">nullptr</span>,</div>
-<div class="line"><a name="l00624"></a><span class="lineno">  624</span>&#160;                       ntpHosts.length() &gt; 2 ? ntpHosts[2].c_str() : <span class="keyword">nullptr</span>);</div>
-<div class="line"><a name="l00625"></a><span class="lineno">  625</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (ntpDstRules.length()) {</div>
-<div class="line"><a name="l00626"></a><span class="lineno">  626</span>&#160;            <span class="comment">// configure only TZ variable</span></div>
-<div class="line"><a name="l00627"></a><span class="lineno">  627</span>&#160;            setenv(<span class="stringliteral">&quot;TZ&quot;</span>, ntpDstRules.c_str(), 3);</div>
-<div class="line"><a name="l00628"></a><span class="lineno">  628</span>&#160;        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00629"></a><span class="lineno">  629</span>&#160;            <span class="comment">// take from RTC?</span></div>
-<div class="line"><a name="l00630"></a><span class="lineno">  630</span>&#160;        }</div>
-<div class="line"><a name="l00631"></a><span class="lineno">  631</span>&#160;    }</div>
-<div class="line"><a name="l00632"></a><span class="lineno">  632</span>&#160; </div>
-<div class="line"><a name="l00633"></a><span class="lineno">  633</span>&#160;    <span class="keywordtype">void</span> publishState() {</div>
-<div class="line"><a name="l00634"></a><span class="lineno">  634</span>&#160;        JSONVar net;</div>
-<div class="line"><a name="l00635"></a><span class="lineno">  635</span>&#160; </div>
-<div class="line"><a name="l00636"></a><span class="lineno">  636</span>&#160;        net[<span class="stringliteral">&quot;mode&quot;</span>] = getStringFromMode(mode);</div>
-<div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160;        net[<span class="stringliteral">&quot;mac&quot;</span>] = macAddress;</div>
-<div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160; </div>
-<div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;        <span class="keywordflow">switch</span> (curState) {</div>
-<div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160;        <span class="keywordflow">case</span> NOTCONFIGURED:</div>
-<div class="line"><a name="l00641"></a><span class="lineno">  641</span>&#160;            net[<span class="stringliteral">&quot;state&quot;</span>] = <span class="stringliteral">&quot;notconfigured&quot;</span>;</div>
-<div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;            <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;        <span class="keywordflow">case</span> CONNECTINGAP:</div>
-<div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;            net[<span class="stringliteral">&quot;state&quot;</span>] = <span class="stringliteral">&quot;connectingap&quot;</span>;</div>
-<div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;            net[<span class="stringliteral">&quot;SSID&quot;</span>] = WiFi.SSID();</div>
-<div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;            <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;        <span class="keywordflow">case</span> CONNECTED:</div>
-<div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;            net[<span class="stringliteral">&quot;state&quot;</span>] = <span class="stringliteral">&quot;connected&quot;</span>;</div>
-<div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;            net[<span class="stringliteral">&quot;SSID&quot;</span>] = WiFi.SSID();</div>
-<div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;            net[<span class="stringliteral">&quot;hostname&quot;</span>] = wifiGetHostname();</div>
-<div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;            net[<span class="stringliteral">&quot;ip&quot;</span>] = WiFi.localIP().toString();</div>
-<div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;            <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00653"></a><span class="lineno">  653</span>&#160;        <span class="keywordflow">case</span> SERVING:</div>
-<div class="line"><a name="l00654"></a><span class="lineno">  654</span>&#160;            net[<span class="stringliteral">&quot;state&quot;</span>] = <span class="stringliteral">&quot;serving&quot;</span>;</div>
-<div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;            net[<span class="stringliteral">&quot;hostname&quot;</span>] = wifiAPGetHostname();</div>
-<div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160;            <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;        <span class="keywordflow">default</span>:</div>
-<div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;            net[<span class="stringliteral">&quot;state&quot;</span>] = <span class="stringliteral">&quot;undefined&quot;</span>;</div>
-<div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;            <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;        }</div>
-<div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;        <span class="keywordflow">if</span> (curState != NOTCONFIGURED &amp;&amp; (mode == Netmode::AP || mode == Netmode::BOTH)) {</div>
-<div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;            net[<span class="stringliteral">&quot;ap&quot;</span>][<span class="stringliteral">&quot;mac&quot;</span>] = WiFi.softAPmacAddress();</div>
-<div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160;            net[<span class="stringliteral">&quot;ap&quot;</span>][<span class="stringliteral">&quot;SSID&quot;</span>] = replaceVars(config.readString(<span class="stringliteral">&quot;net/ap/SSID&quot;</span>, <span class="stringliteral">&quot;muwerk-${macls}&quot;</span>));</div>
-<div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;            net[<span class="stringliteral">&quot;ap&quot;</span>][<span class="stringliteral">&quot;ip&quot;</span>] = WiFi.softAPIP().toString();</div>
-<div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;            net[<span class="stringliteral">&quot;ap&quot;</span>][<span class="stringliteral">&quot;connections&quot;</span>] = (int)connections;</div>
-<div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;        }</div>
-<div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;        String json = JSON.stringify(net);</div>
-<div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;        pSched-&gt;publish(<span class="stringliteral">&quot;net/network&quot;</span>, json);</div>
-<div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;    }</div>
-<div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160; </div>
-<div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160;    <span class="keywordtype">void</span> requestScan(String scantype = <span class="stringliteral">&quot;async&quot;</span>) {</div>
-<div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;        <span class="keywordtype">bool</span> async = <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;        <span class="keywordtype">bool</span> hidden = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;        <span class="keywordflow">for</span> (String arg = shift(scantype, <span class="charliteral">&#39;,&#39;</span>); arg.length(); arg = shift(scantype, <span class="charliteral">&#39;,&#39;</span>)) {</div>
-<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;            arg.toLowerCase();</div>
-<div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;            <span class="keywordflow">if</span> (arg == <span class="stringliteral">&quot;sync&quot;</span>) {</div>
-<div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;                async = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;            } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (arg == <span class="stringliteral">&quot;async&quot;</span>) {</div>
-<div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160;                async = <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160;            } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (arg == <span class="stringliteral">&quot;hidden&quot;</span>) {</div>
-<div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;                hidden = <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;            }</div>
-<div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;        }</div>
-<div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;        processScan(WiFi.scanNetworks(async, hidden));</div>
-<div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;    }</div>
-<div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160; </div>
-<div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;    <span class="keywordtype">void</span> processScan(<span class="keywordtype">int</span> result) {</div>
-<div class="line"><a name="l00688"></a><span class="lineno">  688</span>&#160;        <span class="keywordflow">switch</span> (result) {</div>
-<div class="line"><a name="l00689"></a><span class="lineno">  689</span>&#160;        <span class="keywordflow">case</span> WIFI_SCAN_RUNNING:</div>
-<div class="line"><a name="l00690"></a><span class="lineno">  690</span>&#160;            <span class="keywordflow">if</span> (!scanning) {</div>
-<div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160;                DBG(<span class="stringliteral">&quot;WiFi scan running...&quot;</span>);</div>
-<div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;                scanning = <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;            }</div>
-<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;            <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;        <span class="keywordflow">case</span> WIFI_SCAN_FAILED:</div>
-<div class="line"><a name="l00696"></a><span class="lineno">  696</span>&#160;            DBG(<span class="stringliteral">&quot;WiFi scan FAILED.&quot;</span>);</div>
-<div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160;            publishScan(result);</div>
-<div class="line"><a name="l00698"></a><span class="lineno">  698</span>&#160;            scanning = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00699"></a><span class="lineno">  699</span>&#160;        <span class="keywordflow">case</span> 0:</div>
-<div class="line"><a name="l00700"></a><span class="lineno">  700</span>&#160;            DBG(<span class="stringliteral">&quot;WiFi scan succeeded: No network found.&quot;</span>);</div>
-<div class="line"><a name="l00701"></a><span class="lineno">  701</span>&#160;            scanning = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00610"></a><span class="lineno">  610</span>&#160;    <span class="comment">// Buggy config*Time ESP8266 APIs assume api param char* remain valid indefinitly!</span></div>
+<div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;    <span class="comment">// Unresolved as of now: https://github.com/esp8266/Arduino/issues/7056</span></div>
+<div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;    <span class="comment">// Hence:</span></div>
+<div class="line"><a name="l00613"></a><span class="lineno">  613</span>&#160;    ustd::array&lt;String&gt; ntpHosts;</div>
+<div class="line"><a name="l00614"></a><span class="lineno">  614</span>&#160;    String ntpDstRules;</div>
+<div class="line"><a name="l00615"></a><span class="lineno">  615</span>&#160; </div>
+<div class="line"><a name="l00616"></a><span class="lineno">  616</span>&#160;    <span class="keywordtype">void</span> configureTime() {</div>
+<div class="line"><a name="l00617"></a><span class="lineno">  617</span>&#160;        ntpDstRules = config.readString(<span class="stringliteral">&quot;net/services/ntp/dstrules&quot;</span>);</div>
+<div class="line"><a name="l00618"></a><span class="lineno">  618</span>&#160;        config.readStringArray(<span class="stringliteral">&quot;net/services/ntp/host&quot;</span>, ntpHosts);</div>
+<div class="line"><a name="l00619"></a><span class="lineno">  619</span>&#160; </div>
+<div class="line"><a name="l00620"></a><span class="lineno">  620</span>&#160;        <span class="keywordflow">if</span> (ntpDstRules.length() &amp;&amp; ntpHosts.length()) {</div>
+<div class="line"><a name="l00621"></a><span class="lineno">  621</span>&#160;            <span class="comment">// configure ntp servers AND TZ variable</span></div>
+<div class="line"><a name="l00622"></a><span class="lineno">  622</span>&#160;            configTzTime(ntpDstRules.c_str(), ntpHosts[0].c_str(),</div>
+<div class="line"><a name="l00623"></a><span class="lineno">  623</span>&#160;                         ntpHosts.length() &gt; 1 ? ntpHosts[1].c_str() : <span class="keyword">nullptr</span>,</div>
+<div class="line"><a name="l00624"></a><span class="lineno">  624</span>&#160;                         ntpHosts.length() &gt; 2 ? ntpHosts[2].c_str() : <span class="keyword">nullptr</span>);</div>
+<div class="line"><a name="l00625"></a><span class="lineno">  625</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (ntpHosts.length()) {</div>
+<div class="line"><a name="l00626"></a><span class="lineno">  626</span>&#160;            <span class="comment">// configure ntp servers without TZ variable</span></div>
+<div class="line"><a name="l00627"></a><span class="lineno">  627</span>&#160;            configTime(0, 0, ntpHosts[0].c_str(),</div>
+<div class="line"><a name="l00628"></a><span class="lineno">  628</span>&#160;                       ntpHosts.length() &gt; 1 ? ntpHosts[1].c_str() : <span class="keyword">nullptr</span>,</div>
+<div class="line"><a name="l00629"></a><span class="lineno">  629</span>&#160;                       ntpHosts.length() &gt; 2 ? ntpHosts[2].c_str() : <span class="keyword">nullptr</span>);</div>
+<div class="line"><a name="l00630"></a><span class="lineno">  630</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (ntpDstRules.length()) {</div>
+<div class="line"><a name="l00631"></a><span class="lineno">  631</span>&#160;            <span class="comment">// configure only TZ variable</span></div>
+<div class="line"><a name="l00632"></a><span class="lineno">  632</span>&#160;            setenv(<span class="stringliteral">&quot;TZ&quot;</span>, ntpDstRules.c_str(), 3);</div>
+<div class="line"><a name="l00633"></a><span class="lineno">  633</span>&#160;        } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00634"></a><span class="lineno">  634</span>&#160;            <span class="comment">// take from RTC?</span></div>
+<div class="line"><a name="l00635"></a><span class="lineno">  635</span>&#160;        }</div>
+<div class="line"><a name="l00636"></a><span class="lineno">  636</span>&#160;    }</div>
+<div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160; </div>
+<div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160;    <span class="keywordtype">void</span> publishState() {</div>
+<div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;        JSONVar net;</div>
+<div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160; </div>
+<div class="line"><a name="l00641"></a><span class="lineno">  641</span>&#160;        net[<span class="stringliteral">&quot;mode&quot;</span>] = getStringFromMode(mode);</div>
+<div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;        net[<span class="stringliteral">&quot;mac&quot;</span>] = macAddress;</div>
+<div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160; </div>
+<div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;        <span class="keywordflow">switch</span> (curState) {</div>
+<div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;        <span class="keywordflow">case</span> NOTCONFIGURED:</div>
+<div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;            net[<span class="stringliteral">&quot;state&quot;</span>] = <span class="stringliteral">&quot;notconfigured&quot;</span>;</div>
+<div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;            <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;        <span class="keywordflow">case</span> CONNECTINGAP:</div>
+<div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;            net[<span class="stringliteral">&quot;state&quot;</span>] = <span class="stringliteral">&quot;connectingap&quot;</span>;</div>
+<div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;            net[<span class="stringliteral">&quot;SSID&quot;</span>] = WiFi.SSID();</div>
+<div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;            <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;        <span class="keywordflow">case</span> CONNECTED:</div>
+<div class="line"><a name="l00653"></a><span class="lineno">  653</span>&#160;            net[<span class="stringliteral">&quot;state&quot;</span>] = <span class="stringliteral">&quot;connected&quot;</span>;</div>
+<div class="line"><a name="l00654"></a><span class="lineno">  654</span>&#160;            net[<span class="stringliteral">&quot;SSID&quot;</span>] = WiFi.SSID();</div>
+<div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;            net[<span class="stringliteral">&quot;hostname&quot;</span>] = wifiGetHostname();</div>
+<div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160;            net[<span class="stringliteral">&quot;ip&quot;</span>] = WiFi.localIP().toString();</div>
+<div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;            <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;        <span class="keywordflow">case</span> SERVING:</div>
+<div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;            net[<span class="stringliteral">&quot;state&quot;</span>] = <span class="stringliteral">&quot;serving&quot;</span>;</div>
+<div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;            net[<span class="stringliteral">&quot;hostname&quot;</span>] = wifiAPGetHostname();</div>
+<div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;            <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;        <span class="keywordflow">default</span>:</div>
+<div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160;            net[<span class="stringliteral">&quot;state&quot;</span>] = <span class="stringliteral">&quot;undefined&quot;</span>;</div>
+<div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;            <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;        }</div>
+<div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;        <span class="keywordflow">if</span> (curState != NOTCONFIGURED &amp;&amp; (mode == Netmode::AP || mode == Netmode::BOTH)) {</div>
+<div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;            net[<span class="stringliteral">&quot;ap&quot;</span>][<span class="stringliteral">&quot;mac&quot;</span>] = WiFi.softAPmacAddress();</div>
+<div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;            net[<span class="stringliteral">&quot;ap&quot;</span>][<span class="stringliteral">&quot;SSID&quot;</span>] = replaceVars(config.readString(<span class="stringliteral">&quot;net/ap/SSID&quot;</span>, <span class="stringliteral">&quot;muwerk-${macls}&quot;</span>));</div>
+<div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;            net[<span class="stringliteral">&quot;ap&quot;</span>][<span class="stringliteral">&quot;ip&quot;</span>] = WiFi.softAPIP().toString();</div>
+<div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;            net[<span class="stringliteral">&quot;ap&quot;</span>][<span class="stringliteral">&quot;connections&quot;</span>] = (int)connections;</div>
+<div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160;        }</div>
+<div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;        String json = JSON.stringify(net);</div>
+<div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;        pSched-&gt;publish(<span class="stringliteral">&quot;net/network&quot;</span>, json);</div>
+<div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;    }</div>
+<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160; </div>
+<div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;    <span class="keywordtype">void</span> requestScan(String scantype = <span class="stringliteral">&quot;async&quot;</span>) {</div>
+<div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;        <span class="keywordtype">bool</span> async = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;        <span class="keywordtype">bool</span> hidden = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160;        <span class="keywordflow">for</span> (String arg = shift(scantype, <span class="charliteral">&#39;,&#39;</span>); arg.length(); arg = shift(scantype, <span class="charliteral">&#39;,&#39;</span>)) {</div>
+<div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160;            arg.toLowerCase();</div>
+<div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;            <span class="keywordflow">if</span> (arg == <span class="stringliteral">&quot;sync&quot;</span>) {</div>
+<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;                async = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;            } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (arg == <span class="stringliteral">&quot;async&quot;</span>) {</div>
+<div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;                async = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;            } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (arg == <span class="stringliteral">&quot;hidden&quot;</span>) {</div>
+<div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;                hidden = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;            }</div>
+<div class="line"><a name="l00688"></a><span class="lineno">  688</span>&#160;        }</div>
+<div class="line"><a name="l00689"></a><span class="lineno">  689</span>&#160;        processScan(WiFi.scanNetworks(async, hidden));</div>
+<div class="line"><a name="l00690"></a><span class="lineno">  690</span>&#160;    }</div>
+<div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160; </div>
+<div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;    <span class="keywordtype">void</span> processScan(<span class="keywordtype">int</span> result) {</div>
+<div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;        <span class="keywordflow">switch</span> (result) {</div>
+<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;        <span class="keywordflow">case</span> WIFI_SCAN_RUNNING:</div>
+<div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;            <span class="keywordflow">if</span> (!scanning) {</div>
+<div class="line"><a name="l00696"></a><span class="lineno">  696</span>&#160;                DBG(<span class="stringliteral">&quot;WiFi scan running...&quot;</span>);</div>
+<div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160;                scanning = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00698"></a><span class="lineno">  698</span>&#160;            }</div>
+<div class="line"><a name="l00699"></a><span class="lineno">  699</span>&#160;            <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00700"></a><span class="lineno">  700</span>&#160;        <span class="keywordflow">case</span> WIFI_SCAN_FAILED:</div>
+<div class="line"><a name="l00701"></a><span class="lineno">  701</span>&#160;            DBG(<span class="stringliteral">&quot;WiFi scan FAILED.&quot;</span>);</div>
 <div class="line"><a name="l00702"></a><span class="lineno">  702</span>&#160;            publishScan(result);</div>
-<div class="line"><a name="l00703"></a><span class="lineno">  703</span>&#160;            <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00704"></a><span class="lineno">  704</span>&#160;        <span class="keywordflow">default</span>:</div>
-<div class="line"><a name="l00705"></a><span class="lineno">  705</span>&#160;            DBGF(<span class="stringliteral">&quot;WiFi scan succeeded: %u networks found.\r\n&quot;</span>, result);</div>
+<div class="line"><a name="l00703"></a><span class="lineno">  703</span>&#160;            scanning = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00704"></a><span class="lineno">  704</span>&#160;        <span class="keywordflow">case</span> 0:</div>
+<div class="line"><a name="l00705"></a><span class="lineno">  705</span>&#160;            DBG(<span class="stringliteral">&quot;WiFi scan succeeded: No network found.&quot;</span>);</div>
 <div class="line"><a name="l00706"></a><span class="lineno">  706</span>&#160;            scanning = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00707"></a><span class="lineno">  707</span>&#160;            publishScan(result);</div>
-<div class="line"><a name="l00708"></a><span class="lineno">  708</span>&#160;        }</div>
-<div class="line"><a name="l00709"></a><span class="lineno">  709</span>&#160;    }</div>
-<div class="line"><a name="l00710"></a><span class="lineno">  710</span>&#160; </div>
-<div class="line"><a name="l00711"></a><span class="lineno">  711</span>&#160;    <span class="keywordtype">void</span> publishScan(<span class="keywordtype">int</span> result) {</div>
-<div class="line"><a name="l00712"></a><span class="lineno">  712</span>&#160;        JSONVar res;</div>
-<div class="line"><a name="l00713"></a><span class="lineno">  713</span>&#160; </div>
-<div class="line"><a name="l00714"></a><span class="lineno">  714</span>&#160;        res[<span class="stringliteral">&quot;result&quot;</span>] = result &lt; 0 ? <span class="stringliteral">&quot;error&quot;</span> : <span class="stringliteral">&quot;ok&quot;</span>;</div>
-<div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160;        res[<span class="stringliteral">&quot;networks&quot;</span>] = JSON.parse(<span class="stringliteral">&quot;[]&quot;</span>);</div>
-<div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160; </div>
-<div class="line"><a name="l00717"></a><span class="lineno">  717</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; result; i++) {</div>
-<div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160;            JSONVar network;</div>
-<div class="line"><a name="l00719"></a><span class="lineno">  719</span>&#160; </div>
-<div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160;            network[<span class="stringliteral">&quot;ssid&quot;</span>] = WiFi.SSID(i);</div>
-<div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160;            network[<span class="stringliteral">&quot;rssi&quot;</span>] = WiFi.RSSI(i);</div>
-<div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160;            network[<span class="stringliteral">&quot;channel&quot;</span>] = WiFi.channel(i);</div>
-<div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;            network[<span class="stringliteral">&quot;encryption&quot;</span>] = getStringFromEncryption(WiFi.encryptionType(i));</div>
-<div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;            network[<span class="stringliteral">&quot;bssid&quot;</span>] = WiFi.BSSIDstr(i);</div>
-<div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;<span class="preprocessor">#ifndef __ESP32__</span></div>
-<div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;            network[<span class="stringliteral">&quot;hidden&quot;</span>] = WiFi.isHidden(i);</div>
-<div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160;            res[<span class="stringliteral">&quot;networks&quot;</span>][i] = network;</div>
-<div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160;        }</div>
-<div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;        pSched-&gt;publish(<span class="stringliteral">&quot;net/networks&quot;</span>, JSON.stringify(res));</div>
-<div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160;    }</div>
-<div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160; </div>
-<div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;    <span class="keywordtype">void</span> initLed() {</div>
-<div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;        <span class="keywordflow">if</span> (signalLed != 0xff) {</div>
-<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;            pinMode(signalLed, OUTPUT);</div>
-<div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;            setLed(signalLogic);  <span class="comment">// Turn the LED off</span></div>
-<div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;        }</div>
-<div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;    }</div>
-<div class="line"><a name="l00739"></a><span class="lineno">  739</span>&#160; </div>
-<div class="line"><a name="l00740"></a><span class="lineno">  740</span>&#160;    <span class="keywordtype">void</span> setLed(<span class="keywordtype">bool</span> on) {</div>
-<div class="line"><a name="l00741"></a><span class="lineno">  741</span>&#160;        <span class="keywordflow">if</span> (signalLed != 0xff) {</div>
-<div class="line"><a name="l00742"></a><span class="lineno">  742</span>&#160;            <span class="keywordflow">if</span> (signalLogic) {</div>
-<div class="line"><a name="l00743"></a><span class="lineno">  743</span>&#160;                digitalWrite(signalLed, on ? HIGH : LOW);</div>
-<div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160;            } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;                digitalWrite(signalLed, on ? LOW : HIGH);</div>
-<div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;            }</div>
-<div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160;        }</div>
-<div class="line"><a name="l00748"></a><span class="lineno">  748</span>&#160;    }</div>
-<div class="line"><a name="l00749"></a><span class="lineno">  749</span>&#160; </div>
-<div class="line"><a name="l00750"></a><span class="lineno">  750</span>&#160;    String replaceVars(String val) {</div>
-<div class="line"><a name="l00751"></a><span class="lineno">  751</span>&#160;        String hexAddress = macAddress;</div>
-<div class="line"><a name="l00752"></a><span class="lineno">  752</span>&#160;        hexAddress.replace(<span class="stringliteral">&quot;:&quot;</span>, <span class="stringliteral">&quot;&quot;</span>);</div>
-<div class="line"><a name="l00753"></a><span class="lineno">  753</span>&#160;        val.replace(<span class="stringliteral">&quot;${mac}&quot;</span>, hexAddress);</div>
-<div class="line"><a name="l00754"></a><span class="lineno">  754</span>&#160;        val.replace(<span class="stringliteral">&quot;${macls}&quot;</span>, hexAddress.substring(6));</div>
-<div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;        val.replace(<span class="stringliteral">&quot;${macfs}&quot;</span>, hexAddress.substring(0, 5));</div>
-<div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;        <span class="keywordflow">return</span> val;</div>
-<div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;    }</div>
-<div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160; </div>
-<div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;    <span class="keywordtype">void</span> initHardwareAddresses() {</div>
-<div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;        WiFiMode_t currentMode = WiFi.getMode();</div>
-<div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160;        WiFi.mode(WIFI_AP_STA);</div>
-<div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160;        apmAddress = WiFi.softAPmacAddress();</div>
-<div class="line"><a name="l00763"></a><span class="lineno">  763</span>&#160;        macAddress = WiFi.macAddress();</div>
-<div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160;        WiFi.mode(currentMode);</div>
-<div class="line"><a name="l00765"></a><span class="lineno">  765</span>&#160;    }</div>
-<div class="line"><a name="l00766"></a><span class="lineno">  766</span>&#160; </div>
-<div class="line"><a name="l00767"></a><span class="lineno">  767</span>&#160;    Netmode getModeFromString(String val, Netmode defVal = AP) {</div>
-<div class="line"><a name="l00768"></a><span class="lineno">  768</span>&#160;        val.toLowerCase();</div>
-<div class="line"><a name="l00769"></a><span class="lineno">  769</span>&#160;        <span class="keywordflow">if</span> (val == <span class="stringliteral">&quot;ap&quot;</span>) {</div>
-<div class="line"><a name="l00770"></a><span class="lineno">  770</span>&#160;            <span class="keywordflow">return</span> AP;</div>
-<div class="line"><a name="l00771"></a><span class="lineno">  771</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (val == <span class="stringliteral">&quot;station&quot;</span>) {</div>
-<div class="line"><a name="l00772"></a><span class="lineno">  772</span>&#160;            <span class="keywordflow">return</span> STATION;</div>
-<div class="line"><a name="l00773"></a><span class="lineno">  773</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (val == <span class="stringliteral">&quot;both&quot;</span>) {</div>
-<div class="line"><a name="l00774"></a><span class="lineno">  774</span>&#160;            <span class="keywordflow">return</span> BOTH;</div>
-<div class="line"><a name="l00775"></a><span class="lineno">  775</span>&#160;        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00776"></a><span class="lineno">  776</span>&#160;            <span class="keywordflow">return</span> defVal;</div>
-<div class="line"><a name="l00777"></a><span class="lineno">  777</span>&#160;        }</div>
-<div class="line"><a name="l00778"></a><span class="lineno">  778</span>&#160;    }</div>
-<div class="line"><a name="l00779"></a><span class="lineno">  779</span>&#160; </div>
-<div class="line"><a name="l00780"></a><span class="lineno">  780</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">char</span> *getStringFromEncryption(<span class="keywordtype">int</span> encType) {</div>
-<div class="line"><a name="l00781"></a><span class="lineno">  781</span>&#160;        <span class="comment">// read the encryption type and print out the name:</span></div>
-<div class="line"><a name="l00782"></a><span class="lineno">  782</span>&#160;<span class="preprocessor">#if !defined(__ESP32__)</span></div>
-<div class="line"><a name="l00783"></a><span class="lineno">  783</span>&#160;        <span class="keywordflow">switch</span> (encType) {</div>
-<div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;        <span class="keywordflow">case</span> ENC_TYPE_WEP:</div>
-<div class="line"><a name="l00785"></a><span class="lineno">  785</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;WEP&quot;</span>;</div>
-<div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;        <span class="keywordflow">case</span> ENC_TYPE_TKIP:</div>
-<div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;WPA&quot;</span>;</div>
-<div class="line"><a name="l00788"></a><span class="lineno">  788</span>&#160;        <span class="keywordflow">case</span> ENC_TYPE_CCMP:</div>
-<div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;WPA2&quot;</span>;</div>
-<div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160;        <span class="keywordflow">case</span> ENC_TYPE_NONE:</div>
-<div class="line"><a name="l00791"></a><span class="lineno">  791</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;None&quot;</span>;</div>
-<div class="line"><a name="l00792"></a><span class="lineno">  792</span>&#160;        <span class="keywordflow">case</span> ENC_TYPE_AUTO:</div>
-<div class="line"><a name="l00793"></a><span class="lineno">  793</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;Auto&quot;</span>;</div>
-<div class="line"><a name="l00794"></a><span class="lineno">  794</span>&#160;        <span class="keywordflow">default</span>:</div>
-<div class="line"><a name="l00795"></a><span class="lineno">  795</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;unknown&quot;</span>;</div>
-<div class="line"><a name="l00796"></a><span class="lineno">  796</span>&#160;        }</div>
-<div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00798"></a><span class="lineno">  798</span>&#160;        <span class="keywordflow">switch</span> (encType) {</div>
-<div class="line"><a name="l00799"></a><span class="lineno">  799</span>&#160;        <span class="keywordflow">case</span> WIFI_AUTH_OPEN:</div>
-<div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;None&quot;</span>;</div>
-<div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160;        <span class="keywordflow">case</span> WIFI_AUTH_WEP:</div>
-<div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;WEP&quot;</span>;</div>
-<div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;        <span class="keywordflow">case</span> WIFI_AUTH_WPA_PSK:</div>
-<div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;WPA_PSK&quot;</span>;</div>
-<div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160;        <span class="keywordflow">case</span> WIFI_AUTH_WPA2_PSK:</div>
-<div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;WPA2_PSK&quot;</span>;</div>
-<div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;        <span class="keywordflow">case</span> WIFI_AUTH_WPA_WPA2_PSK:</div>
-<div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;WPA_WPA2_PSK&quot;</span>;</div>
-<div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160;        <span class="keywordflow">case</span> WIFI_AUTH_WPA2_ENTERPRISE:</div>
-<div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;WPA2_ENTERPRISE&quot;</span>;</div>
-<div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;        <span class="keywordflow">default</span>:</div>
-<div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;unknown&quot;</span>;</div>
-<div class="line"><a name="l00813"></a><span class="lineno">  813</span>&#160;        }</div>
-<div class="line"><a name="l00814"></a><span class="lineno">  814</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00815"></a><span class="lineno">  815</span>&#160;    }</div>
-<div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160; </div>
-<div class="line"><a name="l00817"></a><span class="lineno">  817</span>&#160;    String getStringFromMode(Netmode val) {</div>
-<div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160;        <span class="keywordflow">switch</span> (val) {</div>
-<div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;        <span class="keywordflow">default</span>:</div>
-<div class="line"><a name="l00820"></a><span class="lineno">  820</span>&#160;        <span class="keywordflow">case</span> Netmode::OFF:</div>
-<div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;off&quot;</span>;</div>
-<div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;        <span class="keywordflow">case</span> Netmode::AP:</div>
-<div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;ap&quot;</span>;</div>
-<div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;        <span class="keywordflow">case</span> Netmode::STATION:</div>
-<div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;station&quot;</span>;</div>
-<div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;        <span class="keywordflow">case</span> Netmode::BOTH:</div>
-<div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;both&quot;</span>;</div>
-<div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160;        }</div>
-<div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;    }</div>
-<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160; </div>
-<div class="line"><a name="l00831"></a><span class="lineno">  831</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">char</span> *getStringFromState(Netstate val) {</div>
-<div class="line"><a name="l00832"></a><span class="lineno">  832</span>&#160;        <span class="keywordflow">switch</span> (val) {</div>
-<div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160;        <span class="keywordflow">default</span>:</div>
-<div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;        <span class="keywordflow">case</span> Netstate::NOTDEFINED:</div>
-<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;NOTDEFINED&quot;</span>;</div>
-<div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;        <span class="keywordflow">case</span> Netstate::NOTCONFIGURED:</div>
-<div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;NOTCONFIGURED&quot;</span>;</div>
-<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;        <span class="keywordflow">case</span> Netstate::SERVING:</div>
-<div class="line"><a name="l00839"></a><span class="lineno">  839</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;SERVING&quot;</span>;</div>
-<div class="line"><a name="l00840"></a><span class="lineno">  840</span>&#160;        <span class="keywordflow">case</span> Netstate::CONNECTINGAP:</div>
-<div class="line"><a name="l00841"></a><span class="lineno">  841</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;CONNECTINGAP&quot;</span>;</div>
-<div class="line"><a name="l00842"></a><span class="lineno">  842</span>&#160;        <span class="keywordflow">case</span> Netstate::CONNECTED:</div>
-<div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;CONNECTED&quot;</span>;</div>
-<div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;        }</div>
-<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;    }</div>
-<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160; </div>
-<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;    <span class="comment">// ESP WiFi Abstraction</span></div>
-<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160; </div>
-<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;    <span class="keyword">static</span> String wifiGetHostname() {</div>
-<div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;<span class="preprocessor">#if defined(__ESP32__)</span></div>
-<div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;        <span class="keywordflow">return</span> WiFi.getHostname();</div>
-<div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160;        <span class="keywordflow">return</span> WiFi.hostname();</div>
-<div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;    }</div>
-<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160; </div>
-<div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;    <span class="keywordtype">void</span> wifiSetHostname(String &amp;hostname) {</div>
-<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;        <span class="keywordflow">if</span> (!hostname.length()) {</div>
-<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;            hostname = replaceVars(<span class="stringliteral">&quot;muwerk-${macls}&quot;</span>);</div>
-<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;        }</div>
-<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;<span class="preprocessor">#if defined(__ESP32__)</span></div>
-<div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160;        WiFi.setHostname(hostname.c_str());</div>
-<div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160;        WiFi.hostname(hostname.c_str());</div>
-<div class="line"><a name="l00865"></a><span class="lineno">  865</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160;    }</div>
-<div class="line"><a name="l00867"></a><span class="lineno">  867</span>&#160; </div>
-<div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160;<span class="preprocessor">#if !defined(__ESP32__)</span></div>
-<div class="line"><a name="l00869"></a><span class="lineno">  869</span>&#160;    <span class="comment">// since the ESP8266 is not able to manage a hostname for the soft station network,</span></div>
-<div class="line"><a name="l00870"></a><span class="lineno">  870</span>&#160;    <span class="comment">// we need to emulate it</span></div>
-<div class="line"><a name="l00871"></a><span class="lineno">  871</span>&#160;    <span class="keyword">static</span> String esp8266APhostname;</div>
-<div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160; </div>
-<div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;    <span class="keyword">static</span> String wifiAPGetHostname() {</div>
-<div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160;<span class="preprocessor">#if defined(__ESP32__)</span></div>
-<div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160;        <span class="keywordflow">return</span> WiFi.softAPgetHostname();</div>
-<div class="line"><a name="l00877"></a><span class="lineno">  877</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160;        <span class="keywordflow">return</span> Net::esp8266APhostname;</div>
-<div class="line"><a name="l00879"></a><span class="lineno">  879</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00880"></a><span class="lineno">  880</span>&#160;    }</div>
-<div class="line"><a name="l00881"></a><span class="lineno">  881</span>&#160; </div>
-<div class="line"><a name="l00882"></a><span class="lineno">  882</span>&#160;    <span class="keywordtype">void</span> wifiAPSetHostname(String &amp;hostname) {</div>
-<div class="line"><a name="l00883"></a><span class="lineno">  883</span>&#160;        <span class="keywordflow">if</span> (!hostname.length()) {</div>
-<div class="line"><a name="l00884"></a><span class="lineno">  884</span>&#160;            hostname = replaceVars(<span class="stringliteral">&quot;muwerk-${macls}&quot;</span>);</div>
-<div class="line"><a name="l00885"></a><span class="lineno">  885</span>&#160;        }</div>
-<div class="line"><a name="l00886"></a><span class="lineno">  886</span>&#160;<span class="preprocessor">#if defined(__ESP32__)</span></div>
-<div class="line"><a name="l00887"></a><span class="lineno">  887</span>&#160;        WiFi.softAPsetHostname(hostname.c_str());</div>
-<div class="line"><a name="l00888"></a><span class="lineno">  888</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00889"></a><span class="lineno">  889</span>&#160;        Net::esp8266APhostname = hostname;</div>
-<div class="line"><a name="l00890"></a><span class="lineno">  890</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00891"></a><span class="lineno">  891</span>&#160;    }</div>
-<div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160; </div>
-<div class="line"><a name="l00893"></a><span class="lineno">  893</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> wifiSoftAP(String ssid, String passphrase, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> channel, <span class="keywordtype">bool</span> hidden,</div>
-<div class="line"><a name="l00894"></a><span class="lineno">  894</span>&#160;                           <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> max_connection) {</div>
-<div class="line"><a name="l00895"></a><span class="lineno">  895</span>&#160;<span class="preprocessor">#if defined(__ESP32__)</span></div>
-<div class="line"><a name="l00896"></a><span class="lineno">  896</span>&#160;        <span class="keywordflow">return</span> WiFi.softAP(ssid.c_str(), passphrase.c_str(), channel, hidden, max_connection);</div>
-<div class="line"><a name="l00897"></a><span class="lineno">  897</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00898"></a><span class="lineno">  898</span>&#160;        <span class="keywordflow">return</span> WiFi.softAP(ssid, passphrase, channel, hidden, max_connection);</div>
-<div class="line"><a name="l00899"></a><span class="lineno">  899</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00900"></a><span class="lineno">  900</span>&#160;    }</div>
-<div class="line"><a name="l00901"></a><span class="lineno">  901</span>&#160; </div>
-<div class="line"><a name="l00902"></a><span class="lineno">  902</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> wifiSoftAPConfig(String &amp;address, String &amp;gateway, String &amp;netmask) {</div>
-<div class="line"><a name="l00903"></a><span class="lineno">  903</span>&#160;        IPAddress addr;</div>
-<div class="line"><a name="l00904"></a><span class="lineno">  904</span>&#160;        IPAddress gate;</div>
-<div class="line"><a name="l00905"></a><span class="lineno">  905</span>&#160;        IPAddress mask;</div>
-<div class="line"><a name="l00906"></a><span class="lineno">  906</span>&#160;        addr.fromString(address);</div>
-<div class="line"><a name="l00907"></a><span class="lineno">  907</span>&#160;        mask.fromString(netmask);</div>
-<div class="line"><a name="l00908"></a><span class="lineno">  908</span>&#160;        <span class="keywordflow">if</span> (gateway.length()) {</div>
-<div class="line"><a name="l00909"></a><span class="lineno">  909</span>&#160;            gate.fromString(gateway);</div>
-<div class="line"><a name="l00910"></a><span class="lineno">  910</span>&#160;        }</div>
-<div class="line"><a name="l00911"></a><span class="lineno">  911</span>&#160;        <span class="keywordflow">return</span> WiFi.softAPConfig(addr, gate, mask);</div>
-<div class="line"><a name="l00912"></a><span class="lineno">  912</span>&#160;    }</div>
-<div class="line"><a name="l00913"></a><span class="lineno">  913</span>&#160; </div>
-<div class="line"><a name="l00914"></a><span class="lineno">  914</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> wifiConfig(String &amp;address, String &amp;gateway, String &amp;netmask,</div>
-<div class="line"><a name="l00915"></a><span class="lineno">  915</span>&#160;                           ustd::array&lt;String&gt; &amp;dns) {</div>
-<div class="line"><a name="l00916"></a><span class="lineno">  916</span>&#160;        IPAddress addr;</div>
-<div class="line"><a name="l00917"></a><span class="lineno">  917</span>&#160;        IPAddress gate;</div>
-<div class="line"><a name="l00918"></a><span class="lineno">  918</span>&#160;        IPAddress mask;</div>
-<div class="line"><a name="l00919"></a><span class="lineno">  919</span>&#160;        IPAddress dns1;</div>
-<div class="line"><a name="l00920"></a><span class="lineno">  920</span>&#160;        IPAddress dns2;</div>
-<div class="line"><a name="l00921"></a><span class="lineno">  921</span>&#160;        <span class="keywordflow">if</span> (address.length() &amp;&amp; netmask.length()) {</div>
-<div class="line"><a name="l00922"></a><span class="lineno">  922</span>&#160;            DBG(<span class="stringliteral">&quot;Setting static ip: &quot;</span> + address + <span class="stringliteral">&quot; &quot;</span> + netmask);</div>
-<div class="line"><a name="l00923"></a><span class="lineno">  923</span>&#160;            addr.fromString(address);</div>
-<div class="line"><a name="l00924"></a><span class="lineno">  924</span>&#160;            mask.fromString(netmask);</div>
-<div class="line"><a name="l00925"></a><span class="lineno">  925</span>&#160;        }</div>
-<div class="line"><a name="l00926"></a><span class="lineno">  926</span>&#160;        <span class="keywordflow">if</span> (gateway.length()) {</div>
-<div class="line"><a name="l00927"></a><span class="lineno">  927</span>&#160;            DBG(<span class="stringliteral">&quot;Setting static gateway: &quot;</span> + gateway);</div>
-<div class="line"><a name="l00928"></a><span class="lineno">  928</span>&#160;            gate.fromString(gateway);</div>
-<div class="line"><a name="l00929"></a><span class="lineno">  929</span>&#160;        }</div>
-<div class="line"><a name="l00930"></a><span class="lineno">  930</span>&#160;        <span class="keywordflow">if</span> (dns.length() &gt; 0) {</div>
-<div class="line"><a name="l00931"></a><span class="lineno">  931</span>&#160;            DBG(<span class="stringliteral">&quot;Setting dns server 1: &quot;</span> + String(dns[0]));</div>
-<div class="line"><a name="l00932"></a><span class="lineno">  932</span>&#160;            dns1.fromString(dns[0]);</div>
-<div class="line"><a name="l00933"></a><span class="lineno">  933</span>&#160;        }</div>
-<div class="line"><a name="l00934"></a><span class="lineno">  934</span>&#160;        <span class="keywordflow">if</span> (dns.length() &gt; 1) {</div>
-<div class="line"><a name="l00935"></a><span class="lineno">  935</span>&#160;            DBG(<span class="stringliteral">&quot;Setting dns server 2: &quot;</span> + String(dns[1]));</div>
-<div class="line"><a name="l00936"></a><span class="lineno">  936</span>&#160;            dns2.fromString(dns[1]);</div>
-<div class="line"><a name="l00937"></a><span class="lineno">  937</span>&#160;        }</div>
-<div class="line"><a name="l00938"></a><span class="lineno">  938</span>&#160;        <span class="keywordflow">return</span> WiFi.config(addr, gate, mask, dns1, dns2);</div>
-<div class="line"><a name="l00939"></a><span class="lineno">  939</span>&#160;    }</div>
-<div class="line"><a name="l00940"></a><span class="lineno">  940</span>&#160; </div>
-<div class="line"><a name="l00941"></a><span class="lineno">  941</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> wifiBegin(String &amp;ssid, String &amp;passphrase) {</div>
-<div class="line"><a name="l00942"></a><span class="lineno">  942</span>&#160;<span class="preprocessor">#if defined(__ESP32__)</span></div>
-<div class="line"><a name="l00943"></a><span class="lineno">  943</span>&#160;        <span class="keywordflow">return</span> WiFi.begin(ssid.c_str(), passphrase.c_str());</div>
-<div class="line"><a name="l00944"></a><span class="lineno">  944</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00945"></a><span class="lineno">  945</span>&#160;        <span class="keywordflow">return</span> WiFi.begin(ssid, passphrase);</div>
-<div class="line"><a name="l00946"></a><span class="lineno">  946</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00947"></a><span class="lineno">  947</span>&#160;    }</div>
-<div class="line"><a name="l00948"></a><span class="lineno">  948</span>&#160; </div>
-<div class="line"><a name="l00949"></a><span class="lineno">  949</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> wifiSetMode(Netmode val) {</div>
-<div class="line"><a name="l00950"></a><span class="lineno">  950</span>&#160;        <span class="keywordflow">switch</span> (val) {</div>
-<div class="line"><a name="l00951"></a><span class="lineno">  951</span>&#160;        <span class="keywordflow">case</span> Netmode::OFF:</div>
-<div class="line"><a name="l00952"></a><span class="lineno">  952</span>&#160;            WiFi.mode(WIFI_OFF);</div>
-<div class="line"><a name="l00953"></a><span class="lineno">  953</span>&#160;            <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00954"></a><span class="lineno">  954</span>&#160;        <span class="keywordflow">default</span>:</div>
-<div class="line"><a name="l00955"></a><span class="lineno">  955</span>&#160;        <span class="keywordflow">case</span> Netmode::AP:</div>
-<div class="line"><a name="l00956"></a><span class="lineno">  956</span>&#160;            WiFi.mode(WIFI_AP);</div>
-<div class="line"><a name="l00957"></a><span class="lineno">  957</span>&#160;            <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00958"></a><span class="lineno">  958</span>&#160;        <span class="keywordflow">case</span> Netmode::STATION:</div>
-<div class="line"><a name="l00959"></a><span class="lineno">  959</span>&#160;            WiFi.mode(WIFI_STA);</div>
-<div class="line"><a name="l00960"></a><span class="lineno">  960</span>&#160;            <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00961"></a><span class="lineno">  961</span>&#160;        <span class="keywordflow">case</span> Netmode::BOTH:</div>
-<div class="line"><a name="l00962"></a><span class="lineno">  962</span>&#160;            WiFi.mode(WIFI_AP_STA);</div>
-<div class="line"><a name="l00963"></a><span class="lineno">  963</span>&#160;            <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00964"></a><span class="lineno">  964</span>&#160;        }</div>
-<div class="line"><a name="l00965"></a><span class="lineno">  965</span>&#160;    }</div>
-<div class="line"><a name="l00966"></a><span class="lineno">  966</span>&#160;};</div>
-<div class="line"><a name="l00967"></a><span class="lineno">  967</span>&#160; </div>
-<div class="line"><a name="l00968"></a><span class="lineno">  968</span>&#160;<span class="preprocessor">#if !defined(__ESP32__)</span></div>
-<div class="line"><a name="l00969"></a><span class="lineno">  969</span>&#160;<span class="comment">// since the ESP8266 is not able to manage a hostname for the soft station network,</span></div>
-<div class="line"><a name="l00970"></a><span class="lineno">  970</span>&#160;<span class="comment">// we need to emulate it</span></div>
-<div class="line"><a name="l00971"></a><span class="lineno">  971</span>&#160;String Net::esp8266APhostname = <span class="stringliteral">&quot;&quot;</span>;</div>
-<div class="line"><a name="l00972"></a><span class="lineno">  972</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00973"></a><span class="lineno">  973</span>&#160; </div>
-<div class="line"><a name="l00974"></a><span class="lineno">  974</span>&#160;}  <span class="comment">// namespace ustd</span></div>
-<div class="line"><a name="l00975"></a><span class="lineno">  975</span>&#160; </div>
-<div class="line"><a name="l00976"></a><span class="lineno">  976</span>&#160;<span class="comment">// #endif  // defined(__ESP__)</span></div>
+<div class="line"><a name="l00708"></a><span class="lineno">  708</span>&#160;            <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00709"></a><span class="lineno">  709</span>&#160;        <span class="keywordflow">default</span>:</div>
+<div class="line"><a name="l00710"></a><span class="lineno">  710</span>&#160;            DBGF(<span class="stringliteral">&quot;WiFi scan succeeded: %u networks found.\r\n&quot;</span>, result);</div>
+<div class="line"><a name="l00711"></a><span class="lineno">  711</span>&#160;            scanning = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00712"></a><span class="lineno">  712</span>&#160;            publishScan(result);</div>
+<div class="line"><a name="l00713"></a><span class="lineno">  713</span>&#160;        }</div>
+<div class="line"><a name="l00714"></a><span class="lineno">  714</span>&#160;    }</div>
+<div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160; </div>
+<div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160;    <span class="keywordtype">void</span> publishScan(<span class="keywordtype">int</span> result) {</div>
+<div class="line"><a name="l00717"></a><span class="lineno">  717</span>&#160;        JSONVar res;</div>
+<div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160; </div>
+<div class="line"><a name="l00719"></a><span class="lineno">  719</span>&#160;        res[<span class="stringliteral">&quot;result&quot;</span>] = result &lt; 0 ? <span class="stringliteral">&quot;error&quot;</span> : <span class="stringliteral">&quot;ok&quot;</span>;</div>
+<div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160;        res[<span class="stringliteral">&quot;networks&quot;</span>] = JSON.parse(<span class="stringliteral">&quot;[]&quot;</span>);</div>
+<div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160; </div>
+<div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; result; i++) {</div>
+<div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;            JSONVar network;</div>
+<div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160; </div>
+<div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;            network[<span class="stringliteral">&quot;ssid&quot;</span>] = WiFi.SSID(i);</div>
+<div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;            network[<span class="stringliteral">&quot;rssi&quot;</span>] = WiFi.RSSI(i);</div>
+<div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160;            network[<span class="stringliteral">&quot;channel&quot;</span>] = WiFi.channel(i);</div>
+<div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160;            network[<span class="stringliteral">&quot;encryption&quot;</span>] = getStringFromEncryption(WiFi.encryptionType(i));</div>
+<div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160;            network[<span class="stringliteral">&quot;bssid&quot;</span>] = WiFi.BSSIDstr(i);</div>
+<div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;<span class="preprocessor">#ifndef __ESP32__</span></div>
+<div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160;            network[<span class="stringliteral">&quot;hidden&quot;</span>] = WiFi.isHidden(i);</div>
+<div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;            res[<span class="stringliteral">&quot;networks&quot;</span>][i] = network;</div>
+<div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;        }</div>
+<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;        pSched-&gt;publish(<span class="stringliteral">&quot;net/networks&quot;</span>, JSON.stringify(res));</div>
+<div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;    }</div>
+<div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160; </div>
+<div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;    <span class="keywordtype">void</span> initLed() {</div>
+<div class="line"><a name="l00739"></a><span class="lineno">  739</span>&#160;        <span class="keywordflow">if</span> (signalLed != 0xff) {</div>
+<div class="line"><a name="l00740"></a><span class="lineno">  740</span>&#160;            pinMode(signalLed, OUTPUT);</div>
+<div class="line"><a name="l00741"></a><span class="lineno">  741</span>&#160;            setLed(signalLogic);  <span class="comment">// Turn the LED off</span></div>
+<div class="line"><a name="l00742"></a><span class="lineno">  742</span>&#160;        }</div>
+<div class="line"><a name="l00743"></a><span class="lineno">  743</span>&#160;    }</div>
+<div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160; </div>
+<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;    <span class="keywordtype">void</span> setLed(<span class="keywordtype">bool</span> on) {</div>
+<div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;        <span class="keywordflow">if</span> (signalLed != 0xff) {</div>
+<div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160;            <span class="keywordflow">if</span> (signalLogic) {</div>
+<div class="line"><a name="l00748"></a><span class="lineno">  748</span>&#160;                digitalWrite(signalLed, on ? HIGH : LOW);</div>
+<div class="line"><a name="l00749"></a><span class="lineno">  749</span>&#160;            } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00750"></a><span class="lineno">  750</span>&#160;                digitalWrite(signalLed, on ? LOW : HIGH);</div>
+<div class="line"><a name="l00751"></a><span class="lineno">  751</span>&#160;            }</div>
+<div class="line"><a name="l00752"></a><span class="lineno">  752</span>&#160;        }</div>
+<div class="line"><a name="l00753"></a><span class="lineno">  753</span>&#160;    }</div>
+<div class="line"><a name="l00754"></a><span class="lineno">  754</span>&#160; </div>
+<div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;    String replaceVars(String val) {</div>
+<div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;        String hexAddress = macAddress;</div>
+<div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;        hexAddress.replace(<span class="stringliteral">&quot;:&quot;</span>, <span class="stringliteral">&quot;&quot;</span>);</div>
+<div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;        val.replace(<span class="stringliteral">&quot;${mac}&quot;</span>, hexAddress);</div>
+<div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;        val.replace(<span class="stringliteral">&quot;${macls}&quot;</span>, hexAddress.substring(6));</div>
+<div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;        val.replace(<span class="stringliteral">&quot;${macfs}&quot;</span>, hexAddress.substring(0, 5));</div>
+<div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160;        <span class="keywordflow">return</span> val;</div>
+<div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160;    }</div>
+<div class="line"><a name="l00763"></a><span class="lineno">  763</span>&#160; </div>
+<div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160;    <span class="keywordtype">void</span> initHardwareAddresses() {</div>
+<div class="line"><a name="l00765"></a><span class="lineno">  765</span>&#160;        WiFiMode_t currentMode = WiFi.getMode();</div>
+<div class="line"><a name="l00766"></a><span class="lineno">  766</span>&#160;        WiFi.mode(WIFI_AP_STA);</div>
+<div class="line"><a name="l00767"></a><span class="lineno">  767</span>&#160;        apmAddress = WiFi.softAPmacAddress();</div>
+<div class="line"><a name="l00768"></a><span class="lineno">  768</span>&#160;        macAddress = WiFi.macAddress();</div>
+<div class="line"><a name="l00769"></a><span class="lineno">  769</span>&#160;        WiFi.mode(currentMode);</div>
+<div class="line"><a name="l00770"></a><span class="lineno">  770</span>&#160;    }</div>
+<div class="line"><a name="l00771"></a><span class="lineno">  771</span>&#160; </div>
+<div class="line"><a name="l00772"></a><span class="lineno">  772</span>&#160;    Netmode getModeFromString(String val, Netmode defVal = AP) {</div>
+<div class="line"><a name="l00773"></a><span class="lineno">  773</span>&#160;        val.toLowerCase();</div>
+<div class="line"><a name="l00774"></a><span class="lineno">  774</span>&#160;        <span class="keywordflow">if</span> (val == <span class="stringliteral">&quot;ap&quot;</span>) {</div>
+<div class="line"><a name="l00775"></a><span class="lineno">  775</span>&#160;            <span class="keywordflow">return</span> AP;</div>
+<div class="line"><a name="l00776"></a><span class="lineno">  776</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (val == <span class="stringliteral">&quot;station&quot;</span>) {</div>
+<div class="line"><a name="l00777"></a><span class="lineno">  777</span>&#160;            <span class="keywordflow">return</span> STATION;</div>
+<div class="line"><a name="l00778"></a><span class="lineno">  778</span>&#160;        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (val == <span class="stringliteral">&quot;both&quot;</span>) {</div>
+<div class="line"><a name="l00779"></a><span class="lineno">  779</span>&#160;            <span class="keywordflow">return</span> BOTH;</div>
+<div class="line"><a name="l00780"></a><span class="lineno">  780</span>&#160;        } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00781"></a><span class="lineno">  781</span>&#160;            <span class="keywordflow">return</span> defVal;</div>
+<div class="line"><a name="l00782"></a><span class="lineno">  782</span>&#160;        }</div>
+<div class="line"><a name="l00783"></a><span class="lineno">  783</span>&#160;    }</div>
+<div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160; </div>
+<div class="line"><a name="l00785"></a><span class="lineno">  785</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">char</span> *getStringFromEncryption(<span class="keywordtype">int</span> encType) {</div>
+<div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;        <span class="comment">// read the encryption type and print out the name:</span></div>
+<div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;<span class="preprocessor">#if !defined(__ESP32__)</span></div>
+<div class="line"><a name="l00788"></a><span class="lineno">  788</span>&#160;        <span class="keywordflow">switch</span> (encType) {</div>
+<div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160;        <span class="keywordflow">case</span> ENC_TYPE_WEP:</div>
+<div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;WEP&quot;</span>;</div>
+<div class="line"><a name="l00791"></a><span class="lineno">  791</span>&#160;        <span class="keywordflow">case</span> ENC_TYPE_TKIP:</div>
+<div class="line"><a name="l00792"></a><span class="lineno">  792</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;WPA&quot;</span>;</div>
+<div class="line"><a name="l00793"></a><span class="lineno">  793</span>&#160;        <span class="keywordflow">case</span> ENC_TYPE_CCMP:</div>
+<div class="line"><a name="l00794"></a><span class="lineno">  794</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;WPA2&quot;</span>;</div>
+<div class="line"><a name="l00795"></a><span class="lineno">  795</span>&#160;        <span class="keywordflow">case</span> ENC_TYPE_NONE:</div>
+<div class="line"><a name="l00796"></a><span class="lineno">  796</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;None&quot;</span>;</div>
+<div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160;        <span class="keywordflow">case</span> ENC_TYPE_AUTO:</div>
+<div class="line"><a name="l00798"></a><span class="lineno">  798</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;Auto&quot;</span>;</div>
+<div class="line"><a name="l00799"></a><span class="lineno">  799</span>&#160;        <span class="keywordflow">default</span>:</div>
+<div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;unknown&quot;</span>;</div>
+<div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160;        }</div>
+<div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;        <span class="keywordflow">switch</span> (encType) {</div>
+<div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;        <span class="keywordflow">case</span> WIFI_AUTH_OPEN:</div>
+<div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;None&quot;</span>;</div>
+<div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160;        <span class="keywordflow">case</span> WIFI_AUTH_WEP:</div>
+<div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;WEP&quot;</span>;</div>
+<div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;        <span class="keywordflow">case</span> WIFI_AUTH_WPA_PSK:</div>
+<div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;WPA_PSK&quot;</span>;</div>
+<div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;        <span class="keywordflow">case</span> WIFI_AUTH_WPA2_PSK:</div>
+<div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;WPA2_PSK&quot;</span>;</div>
+<div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160;        <span class="keywordflow">case</span> WIFI_AUTH_WPA_WPA2_PSK:</div>
+<div class="line"><a name="l00813"></a><span class="lineno">  813</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;WPA_WPA2_PSK&quot;</span>;</div>
+<div class="line"><a name="l00814"></a><span class="lineno">  814</span>&#160;        <span class="keywordflow">case</span> WIFI_AUTH_WPA2_ENTERPRISE:</div>
+<div class="line"><a name="l00815"></a><span class="lineno">  815</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;WPA2_ENTERPRISE&quot;</span>;</div>
+<div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160;        <span class="keywordflow">default</span>:</div>
+<div class="line"><a name="l00817"></a><span class="lineno">  817</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;unknown&quot;</span>;</div>
+<div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160;        }</div>
+<div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00820"></a><span class="lineno">  820</span>&#160;    }</div>
+<div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160; </div>
+<div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;    String getStringFromMode(Netmode val) {</div>
+<div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;        <span class="keywordflow">switch</span> (val) {</div>
+<div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;        <span class="keywordflow">default</span>:</div>
+<div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;        <span class="keywordflow">case</span> Netmode::OFF:</div>
+<div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;off&quot;</span>;</div>
+<div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160;        <span class="keywordflow">case</span> Netmode::AP:</div>
+<div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;ap&quot;</span>;</div>
+<div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;        <span class="keywordflow">case</span> Netmode::STATION:</div>
+<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;station&quot;</span>;</div>
+<div class="line"><a name="l00831"></a><span class="lineno">  831</span>&#160;        <span class="keywordflow">case</span> Netmode::BOTH:</div>
+<div class="line"><a name="l00832"></a><span class="lineno">  832</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;both&quot;</span>;</div>
+<div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160;        }</div>
+<div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;    }</div>
+<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160; </div>
+<div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">char</span> *getStringFromState(Netstate val) {</div>
+<div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;        <span class="keywordflow">switch</span> (val) {</div>
+<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;        <span class="keywordflow">default</span>:</div>
+<div class="line"><a name="l00839"></a><span class="lineno">  839</span>&#160;        <span class="keywordflow">case</span> Netstate::NOTDEFINED:</div>
+<div class="line"><a name="l00840"></a><span class="lineno">  840</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;NOTDEFINED&quot;</span>;</div>
+<div class="line"><a name="l00841"></a><span class="lineno">  841</span>&#160;        <span class="keywordflow">case</span> Netstate::NOTCONFIGURED:</div>
+<div class="line"><a name="l00842"></a><span class="lineno">  842</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;NOTCONFIGURED&quot;</span>;</div>
+<div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;        <span class="keywordflow">case</span> Netstate::SERVING:</div>
+<div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;SERVING&quot;</span>;</div>
+<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;        <span class="keywordflow">case</span> Netstate::CONNECTINGAP:</div>
+<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;CONNECTINGAP&quot;</span>;</div>
+<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;        <span class="keywordflow">case</span> Netstate::CONNECTED:</div>
+<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;            <span class="keywordflow">return</span> <span class="stringliteral">&quot;CONNECTED&quot;</span>;</div>
+<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;        }</div>
+<div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;    }</div>
+<div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160; </div>
+<div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160;    <span class="comment">// ESP WiFi Abstraction</span></div>
+<div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160; </div>
+<div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;    <span class="keyword">static</span> String wifiGetHostname() {</div>
+<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;<span class="preprocessor">#if defined(__ESP32__)</span></div>
+<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;        <span class="keywordflow">return</span> WiFi.getHostname();</div>
+<div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;        <span class="keywordflow">return</span> WiFi.hostname();</div>
+<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;    }</div>
+<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160; </div>
+<div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160;    <span class="keywordtype">void</span> wifiSetHostname(String &amp;hostname) {</div>
+<div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;        <span class="keywordflow">if</span> (!hostname.length()) {</div>
+<div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160;            hostname = replaceVars(<span class="stringliteral">&quot;muwerk-${macls}&quot;</span>);</div>
+<div class="line"><a name="l00865"></a><span class="lineno">  865</span>&#160;        }</div>
+<div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160;<span class="preprocessor">#if defined(__ESP32__)</span></div>
+<div class="line"><a name="l00867"></a><span class="lineno">  867</span>&#160;        WiFi.setHostname(hostname.c_str());</div>
+<div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00869"></a><span class="lineno">  869</span>&#160;        WiFi.hostname(hostname.c_str());</div>
+<div class="line"><a name="l00870"></a><span class="lineno">  870</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00871"></a><span class="lineno">  871</span>&#160;    }</div>
+<div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160; </div>
+<div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160;<span class="preprocessor">#if !defined(__ESP32__)</span></div>
+<div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;    <span class="comment">// since the ESP8266 is not able to manage a hostname for the soft station network,</span></div>
+<div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160;    <span class="comment">// we need to emulate it</span></div>
+<div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160;    <span class="keyword">static</span> String esp8266APhostname;</div>
+<div class="line"><a name="l00877"></a><span class="lineno">  877</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160; </div>
+<div class="line"><a name="l00879"></a><span class="lineno">  879</span>&#160;    <span class="keyword">static</span> String wifiAPGetHostname() {</div>
+<div class="line"><a name="l00880"></a><span class="lineno">  880</span>&#160;<span class="preprocessor">#if defined(__ESP32__)</span></div>
+<div class="line"><a name="l00881"></a><span class="lineno">  881</span>&#160;        <span class="keywordflow">return</span> WiFi.softAPgetHostname();</div>
+<div class="line"><a name="l00882"></a><span class="lineno">  882</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00883"></a><span class="lineno">  883</span>&#160;        <span class="keywordflow">return</span> Net::esp8266APhostname;</div>
+<div class="line"><a name="l00884"></a><span class="lineno">  884</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00885"></a><span class="lineno">  885</span>&#160;    }</div>
+<div class="line"><a name="l00886"></a><span class="lineno">  886</span>&#160; </div>
+<div class="line"><a name="l00887"></a><span class="lineno">  887</span>&#160;    <span class="keywordtype">void</span> wifiAPSetHostname(String &amp;hostname) {</div>
+<div class="line"><a name="l00888"></a><span class="lineno">  888</span>&#160;        <span class="keywordflow">if</span> (!hostname.length()) {</div>
+<div class="line"><a name="l00889"></a><span class="lineno">  889</span>&#160;            hostname = replaceVars(<span class="stringliteral">&quot;muwerk-${macls}&quot;</span>);</div>
+<div class="line"><a name="l00890"></a><span class="lineno">  890</span>&#160;        }</div>
+<div class="line"><a name="l00891"></a><span class="lineno">  891</span>&#160;<span class="preprocessor">#if defined(__ESP32__)</span></div>
+<div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160;        WiFi.softAPsetHostname(hostname.c_str());</div>
+<div class="line"><a name="l00893"></a><span class="lineno">  893</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00894"></a><span class="lineno">  894</span>&#160;        Net::esp8266APhostname = hostname;</div>
+<div class="line"><a name="l00895"></a><span class="lineno">  895</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00896"></a><span class="lineno">  896</span>&#160;    }</div>
+<div class="line"><a name="l00897"></a><span class="lineno">  897</span>&#160; </div>
+<div class="line"><a name="l00898"></a><span class="lineno">  898</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> wifiSoftAP(String ssid, String passphrase, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> channel, <span class="keywordtype">bool</span> hidden,</div>
+<div class="line"><a name="l00899"></a><span class="lineno">  899</span>&#160;                           <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> max_connection) {</div>
+<div class="line"><a name="l00900"></a><span class="lineno">  900</span>&#160;<span class="preprocessor">#if defined(__ESP32__)</span></div>
+<div class="line"><a name="l00901"></a><span class="lineno">  901</span>&#160;        <span class="keywordflow">return</span> WiFi.softAP(ssid.c_str(), passphrase.c_str(), channel, hidden, max_connection);</div>
+<div class="line"><a name="l00902"></a><span class="lineno">  902</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00903"></a><span class="lineno">  903</span>&#160;        <span class="keywordflow">return</span> WiFi.softAP(ssid, passphrase, channel, hidden, max_connection);</div>
+<div class="line"><a name="l00904"></a><span class="lineno">  904</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00905"></a><span class="lineno">  905</span>&#160;    }</div>
+<div class="line"><a name="l00906"></a><span class="lineno">  906</span>&#160; </div>
+<div class="line"><a name="l00907"></a><span class="lineno">  907</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> wifiSoftAPConfig(String &amp;address, String &amp;gateway, String &amp;netmask) {</div>
+<div class="line"><a name="l00908"></a><span class="lineno">  908</span>&#160;        IPAddress addr;</div>
+<div class="line"><a name="l00909"></a><span class="lineno">  909</span>&#160;        IPAddress gate;</div>
+<div class="line"><a name="l00910"></a><span class="lineno">  910</span>&#160;        IPAddress mask;</div>
+<div class="line"><a name="l00911"></a><span class="lineno">  911</span>&#160;        addr.fromString(address);</div>
+<div class="line"><a name="l00912"></a><span class="lineno">  912</span>&#160;        mask.fromString(netmask);</div>
+<div class="line"><a name="l00913"></a><span class="lineno">  913</span>&#160;        <span class="keywordflow">if</span> (gateway.length()) {</div>
+<div class="line"><a name="l00914"></a><span class="lineno">  914</span>&#160;            gate.fromString(gateway);</div>
+<div class="line"><a name="l00915"></a><span class="lineno">  915</span>&#160;        }</div>
+<div class="line"><a name="l00916"></a><span class="lineno">  916</span>&#160;        <span class="keywordflow">return</span> WiFi.softAPConfig(addr, gate, mask);</div>
+<div class="line"><a name="l00917"></a><span class="lineno">  917</span>&#160;    }</div>
+<div class="line"><a name="l00918"></a><span class="lineno">  918</span>&#160; </div>
+<div class="line"><a name="l00919"></a><span class="lineno">  919</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> wifiConfig(String &amp;address, String &amp;gateway, String &amp;netmask,</div>
+<div class="line"><a name="l00920"></a><span class="lineno">  920</span>&#160;                           ustd::array&lt;String&gt; &amp;dns) {</div>
+<div class="line"><a name="l00921"></a><span class="lineno">  921</span>&#160;        IPAddress addr;</div>
+<div class="line"><a name="l00922"></a><span class="lineno">  922</span>&#160;        IPAddress gate;</div>
+<div class="line"><a name="l00923"></a><span class="lineno">  923</span>&#160;        IPAddress mask;</div>
+<div class="line"><a name="l00924"></a><span class="lineno">  924</span>&#160;        IPAddress dns1;</div>
+<div class="line"><a name="l00925"></a><span class="lineno">  925</span>&#160;        IPAddress dns2;</div>
+<div class="line"><a name="l00926"></a><span class="lineno">  926</span>&#160;        <span class="keywordflow">if</span> (address.length() &amp;&amp; netmask.length()) {</div>
+<div class="line"><a name="l00927"></a><span class="lineno">  927</span>&#160;            DBG(<span class="stringliteral">&quot;Setting static ip: &quot;</span> + address + <span class="stringliteral">&quot; &quot;</span> + netmask);</div>
+<div class="line"><a name="l00928"></a><span class="lineno">  928</span>&#160;            addr.fromString(address);</div>
+<div class="line"><a name="l00929"></a><span class="lineno">  929</span>&#160;            mask.fromString(netmask);</div>
+<div class="line"><a name="l00930"></a><span class="lineno">  930</span>&#160;        }</div>
+<div class="line"><a name="l00931"></a><span class="lineno">  931</span>&#160;        <span class="keywordflow">if</span> (gateway.length()) {</div>
+<div class="line"><a name="l00932"></a><span class="lineno">  932</span>&#160;            DBG(<span class="stringliteral">&quot;Setting static gateway: &quot;</span> + gateway);</div>
+<div class="line"><a name="l00933"></a><span class="lineno">  933</span>&#160;            gate.fromString(gateway);</div>
+<div class="line"><a name="l00934"></a><span class="lineno">  934</span>&#160;        }</div>
+<div class="line"><a name="l00935"></a><span class="lineno">  935</span>&#160;        <span class="keywordflow">if</span> (dns.length() &gt; 0) {</div>
+<div class="line"><a name="l00936"></a><span class="lineno">  936</span>&#160;            DBG(<span class="stringliteral">&quot;Setting dns server 1: &quot;</span> + String(dns[0]));</div>
+<div class="line"><a name="l00937"></a><span class="lineno">  937</span>&#160;            dns1.fromString(dns[0]);</div>
+<div class="line"><a name="l00938"></a><span class="lineno">  938</span>&#160;        }</div>
+<div class="line"><a name="l00939"></a><span class="lineno">  939</span>&#160;        <span class="keywordflow">if</span> (dns.length() &gt; 1) {</div>
+<div class="line"><a name="l00940"></a><span class="lineno">  940</span>&#160;            DBG(<span class="stringliteral">&quot;Setting dns server 2: &quot;</span> + String(dns[1]));</div>
+<div class="line"><a name="l00941"></a><span class="lineno">  941</span>&#160;            dns2.fromString(dns[1]);</div>
+<div class="line"><a name="l00942"></a><span class="lineno">  942</span>&#160;        }</div>
+<div class="line"><a name="l00943"></a><span class="lineno">  943</span>&#160;        <span class="keywordflow">return</span> WiFi.config(addr, gate, mask, dns1, dns2);</div>
+<div class="line"><a name="l00944"></a><span class="lineno">  944</span>&#160;    }</div>
+<div class="line"><a name="l00945"></a><span class="lineno">  945</span>&#160; </div>
+<div class="line"><a name="l00946"></a><span class="lineno">  946</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> wifiBegin(String &amp;ssid, String &amp;passphrase) {</div>
+<div class="line"><a name="l00947"></a><span class="lineno">  947</span>&#160;<span class="preprocessor">#if defined(__ESP32__)</span></div>
+<div class="line"><a name="l00948"></a><span class="lineno">  948</span>&#160;        <span class="keywordflow">return</span> WiFi.begin(ssid.c_str(), passphrase.c_str());</div>
+<div class="line"><a name="l00949"></a><span class="lineno">  949</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00950"></a><span class="lineno">  950</span>&#160;        <span class="keywordflow">return</span> WiFi.begin(ssid, passphrase);</div>
+<div class="line"><a name="l00951"></a><span class="lineno">  951</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00952"></a><span class="lineno">  952</span>&#160;    }</div>
+<div class="line"><a name="l00953"></a><span class="lineno">  953</span>&#160; </div>
+<div class="line"><a name="l00954"></a><span class="lineno">  954</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> wifiSetMode(Netmode val) {</div>
+<div class="line"><a name="l00955"></a><span class="lineno">  955</span>&#160;        <span class="keywordflow">switch</span> (val) {</div>
+<div class="line"><a name="l00956"></a><span class="lineno">  956</span>&#160;        <span class="keywordflow">case</span> Netmode::OFF:</div>
+<div class="line"><a name="l00957"></a><span class="lineno">  957</span>&#160;            WiFi.mode(WIFI_OFF);</div>
+<div class="line"><a name="l00958"></a><span class="lineno">  958</span>&#160;            <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00959"></a><span class="lineno">  959</span>&#160;        <span class="keywordflow">default</span>:</div>
+<div class="line"><a name="l00960"></a><span class="lineno">  960</span>&#160;        <span class="keywordflow">case</span> Netmode::AP:</div>
+<div class="line"><a name="l00961"></a><span class="lineno">  961</span>&#160;            WiFi.mode(WIFI_AP);</div>
+<div class="line"><a name="l00962"></a><span class="lineno">  962</span>&#160;            <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00963"></a><span class="lineno">  963</span>&#160;        <span class="keywordflow">case</span> Netmode::STATION:</div>
+<div class="line"><a name="l00964"></a><span class="lineno">  964</span>&#160;            WiFi.mode(WIFI_STA);</div>
+<div class="line"><a name="l00965"></a><span class="lineno">  965</span>&#160;            <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00966"></a><span class="lineno">  966</span>&#160;        <span class="keywordflow">case</span> Netmode::BOTH:</div>
+<div class="line"><a name="l00967"></a><span class="lineno">  967</span>&#160;            WiFi.mode(WIFI_AP_STA);</div>
+<div class="line"><a name="l00968"></a><span class="lineno">  968</span>&#160;            <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00969"></a><span class="lineno">  969</span>&#160;        }</div>
+<div class="line"><a name="l00970"></a><span class="lineno">  970</span>&#160;    }</div>
+<div class="line"><a name="l00971"></a><span class="lineno">  971</span>&#160;};</div>
+<div class="line"><a name="l00972"></a><span class="lineno">  972</span>&#160; </div>
+<div class="line"><a name="l00973"></a><span class="lineno">  973</span>&#160;<span class="preprocessor">#if !defined(__ESP32__)</span></div>
+<div class="line"><a name="l00974"></a><span class="lineno">  974</span>&#160;<span class="comment">// since the ESP8266 is not able to manage a hostname for the soft station network,</span></div>
+<div class="line"><a name="l00975"></a><span class="lineno">  975</span>&#160;<span class="comment">// we need to emulate it</span></div>
+<div class="line"><a name="l00976"></a><span class="lineno">  976</span>&#160;String Net::esp8266APhostname = <span class="stringliteral">&quot;&quot;</span>;</div>
+<div class="line"><a name="l00977"></a><span class="lineno">  977</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00978"></a><span class="lineno">  978</span>&#160; </div>
+<div class="line"><a name="l00979"></a><span class="lineno">  979</span>&#160;}  <span class="comment">// namespace ustd</span></div>
+<div class="line"><a name="l00980"></a><span class="lineno">  980</span>&#160; </div>
+<div class="line"><a name="l00981"></a><span class="lineno">  981</span>&#160;<span class="comment">// #endif  // defined(__ESP__)</span></div>
 <div class="ttc" id="aclassustd_1_1Net_html"><div class="ttname"><a href="classustd_1_1Net.html">ustd::Net</a></div><div class="ttdoc">munet, the muwerk network class for WiFi and NTP</div><div class="ttdef"><b>Definition:</b> net.h:72</div></div>
 <div class="ttc" id="aclassustd_1_1Net_html_a0d075f7d15c5e3ff3355959c840cd408"><div class="ttname"><a href="classustd_1_1Net.html#a0d075f7d15c5e3ff3355959c840cd408">ustd::Net::begin</a></div><div class="ttdeci">void begin(Scheduler *pScheduler, Netmode opmode=AP, bool restartOnMultipleFailures=true)</div><div class="ttdef"><b>Definition:</b> net.h:145</div></div>
 <div class="ttc" id="aclassustd_1_1Net_html_a81a9d3aa22ddec85d46effa088d0e670"><div class="ttname"><a href="classustd_1_1Net.html#a81a9d3aa22ddec85d46effa088d0e670">ustd::Net::begin</a></div><div class="ttdeci">void begin(Scheduler *pScheduler, String SSID, String password=&quot;&quot;, String hostname=&quot;muwerk-${macls}&quot;, Netmode opmode=AP, bool restartOnMultipleFailures=true)</div><div class="ttdef"><b>Definition:</b> net.h:170</div></div>
