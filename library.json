@@ -1,7 +1,7 @@
 {
     "name": "munet",
     "keywords": "esp networking",
-    "description": "Modular networking libraries for ESP32 and ESP8266 providing muwerk scheduler tasks for WiFi connection, Access Point Mode, NTP time sync, OTA software update and MQTT communication. Requires: ustd, muwerk, Arduino_JSON and PubSubClient",
+    "description": "Modular networking libraries for ESP32 and ESP8266 providing muwerk scheduler tasks for WiFi connection, Access Point Mode, NTP time sync, OTA software update and MQTT communication. Exposes MQTT via serial link to non-networked hardware. Requires: ustd, muwerk, Arduino_JSON and PubSubClient",
     "repository": {
         "type": "git",
         "url": "https://github.com/muwerk/munet.git"
@@ -30,7 +30,7 @@
             "frameworks": "arduino"
         }
     ],
-    "version": "0.3.1",
+    "version": "0.3.2",
     "frameworks": "arduino",
-    "platforms": "espressif8266,espressif32"
+    "platforms": "*"
 }

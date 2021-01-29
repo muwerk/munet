@@ -84,7 +84,7 @@ class MuSerial {
     uint8_t connectionLed;
     unsigned long ledTimer = 0;
 
-    enum LinkState { SYNC, HEADER, MSG, CRC };
+    enum LinkState { SYNC, HEADER, MSG, MUCRC };
     bool bCheckLink = false;
     uint8_t blockNum = 0;
     LinkState linkState;
@@ -263,7 +263,7 @@ class MuSerial {
 
     void ping() {
         char strTime[16];
-#ifdef __ARDUINO__
+#if defined(__ARDUINO__) || defined(__ARM__) || defined(__RISC_V__)
         ltoa(pSched->getUptime(), strTime, 15);
 #else
         ltoa(time(nullptr), strTime, 15);
@@ -403,13 +403,13 @@ class MuSerial {
                     msgBuf[curMsg] = c;
                     ++curMsg;
                     if (curMsg == msgLen) {
-                        linkState = CRC;
+                        linkState = MUCRC;
                         pFo = (unsigned char *)&fo;
                         cLen = 0;
                     }
                     continue;
                     break;
-                case CRC:
+                case MUCRC:
                     pFo[cLen] = c;
                     ++cLen;
                     if (cLen == sizeof(fo)) {

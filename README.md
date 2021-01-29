@@ -3,6 +3,7 @@ munet
 
 [![ESP12e build](https://travis-ci.org/muwerk/munet.svg?branch=master)](https://travis-ci.org/muwerk/munet)
 [![Dev Docs](https://img.shields.io/badge/docs-dev-blue.svg)](https://muwerk.github.io/munet/docs/index.html)
+[![PlatformIO CI](https://github.com/muwerk/munet/workflows/PlatformIO%20CI/badge.svg)](https://github.com/muwerk/munet/actions)
 
 The munet libraries use the [muwerk scheduler](https://github.com/muwerk/muwerk) to provide a
 comprehensive set of network functionality: WiFi connection, Access Point Mode, NTP time sync,
@@ -440,9 +441,13 @@ See [Example SerialBridge](https://github.com/muwerk/examples/tree/master/serial
 History
 -------
 
-- 0.3.2 (2021-01-XX): [not yet published (note: supported platforms should be set to `*` in `library.*` on release)]: 
-  * MuSerial MQTT-via-serial link between two muwerk MCUs to provide MQTT access to hardware without network via serial.
-  * Fixed handling of mqtt connection state when network connection changes
+- 0.3.2 (2021-01-29): MuSerial: MQTT-enable non-networked hardware via serial link, NTP Bugfix, MQTT connection state fix.
+  - Bugfix: NTP initialization on ESP8266 [failed often, #6](https://github.com/muwerk/munet/issues/6), due to unsafe parameter handling
+   in current configTime() API of ESP8266, fixed.
+  - MuSerial: MQTT-via-serial link between two muwerk MCUs to provide MQTT access to hardware without network via serial.
+    MuSerial runs on all platforms and can be used to network-enable hardware via ESPs. See [SerialBridge](https://github.com/muwerk/examples/tree/master/serialBridge).
+  - Fixed handling of mqtt connection state when network connection changes
+- CI (2021-01-38): Github actions build-check for all supported platforms: network for ESPxx, serial for all others.  
 - 0.3.1 (2021-01-20): Minor change: enable dependency-managment for Arduino library manager.
 - 0.3.0 (2021-01-20): Next Generation Network: See section _"Breaking Changes at Version 0.3.0"_ for caveats.
   - Support for Access Point mode and Dual Mode (both network station and access point mode)
