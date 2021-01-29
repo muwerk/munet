@@ -441,7 +441,7 @@ See [Example SerialBridge](https://github.com/muwerk/examples/tree/master/serial
 History
 -------
 
-- 0.3.2 (2021-01-29): MuSerial: MQTT-enable non-networked hardware via serial link and NTP Bugfix, MQTT connection state fix.
+- 0.3.2 (2021-01-29): MuSerial: MQTT-enable non-networked hardware via serial link, NTP Bugfix, MQTT connection state fix.
   - Bugfix: NTP initialization on ESP8266 [failed often, #6](https://github.com/muwerk/munet/issues/6), due to unsafe parameter handling
    in current configTime() API of ESP8266, fixed.
   - MuSerial: MQTT-via-serial link between two muwerk MCUs to provide MQTT access to hardware without network via serial.
