@@ -420,6 +420,7 @@ $(function() {
 <p>See <a href="https://github.com/muwerk/examples/tree/master/serialBridge">Example SerialBridge</a> for a complete overview.</p>
 <h1>History </h1>
 <ul>
+<li>0.4.0 (2021-01-30): <b>Breaking change</b> for ustd library include: ustd include-files have now <code>ustd_</code> prefix to prevent name-clashes with various platform-sdks. [queue.h clashed with ESP8266-Wifi, platform.h clashed with RISC-V SDK, hence new names <code>ustd_queue.h</code> and <code>ustd_platform.h</code> etc.]</li>
 <li>0.3.2 (2021-01-29): MuSerial: MQTT-enable non-networked hardware via serial link, NTP Bugfix, MQTT connection state fix.<ul>
 <li>Bugfix: NTP initialization on ESP8266 <a href="https://github.com/muwerk/munet/issues/6">failed often, #6</a>, due to unsafe parameter handling in current configTime() API of ESP8266, fixed.</li>
 <li>MuSerial: MQTT-via-serial link between two muwerk MCUs to provide MQTT access to hardware without network via serial. MuSerial runs on all platforms and can be used to network-enable hardware via ESPs. See <a href="https://github.com/muwerk/examples/tree/master/serialBridge">SerialBridge</a>.</li>
