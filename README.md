@@ -441,6 +441,8 @@ See [Example SerialBridge](https://github.com/muwerk/examples/tree/master/serial
 History
 -------
 
+- 0.4.0 (2021-01-30): **Breaking change** for ustd library include: ustd include-files have now `ustd_` prefix to prevent name-clashes with various platform-sdks. [queue.h clashed with ESP8266-Wifi, platform.h clashed with
+RISC-V SDK, hence new names `ustd_queue.h` and `ustd_platform.h` etc.]
 - 0.3.2 (2021-01-29): MuSerial: MQTT-enable non-networked hardware via serial link, NTP Bugfix, MQTT connection state fix.
   - Bugfix: NTP initialization on ESP8266 [failed often, #6](https://github.com/muwerk/munet/issues/6), due to unsafe parameter handling
    in current configTime() API of ESP8266, fixed.

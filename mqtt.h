@@ -9,9 +9,9 @@
 #include <Arduino_JSON.h>
 #include <PubSubClient.h>  // ESP32 requires v2.7 or later
 
-#include "platform.h"
-#include "array.h"
-#include "map.h"
+#include "ustd_platform.h"
+#include "ustd_array.h"
+#include "ustd_map.h"
 
 #include "scheduler.h"
 #include "timeout.h"

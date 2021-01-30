@@ -1,9 +1,9 @@
 // muserial.h
 #pragma once
 
-#include "platform.h"
-#include "array.h"
-#include "map.h"
+#include "ustd_platform.h"
+#include "ustd_array.h"
+#include "ustd_map.h"
 
 #include "scheduler.h"
 //#include <Arduino_JSON.h>
