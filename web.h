@@ -3,7 +3,7 @@
 
 #if defined(__ESP__)
 
-#include "platform.h"
+#include "ustd_platform.h"
 
 #ifdef __ESP32__
 #include <WiFiClient.h>
@@ -15,8 +15,8 @@
 #include <ESP8266mDNS.h>
 #endif
 
-#include "array.h"
-#include "map.h"
+#include "ustd_array.h"
+#include "ustd_map.h"
 #include "scheduler.h"
 
 namespace ustd {
