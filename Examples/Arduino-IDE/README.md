@@ -1,7 +1,8 @@
 Prepare your Arduino-IDE for usage with ESP and muwerk and munet
 ================================================================
 
-0. Make sure you have board support installed for ESP8266 and/or ESP32
+Board support for ESP8266 and/or ESP32 installation
+---------------------------------------------------
 
 If you want to use ESP8266 or ESP32 based boards, open `Preferences` in Arduino IDE,
 click on the Windows-Icon right to `Additional Boards Manager URLs` and
@@ -50,5 +51,31 @@ accidentaly got updated.)
 Upload the filesystem with configuration information `net.json` and `mqtt.json`
 -------------------------------------------------------------------------------
 
+### Plugins for data upload
 
+There are two filesystems to store configuration data. At the time of this writing,
+ESP8266 uses the newer and more reliable LittleFS, while ESP32 still uses SPIFFS.
 
+Current (1.8.13) Arduino IDEs have tools for SPIFFS for ESP8266 and ESP32 installed (`ESP32 Sketch Data Upload`). However, muwerk needs Little-FS support for ESP8266.
+
+A general description and installation-instructions for the file-system uploaders can be found here:
+
+* https://arduino-esp8266.readthedocs.io/en/latest/filesystem.html
+
+For ESP8266, you need to additionally install LittleFS support from here:
+
+* https://github.com/earlephilhower/arduino-esp8266littlefs-plugin/releases
+
+### Customize your network-configuration
+
+Open the `data` directory in your project folder and copy the two template files:
+
+* copy `net-default.json` to `net.json`
+* copy `mqtt-default.json` to `mqtt.json`
+
+Edit `net.json` and enter die Wifi credtionals. If you want to use an MQTT server,
+edit `mqtt.json` and enter the hostname of your mqtt server.
+
+You'll find a complete description of all the configuration options in munet's [README](https://github.com/muwerk/munet#network-configuration).
+
+Once the required json files are configured, use `ESP8266 LittleFS data upload` or `ESP32 Sketch data upload` to upload the configuration to your device.

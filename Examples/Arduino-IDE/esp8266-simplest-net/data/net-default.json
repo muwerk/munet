@@ -1,0 +1,17 @@
+{
+    "version": 1,
+    "mode": "station",
+    "hostname": "my-host-name",
+    "station": {
+        "SSID": "my-network-SSID",
+        "password": "myS3cr3t"
+    },
+    "services": {
+        "ntp": {
+            "host": [
+                "time.nist.gov"
+            ],
+            "dstrules": "CET-1CEST,M3.5.0,M10.5.0/3"
+        }
+    }
+}
