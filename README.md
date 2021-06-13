@@ -355,7 +355,7 @@ The MQTT configuration is stored in a file named `mqtt.json`.
 {
     "host": "192.168.107.1",
     "port": 1884,
-    "user": "",
+    "username": "",
     "password": "",
     "clientName": "${hostname}",
     "domainToken": "mu",
@@ -392,7 +392,7 @@ The following placeholders are currently available:
 | ------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `host`              | Hostname or ip address of the MQTT server. This value is mandatory                                           |
 | `port`              | Port number under which the MQTT server is reachable. (default: 1884)                                        |
-| `user`              | Username for mqtt server authentication. (default: empty for no authentication)                              |
+| `username`          | Username for mqtt server authentication. (default: empty for no authentication)                              |
 | `password`          | Password for mqtt server authentication. (default: empty for no authentication)                              |
 | `clientName`        | The unique MQTT client name.  (default: `${hostname}`)                                                       |
 | `domainToken`       | Common domain token for device group. (default' `mu`)                                                        |
@@ -449,7 +449,7 @@ RISC-V SDK, hence new names `ustd_queue.h` and `ustd_platform.h` etc.]
   - MuSerial: MQTT-via-serial link between two muwerk MCUs to provide MQTT access to hardware without network via serial.
     MuSerial runs on all platforms and can be used to network-enable hardware via ESPs. See [SerialBridge](https://github.com/muwerk/examples/tree/master/serialBridge).
   - Fixed handling of mqtt connection state when network connection changes
-- CI (2021-01-38): Github actions build-check for all supported platforms: network for ESPxx, serial for all others.  
+- CI (2021-01-38): Github actions build-check for all supported platforms: network for ESPxx, serial for all others.
 - 0.3.1 (2021-01-20): Minor change: enable dependency-managment for Arduino library manager.
 - 0.3.0 (2021-01-20): Next Generation Network: See section _"Breaking Changes at Version 0.3.0"_ for caveats.
   - Support for Access Point mode and Dual Mode (both network station and access point mode)
