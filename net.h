@@ -72,8 +72,15 @@ void loop() {
 class Net {
   public:
     const long NET_CONFIG_VERSION = 1;
-    enum Netstate { NOTDEFINED, NOTCONFIGURED, SERVING, CONNECTINGAP, CONNECTED };
-    enum Netmode { OFF, AP, STATION, BOTH };
+    enum Netstate { NOTDEFINED,
+                    NOTCONFIGURED,
+                    SERVING,
+                    CONNECTINGAP,
+                    CONNECTED };
+    enum Netmode { OFF,
+                   AP,
+                   STATION,
+                   BOTH };
 
   private:
     // hardware configuration
@@ -727,7 +734,7 @@ class Net {
             network["channel"] = WiFi.channel(i);
             network["encryption"] = getStringFromEncryption(WiFi.encryptionType(i));
             network["bssid"] = WiFi.BSSIDstr(i);
-#ifndef __ESP32__
+#if !defined(__ESP32__) && !defined(__ESP32_RISC__)
             network["hidden"] = WiFi.isHidden(i);
 #endif
             res["networks"][i] = network;
@@ -784,7 +791,7 @@ class Net {
 
     const char *getStringFromEncryption(int encType) {
         // read the encryption type and print out the name:
-#if !defined(__ESP32__)
+#if !defined(__ESP32__) && !defined(__ESP32_RISC__)
         switch (encType) {
         case ENC_TYPE_WEP:
             return "WEP";
@@ -852,7 +859,7 @@ class Net {
     // ESP WiFi Abstraction
 
     static String wifiGetHostname() {
-#if defined(__ESP32__)
+#if defined(__ESP32__) || defined(__ESP32_RISC__)
         return WiFi.getHostname();
 #else
         return WiFi.hostname();
@@ -863,21 +870,21 @@ class Net {
         if (!hostname.length()) {
             hostname = replaceVars("muwerk-${macls}");
         }
-#if defined(__ESP32__)
+#if defined(__ESP32__) || defined(__ESP32_RISC__)
         WiFi.setHostname(hostname.c_str());
 #else
         WiFi.hostname(hostname.c_str());
 #endif
     }
 
-#if !defined(__ESP32__)
+#if !defined(__ESP32__) && !defined(__ESP32_RISC__)
     // since the ESP8266 is not able to manage a hostname for the soft station network,
     // we need to emulate it
     static String esp8266APhostname;
 #endif
 
     static String wifiAPGetHostname() {
-#if defined(__ESP32__)
+#if defined(__ESP32__) || defined(__ESP32_RISC__)
         return WiFi.softAPgetHostname();
 #else
         return Net::esp8266APhostname;
@@ -888,7 +895,7 @@ class Net {
         if (!hostname.length()) {
             hostname = replaceVars("muwerk-${macls}");
         }
-#if defined(__ESP32__)
+#if defined(__ESP32__) || defined(__ESP32_RISC__)
         WiFi.softAPsetHostname(hostname.c_str());
 #else
         Net::esp8266APhostname = hostname;
@@ -897,7 +904,7 @@ class Net {
 
     static bool wifiSoftAP(String ssid, String passphrase, unsigned int channel, bool hidden,
                            unsigned int max_connection) {
-#if defined(__ESP32__)
+#if defined(__ESP32__) || defined(__ESP32_RISC__)
         return WiFi.softAP(ssid.c_str(), passphrase.c_str(), channel, hidden, max_connection);
 #else
         return WiFi.softAP(ssid, passphrase, channel, hidden, max_connection);
@@ -944,7 +951,7 @@ class Net {
     }
 
     static bool wifiBegin(String &ssid, String &passphrase) {
-#if defined(__ESP32__)
+#if defined(__ESP32__) || defined(__ESP32_RISC__)
         return WiFi.begin(ssid.c_str(), passphrase.c_str());
 #else
         return WiFi.begin(ssid, passphrase);
@@ -970,7 +977,7 @@ class Net {
     }
 };
 
-#if !defined(__ESP32__)
+#if !defined(__ESP32__) && !defined(__ESP32_RISC__)
 // since the ESP8266 is not able to manage a hostname for the soft station network,
 // we need to emulate it
 String Net::esp8266APhostname = "";

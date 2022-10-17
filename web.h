@@ -5,7 +5,7 @@
 
 #include "ustd_platform.h"
 
-#ifdef __ESP32__
+#if defined(__ESP32__) || defined(__ESP32_RISC__)
 #include <WiFiClient.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>
@@ -27,7 +27,7 @@ class Web {
     bool netUp = false;
     bool webUp = false;
     String webServer;
-#ifdef __ESP32__
+#if defined(__ESP32__) || defined(__ESP32_RISC__)
     WebServer *pWebServer;
 #else
     ESP8266WebServer *pWebServer;
@@ -48,7 +48,7 @@ class Web {
         LittleFS.begin();
 #endif
 
-#ifdef __ESP32__
+#if defined(__ESP32__) || defined(__ESP32_RISC__)
         pWebServer = new WebServer(80);
 #else
         pWebServer = new ESP8266WebServer(80);
@@ -141,7 +141,7 @@ class Web {
     void loop() {
         if (netUp) {
             pWebServer->handleClient();
-#ifndef __ESP32__
+#if !defined(__ESP32__) && !defined(__ESP32_RISC__)
             MDNS.update();
 #endif
         }

@@ -554,7 +554,7 @@ class Mqtt {
     void finalizeConfiguration(String &hostname, String &mac) {
         // get network information
         if (hostname.length() == 0) {
-#if defined(__ESP32__)
+#if defined(__ESP32__) || defined(__ESP32_RISC__)
             String hostname = WiFi.getHostname();
 #else
             String hostname = WiFi.hostname();

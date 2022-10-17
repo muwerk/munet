@@ -125,7 +125,7 @@ class Ota {
 
     void OTAsetup() {
 
-#if defined(__ESP32__)
+#if defined(__ESP32__) || defined(__ESP32_RISC__)
         ArduinoOTA.setHostname(WiFi.getHostname());
 #else
         ArduinoOTA.setHostname(WiFi.hostname().c_str());
