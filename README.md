@@ -441,6 +441,7 @@ See [Example SerialBridge](https://github.com/muwerk/examples/tree/master/serial
 History
 -------
 
+- 0.5.0 (2023-06-02): Telnet access to `muwerk` console
 - 0.4.1 (2022-10-17): Support for ESP32C3 (platform define `__ESP32_RISC__`).
 - 0.4.0 (2021-01-30): **Breaking change** for ustd library include: ustd include-files have now `ustd_` prefix to prevent name-clashes with various platform-sdks. [queue.h clashed with ESP8266-Wifi, platform.h clashed with
 RISC-V SDK, hence new names `ustd_queue.h` and `ustd_platform.h` etc.]
