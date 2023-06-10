@@ -23,8 +23,6 @@ This class is not instantiated directly but managed by the \ref TelnetConsole cl
 
 class TelnetConsoleConnection : public Console {
   public:
-    Scheduler *pSched;
-    int tID;
     WiFiClient client;
     bool connected;
     char buffer[64];
@@ -53,7 +51,7 @@ class TelnetConsoleConnection : public Console {
     void begin(Scheduler *_pSched) {
         pSched = _pSched;
         tID = pSched->add([this]() { this->loop(); }, "telnet", 60000);  // 60ms
-        init(pSched);
+        init();
         motd();
         prompt();
     }
