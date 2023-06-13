@@ -7,6 +7,7 @@
 #include <functional>
 
 #include <Arduino_JSON.h>
+// https://registry.platformio.org/libraries/links2004/WebSockets
 
 #include "ustd_platform.h"
 #include "ustd_array.h"
