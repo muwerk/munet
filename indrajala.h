@@ -116,7 +116,13 @@ class Indrajala {
     ustd::timeout indraEcho = 5000L;
     WebSocketsClient webSocket;
     double serverTimeOffset = 0.0;
-    ustd::sensorprocessor meanTimeOffset = ustd::sensorprocessor(20, 0, 0.0000001);  // 4, 600, 0.01);
+    ustd::sensorprocessor meanTimeOffset = ustd::sensorprocessor(4, 0, 0.0000001);  // 4, 600, 0.01);
+    double serverSendTimeOffset = 0.0;
+    ustd::sensorprocessor meanSendTimeOffset = ustd::sensorprocessor(4, 0, 0.0000001);  // 4, 600, 0.01);
+    double serverReceiveTimeOffset = 0.0;
+    ustd::sensorprocessor meanReceiveTimeOffset = ustd::sensorprocessor(4, 0, 0.0000001);  // 4, 600, 0.01);
+    double compensationTimeOffset = 0.0;
+
   public:
     Indrajala() {
         /*! Instantiate an Indrajala client.
@@ -305,9 +311,15 @@ class Indrajala {
         return uuid;
     }
 
-    double jd_time() {
-        double dts = time(nullptr) + (millis() % 1000) / 1000.0 + serverTimeOffset;
+    double jd_time(bool bCompensate = true) {
+        double dts = time(nullptr) + (millis() % 1000) / 1000.0;
+        if (bCompensate)
+            dts += compensationTimeOffset;
         return dts / 86400.0 + 2440587.5;
+    }
+
+    double sec_from_jd(double jd) {
+        return (jd - 2440587.5) * 86400.0;
     }
 
     void createIndraEvent(JSONVar *pIE, String domain, String data_type = "") {
@@ -323,7 +335,10 @@ class Indrajala {
         JSONVar indraEvent;
         String msg;
         createIndraEvent(&indraEvent, "$trx/echo", "json");
-        indraEvent["data"] = "";
+        double jd_now = jd_time(false);
+        JSONVar data;
+        data["jd_now_uncompensated"] = jd_now;
+        indraEvent["data"] = JSON.stringify(data);
         msg = JSON.stringify(indraEvent);
         webSocket.sendTXT(msg.c_str());
     }
@@ -331,20 +346,18 @@ class Indrajala {
     void webSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
         String domain, data, from_id, data_type;
         JSONVar indraEvent;
-        double jd_now, jd_start, jd_end, jd_rtt, jd_dt1, jd_dt2;
+        double jd_start, jd_end, jd_rtt, jd_dt1, jd_dt2, jd_now_uc, jd_start_uc;
         switch (type) {
         case WStype_DISCONNECTED:
             Serial.printf("[WSc] Disconnected!\r\n");
             bIndraConnected = false;
             bIndraConnecting = false;
-            bCheckConnection = true;
             publishState();
             break;
         case WStype_CONNECTED:
             Serial.printf("[WSc] Connected to url: %s\r\n", payload);
             bIndraConnected = true;
             bIndraConnecting = false;
-            bCheckConnection = false;
             publishState();
             sendEcho();
             break;
@@ -362,18 +375,29 @@ class Indrajala {
                     indraEvent.hasOwnProperty("data_type")) {
                     domain = (const char *)indraEvent["domain"];
                     from_id = (const char *)indraEvent["from_id"];
-                    if (from_id == String("$trx/echo")) {
+                    data = (const char *)indraEvent["data"];
+                    JSONVar dataObj = JSON.parse(data);
+                    if (from_id == String("$trx/echo") && dataObj.hasOwnProperty("jd_now_uncompensated")) {
                         // echo received
-                        jd_now = jd_time() * 86400;
-                        jd_start = (double)indraEvent["time_jd_start"] * 86400;
-                        jd_end = (double)indraEvent["time_jd_end"] * 86400;
-                        jd_rtt = jd_now - jd_start;
-                        jd_dt1 = jd_start - jd_end;
-                        jd_dt2 = jd_now - jd_end;
-                        // serverTimeOffset = (jd_dt1 + jd_dt2) / 2.0 - jd_rtt / 2.0;
-                        serverTimeOffset = serverTimeOffset + jd_end - (jd_now + jd_start) / 2.0;
+                        jd_now_uc = sec_from_jd(jd_time(false));
+                        jd_start_uc = sec_from_jd((double)dataObj["jd_now_uncompensated"]);
+                        jd_start = sec_from_jd((double)indraEvent["time_jd_start"]);
+                        jd_end = sec_from_jd((double)indraEvent["time_jd_end"]);
+                        jd_rtt = jd_now_uc - jd_start_uc;
+                        jd_dt1 = jd_end - jd_start_uc;
+                        jd_dt2 = jd_now_uc - jd_end;
+                        serverTimeOffset = (jd_dt1 - jd_dt2) / 2.0;
+                        if ((serverTimeOffset > 10.0) || (serverTimeOffset < -10.0)) {
+                            Serial.printf("Invalid offset: %lf", serverTimeOffset);
+                            break;
+                        }
                         meanTimeOffset.filter(&serverTimeOffset);
-                        Serial.printf("[WSc] echo received %lf, %lf, %lf, delta_t: %lf\r\n", jd_rtt, jd_dt1, jd_dt2, serverTimeOffset);
+                        serverSendTimeOffset = jd_end - jd_start_uc;
+                        meanSendTimeOffset.filter(&serverSendTimeOffset);
+                        serverReceiveTimeOffset = jd_end - jd_now_uc;
+                        meanReceiveTimeOffset.filter(&serverReceiveTimeOffset);
+                        compensationTimeOffset = serverTimeOffset;  // compensationTimeOffset + serverSendTimeOffset;
+                        Serial.printf("[WSc] echo received %lf, %lf, %lf, delta_t: %lf, dts: %lf\r\n", jd_rtt, jd_dt1, jd_dt2, serverTimeOffset, compensationTimeOffset);
                     } else {
                         data = (const char *)indraEvent["data"];
                         pSched->publish(domain, data);
