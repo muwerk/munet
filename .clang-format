@@ -1,5 +1,4 @@
 ---
-Language: JavaScript
 Language:        Cpp
 # BasedOnStyle:  LLVM
 AccessModifierOffset: -2

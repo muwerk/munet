@@ -97,6 +97,11 @@ class Net {
     String macAddress;
     String deviceID;
 
+    // Credentials
+    String SSID;
+    String password;
+    String hostname;
+
     // runtime control - state management
     Netmode mode;
     Netstate curState;
@@ -280,7 +285,7 @@ class Net {
                 return;
             }
             if (connectTimeout.test()) {
-                DBG("Timout connecting to WiFi " + WiFi.SSID());
+                DBG("Timout connecting to WiFi " + SSID + ", status: " + WiFi.status());
                 if (bOnceConnected) {
                     if (bRebootOnContinuedFailure) {
                         --deathCounter;
@@ -295,7 +300,6 @@ class Net {
                     WiFi.reconnect();
                     connectTimeout.reset();
                 } else {
-                    DBG("Retrying to connect...");
                     if (initialCounter > 0) {
                         if (bRebootOnContinuedFailure) {
                             --initialCounter;
@@ -545,7 +549,7 @@ class Net {
 
     bool startAP() {
         // configure hostname
-        String hostname = replaceVars(config.readString("net/hostname", "muwerk-${macls}"));
+        hostname = replaceVars(config.readString("net/hostname", "muwerk-${macls}"));
         wifiAPSetHostname(hostname);
 
         // configure network
@@ -557,11 +561,11 @@ class Net {
         }
 
         // configure AP
-        String SSID = replaceVars(config.readString("net/ap/SSID", "muwerk-${macls}"));
+        SSID = replaceVars(config.readString("net/ap/SSID", "muwerk-${macls}"));
         if (!SSID.length()) {
             SSID = replaceVars("muwerk-${macls}");
         }
-        String password = config.readString("net/ap/password");
+        password = config.readString("net/ap/password");
         unsigned int channel = config.readLong("net/ap/channel", 1, 13, 1);
         bool hidden = config.readBool("net/ap/hidden", false);
         unsigned int maxConnections = config.readLong("net/ap/maxConnections", 1, 8, 4);
@@ -580,9 +584,9 @@ class Net {
 
     bool startSTATION() {
         // get connection parameters
-        String hostname = replaceVars(config.readString("net/hostname"));
-        String SSID = config.readString("net/station/SSID");
-        String password = config.readString("net/station/password");
+        hostname = replaceVars(config.readString("net/hostname"));
+        SSID = config.readString("net/station/SSID");
+        password = config.readString("net/station/password");
 
         // get network parameter
         ustd::array<String> dns;
